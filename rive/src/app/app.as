@@ -4,17 +4,27 @@
 
 import { Layout, Context } from "rive/host";
 import { Renderer } from "rive/renderer";
+import { Mat2D } from "rive/mat2d";
 import { KeyboardEvent, PointerEvent, ScrollEvent, TextInput } from "rive/events";
 import { ViewModel } from "rive/data";
+import { Audio } from "rive/audio";
 import { SongFile } from "../lang/bundle";
 import { CONDUCTOR_PATH } from "../lang/config";
 import { Diagnostic } from "../lang/diagnostics";
 import { Song } from "../lang/song";
+import { CheckedFile } from "../lang/check";
 import { compileSong, CompileOptions, Score } from "../score/compiler";
+import { Grid, GridRow } from "../score/timeline";
+import { Rail, RAIL_WIDTH } from "../editor/rail";
+import { FileList, LIST_WIDTH } from "../editor/filelist";
+import { isName } from "../lang/types";
+import { renameReferences } from "../lang/rename";
+import { INSTRUMENTS_DIR, PATTERNS_DIR } from "../lang/song";
 import { MAX_CHANNELS } from "../synth/engine";
-import { Column, EditorView } from "../editor/view";
-import { Doc } from "../editor/doc";
-import { Bindings, itemNum, itemStr, newItem, setItemBool, setItemNum, setItemStr } from "./bindings";
+import { Column, EditorView, summaryAt } from "../editor/view";
+import { Doc, Pos } from "../editor/doc";
+import { buildOverview } from "../editor/overview";
+import { Bindings, itemNum, itemStr, newItem, setItemBool, setItemColor, setItemNum, setItemStr } from "./bindings";
 import { exampleBundle, exampleInfo, examples } from "./examples";
 import { ExportState, exportStateName, Exporter, formatId } from "./exporter";
 import { Transport, TransportState } from "./transport";
@@ -22,14 +32,32 @@ import { Transport, TransportState } from "./transport";
 export const COMPILE_DELAY: f64 = 0.15; // seconds after the last edit
 export const CHANGED_DELAY: f64 = 0.3; // before telling the host (§11.3)
 export const DEFAULT_EXAMPLE: string = "deep-house";
+// Toolbar toggles (loop, follow): lit when on.
+export const TOGGLE_ON: u32 = 0xFF3B5E8C;
+export const TOGGLE_OFF: u32 = 0xFF2B303B;
 
 // The examples dropdown as scene.rml lays it out (§10.1): two columns of rows,
 // pinned to the right edge just under the toolbar.
 export const MENU_WIDTH: f64 = 616;
-export const MENU_RIGHT: f64 = 10;
-export const MENU_ROW: f64 = 30;
-export const MENU_GAP: f64 = 4;
-export const MENU_PAD: f64 = 6;
+export const MENU_RIGHT: f64 = 8;
+export const MENU_ROW: f64 = 26;
+export const MENU_GAP: f64 = 2;
+export const MENU_PAD: f64 = 4;
+// The narrow layout (docs/spec.md §10.7) starts below this width.
+export const NARROW_WIDTH: f64 = 1000;
+// The "More" popover and the Diagnostics popover, as tools/gen_scene.py lays them out.
+export const MORE_WIDTH: f64 = 196;
+export const MORE_HEIGHT: f64 = 4 * 2 + 6 * 26 + 5 * 2;
+export const DIAG_WIDTH: f64 = 576;
+export const DIAG_ROW: f64 = 24;
+export const DIAG_LIMIT: i32 = 20;
+// Toggle looks (equal RGB channels only).
+export const LOOK_FILL: u32 = 0xFF151515;
+export const LOOK_FILL_ON: u32 = 0xFF222222;
+export const LOOK_INK: u32 = 0xFFA0A0A0;
+export const LOOK_INK_ON: u32 = 0xFFFFFFFF;
+export const LOOK_EDGE: u32 = 0xFF303030;
+export const LOOK_EDGE_ON: u32 = 0xFF666666;
 
 // A column wide enough for its longest line, within reason.
 function autoWidth(doc: Doc, least: i32): i32 {
@@ -47,7 +75,23 @@ export class Partition extends Layout {
     vm: Bindings? = null;
     ready: bool = false;
     framesWithoutVm: i32 = 0;
+    // One editor per tab (§10.9): tracks, patterns, instruments. `view` is the
+    // one on screen.
+    tracksView: EditorView = new EditorView();
+    patternsView: EditorView = new EditorView();
+    instrumentsView: EditorView = new EditorView();
     view: EditorView = new EditorView();
+    tab: i32 = 0;
+    auditioning: bool = false;
+    auditionPath: string = "";
+    rail: Rail = new Rail();
+    patternList: FileList = new FileList("Patterns", "pattern");
+    instrumentList: FileList = new FileList("Instruments", "instrument");
+    // Editor columns of pattern and instrument files, kept (with their undo
+    // history) while the files exist.
+    fileColumnCache: Map<string, Column> = new Map<string, Column>();
+    layoutW: f64 = 1280;
+    layoutH: f64 = 700;
     transport: Transport = new Transport();
     exporter: Exporter = new Exporter();
     song: Song = new Song();
@@ -67,12 +111,28 @@ export class Partition extends Layout {
     pollFilesIn: f64 = 0;
     reportedFailures: i32 = 0;
     menuOpen: bool = false;
+    moreOpen: bool = false;
+    diagnosticsOpen: bool = false;
+    narrow: bool = false;
+    editedSinceLoad: bool = false;
+    diagnosticItems: Array<Diagnostic> = [];
     currentExample: string = "";
     exampleItems: Array<ViewModel> = [];
 
+    views(): Array<EditorView> {
+        return [this.tracksView, this.patternsView, this.instrumentsView];
+    }
+
     override init(context: Context): bool {
         this.context = context;
-        this.view.setFonts(context.font("mono"), context.font("mono-bold"));
+        this.view = this.tracksView;
+        this.patternsView.docsTopic = "patterns";
+        this.instrumentsView.docsTopic = "instruments";
+        this.instrumentsView.strip = 0;
+        let views = this.views();
+        for (let i = 0; i < views.length; i++) {
+            views[i].setFonts(context.font("mono"), context.font("mono-bold"), context.font("ui"), context.font("ui-bold"));
+        }
         this.tryStart();
         return true;
     }
@@ -105,9 +165,375 @@ export class Partition extends Layout {
     }
 
     override resize(width: f64, height: f64, scale: f64): void {
-        this.view.width = width;
-        this.view.height = height;
-        this.view.clampScroll();
+        this.narrow = width < NARROW_WIDTH;
+        this.layoutW = width;
+        this.layoutH = height;
+        let views = this.views();
+        for (let i = 0; i < views.length; i++) {
+            // Tracks sit right of the rail; files right of the rail and the list.
+            let left = i == 0 ? RAIL_WIDTH : RAIL_WIDTH + LIST_WIDTH;
+            views[i].originX = left;
+            views[i].width = Math.max(width - left, 120);
+            views[i].height = height;
+            views[i].fit();
+            views[i].relayout();
+        }
+    }
+
+    listFor(tab: i32): FileList {
+        return tab == 2 ? this.instrumentList : this.patternList;
+    }
+
+    // --- Tabs (§10.9) --------------------------------------------------------------
+
+    setTab(tab: i32): void {
+        if (tab < 0 || tab > 2 || tab == this.tab) return;
+        let docs = this.view.docsOpen;
+        this.closePopovers();
+        this.tab = tab;
+        this.rail.tab = tab;
+        this.view = this.views()[tab];
+        if (docs && !this.view.docsOpen) this.view.openDocs();
+        else if (!docs) this.view.docsOpen = false;
+        this.view.fit();
+        this.view.relayout();
+    }
+
+    // The tab and view that edit `path`.
+    tabOf(path: string): i32 {
+        if (path.startsWith(PATTERNS_DIR)) return 1;
+        if (path.startsWith(INSTRUMENTS_DIR)) return 2;
+        return 0;
+    }
+
+    // The file lists and, in each file tab, the column of the selected file.
+    refreshFileTabs(): void {
+        this.refreshList(1);
+        this.refreshList(2);
+    }
+
+    refreshList(tab: i32): void {
+        let list = this.listFor(tab);
+        let pattern = tab == 1;
+        let names = pattern ? this.song.patternNames : this.song.instrumentNames;
+        list.names = [];
+        list.details = [];
+        for (let i = 0; i < names.length; i++) {
+            list.names.push(names[i]);
+            let file = pattern ? this.song.patterns.get(names[i]) : this.song.instruments.get(names[i]);
+            if (pattern) {
+                list.details.push(`${file.rowCount} rows`);
+            } else {
+                // The preset it starts from, if any.
+                let base = "";
+                let cmds = file.commands();
+                for (let k = 0; k < cmds.length; k++) if (cmds[k].name == "base") base = cmds[k].str("preset", "");
+                list.details.push(base);
+            }
+        }
+        if (!list.names.includes(list.selected)) list.selected = list.names.length > 0 ? list.names[0] : "";
+        this.showFile(tab, list.selected);
+    }
+
+    // Puts file `name` of a tab in that tab's editor.
+    showFile(tab: i32, name: string): void {
+        let list = this.listFor(tab);
+        let view = this.views()[tab];
+        list.selected = name;
+        if (name.length == 0) {
+            view.setColumns([]);
+            return;
+        }
+        let pattern = tab == 1;
+        let path = (pattern ? PATTERNS_DIR : INSTRUMENTS_DIR) + name + (pattern ? ".pat" : ".inst");
+        let c: Column;
+        if (this.fileColumnCache.has(path)) {
+            c = this.fileColumnCache.get(path);
+            if (c.doc.text() != this.song.text(path) && !(pattern && c.doc.lines.join("\n") + "\n" == this.song.text(path))) c.doc.replaceAll(this.song.text(path));
+        } else {
+            let doc = new Doc(path, this.song.text(path));
+            doc.keepTrailing = pattern; // a pattern's trailing rests are part of its length
+            c = new Column(doc, name, autoWidth(doc, pattern ? 24 : 40), false, false, false);
+            c.controls = false;
+            this.fileColumnCache.set(path, c);
+        }
+        c.name = name;
+        view.setColumns([c]);
+        view.focus = 0;
+        view.fit();
+        view.relayout();
+        // A pattern shown for the first time gets its overview now; edits rebuild it on compile.
+        if (pattern && c.overview == null && this.patternsView.grid != null) {
+            let file = this.song.checked(path);
+            if (file != null) {
+                let ov = buildOverview(file!, this.song, this.patternsView.grid!, [this.song.config.bpm]);
+                ov.revision = this.song.revision;
+                c.overview = ov;
+            }
+        }
+    }
+
+    // A grid for the patterns tab: the song's meter from row 0, with no conductor.
+    patternGrid(): Grid {
+        let g = new Grid();
+        let config = this.song.config;
+        let rows = 0;
+        let columns = this.patternsView.columns;
+        for (let i = 0; i < columns.length; i++) rows = max<i32>(rows, columns[i].map.bands);
+        rows += 64;
+        let perBar = config.rowsPerBeat * config.sigNum;
+        for (let r = 0; r < rows; r++) {
+            let row = new GridRow();
+            row.rpb = config.rowsPerBeat;
+            row.sigNum = config.sigNum;
+            row.sigDen = config.sigDen;
+            row.bar = r / perBar;
+            row.beat = (r % perBar) / config.rowsPerBeat;
+            row.rowInBeat = r % config.rowsPerBeat;
+            g.rows.push(row);
+        }
+        return g;
+    }
+
+    // Adds a pattern or an instrument file (from the add column).
+    newFile(): void {
+        let pattern = this.tab == 1;
+        let dir = pattern ? PATTERNS_DIR : INSTRUMENTS_DIR;
+        let ext = pattern ? ".pat" : ".inst";
+        let stem = pattern ? "pattern" : "instrument";
+        let n = 1;
+        while (this.song.files.has(`${dir}${stem}_${n}${ext}`)) n++;
+        let path = `${dir}${stem}_${n}${ext}`;
+        let text = "";
+        if (pattern) {
+            // One bar: a note on each beat, then rests to the bar's end.
+            let rpb = this.song.config.rowsPerBeat;
+            let rows = rpb * this.song.config.sigNum;
+            for (let r = 0; r < rows; r++) text += (r % rpb == 0 ? "note(p: C4)" : "") + "\n";
+        } else {
+            text = "base(preset: saw)\nfilter(type: lowpass, cutoff: 2k, res: 0.2)\nenv(a: 5ms, d: 300ms, s: 0.6, r: 200ms)\n";
+        }
+        this.song.setFile(path, text);
+        let list = this.listFor(this.tab);
+        list.selected = `${stem}_${n}`;
+        this.refreshFileTabs();
+        this.selectFile(this.tab, list.selected);
+        this.fileEdited(path, text);
+        // Name it right away: the new row opens for renaming.
+        list.startRename(list.names.indexOf(`${stem}_${n}`));
+        this.say(`added ${path}; type its name, then call it with ${pattern ? "pattern(name: …)" : "inst(name: …)"}`);
+    }
+
+    handleListActions(): void {
+        if (this.tab == 0) return;
+        let list = this.listFor(this.tab);
+        let actions = list.takeActions();
+        for (let i = 0; i < actions.length; i++) {
+            let a = actions[i];
+            if (a == "add") this.newFile();
+            else if (a.startsWith("select:")) this.selectFile(this.tab, a.substring(7)); else if (a.startsWith("delete:")) this.deleteFile(this.tab, a.substring(7));
+            else if (a.startsWith("rename:")) {
+                let parts = a.split(":");
+                if (parts.length == 3) this.renameFile(this.tab, parts[1], parts[2]);
+            }
+        }
+    }
+
+    // Opens another file of a tab. While playing, the new file plays from its start.
+    selectFile(tab: i32, name: string): void {
+        let playing = this.transport.state == TransportState.Playing;
+        this.endAudition();
+        this.showFile(tab, name);
+        if (playing && tab == this.tab) this.auditionFile(false);
+    }
+
+    filePath(tab: i32, name: string): string {
+        return tab == 1 ? `${PATTERNS_DIR}${name}.pat` : `${INSTRUMENTS_DIR}${name}.inst`;
+    }
+
+    deleteFile(tab: i32, name: string): void {
+        let path = this.filePath(tab, name);
+        if (!this.song.files.has(path)) return;
+        if (this.auditionPath == path) this.stop();
+        this.song.removeFile(path);
+        this.fileColumnCache.delete(path);
+        this.removeFileFromVm(path);
+        this.refreshFileTabs();
+        this.editedSinceLoad = true;
+        this.compileAt = this.clock + COMPILE_DELAY;
+        this.say(`deleted ${path}`);
+    }
+
+    // Renames a pattern or instrument and the references to it in every file.
+    renameFile(tab: i32, from: string, to: string): void {
+        let pattern = tab == 1;
+        let list = this.listFor(tab);
+        if (!isName(to)) {
+            this.say(`'${to}' is not a valid name: use lowercase letters, digits and '_'`);
+            return;
+        }
+        let oldPath = this.filePath(tab, from);
+        let newPath = this.filePath(tab, to);
+        if (this.song.files.has(newPath)) {
+            this.say(`there is already a ${pattern ? "pattern" : "instrument"} named '${to}'`);
+            return;
+        }
+        let text = this.song.text(oldPath);
+        let cached = this.fileColumnCache.has(oldPath) ? this.fileColumnCache.get(oldPath) : null;
+        if (cached != null) {
+            text = cached.doc.text();
+            cached.doc.path = newPath;
+            this.fileColumnCache.delete(oldPath);
+            this.fileColumnCache.set(newPath, cached);
+        }
+        this.song.setFile(newPath, text);
+        this.song.removeFile(oldPath);
+        this.removeFileFromVm(oldPath);
+        this.writeFileToVm(newPath, text, true);
+        // References: pattern(name: old) for patterns; inst(name: old) and inst: old for instruments.
+        let changed = 0;
+        let paths = this.song.paths.slice(0);
+        for (let i = 0; i < paths.length; i++) {
+            let p = paths[i];
+            if (!p.endsWith(".ch") && !p.endsWith(".pat")) continue;
+            let before = this.song.text(p);
+            let after = renameReferences(before, from, to, pattern);
+            if (after == before) continue;
+            changed++;
+            this.song.setFile(p, after);
+            this.writeFileToVm(p, after, true);
+            this.updateOpenDoc(p, after);
+        }
+        if (this.auditionPath == oldPath) this.auditionPath = newPath;
+        list.selected = to;
+        this.refreshFileTabs();
+        this.editedSinceLoad = true;
+        this.compileAt = this.clock + COMPILE_DELAY;
+        this.say(`renamed ${from} to ${to}${changed > 0 ? `, updated ${changed} file${changed == 1 ? "" : "s"}` : ""}`);
+    }
+
+    // A file changed outside its editor: show the new text where it is open.
+    updateOpenDoc(path: string, text: string): void {
+        let views = this.views();
+        for (let v = 0; v < views.length; v++) {
+            let columns = views[v].columns;
+            for (let i = 0; i < columns.length; i++) {
+                if (columns[i].doc.path == path) {
+                    columns[i].doc.replaceAll(text);
+                    views[v].relayout();
+                }
+            }
+        }
+        if (this.fileColumnCache.has(path)) this.fileColumnCache.get(path).doc.replaceAll(text);
+    }
+
+    removeFileFromVm(path: string): void {
+        let vm = this.vm;
+        if (vm == null) return;
+        let list = vm.list(vm.song, "files");
+        if (list == null) return;
+        for (let i = 0; i < list.length; i++) {
+            if (itemStr(list.get(i), "path") == path) {
+                list.removeAt(i);
+                break;
+            }
+        }
+        this.seenRevision.delete(path);
+    }
+
+    // --- Auditions (§10.9) ---------------------------------------------------------
+
+    // Plays the focused pattern on a loop, or a phrase on the focused
+    // instrument, without the rest of the song.
+    auditionFile(keep: bool): void {
+        let c = this.view.focused;
+        if (c == null || this.tab == 0) return;
+        let path = c.doc.path;
+        let name = c.name;
+        let config = this.song.config;
+        let rpb = config.rowsPerBeat;
+        let line = "";
+        let loopRows = 0;
+        if (this.tab == 1) {
+            // The pattern alone, called again on every pass of the loop.
+            line = `${this.callerInstrument(name)}pattern(name: ${name})\n`;
+            loopRows = max<i32>(c.map.bands, 1);
+        } else {
+            // An example track: an arpeggio, a held chord, a low line (two bars).
+            let rows = new Array<string>(rpb * 8);
+            for (let r = 0; r < rows.length; r++) rows[r] = "";
+            rows[0] = `inst(name: ${name}); note(p: C3, len: 1b)`;
+            rows[rpb] = "note(p: E3, len: 1b)";
+            rows[rpb * 2] = "note(p: G3, len: 1b)";
+            rows[rpb * 3] = "note(p: C4, len: 1b)";
+            rows[rpb * 4] = "chord(root: C3, type: maj7, len: 2b, strum: 30ms)";
+            rows[rpb * 6] = "note(p: G2, len: 1/8); note(p: G3, len: 1/8, at: 0.5)";
+            rows[rpb * 7] = "note(p: C2, len: 1b)";
+            line = rows.join("\n") + "\n";
+            loopRows = rpb * 8;
+        }
+        let conductor = "mark(name: audition)\n";
+        for (let r = 1; r < loopRows - 1; r++) conductor += "\n";
+        conductor += loopRows > 1 ? "jump(to: audition)\n" : "";
+        let yaml = `bpm: ${config.bpm}\nsignature: ${config.sigNum}/${config.sigDen}\nrows_per_beat: ${rpb}\nswing: ${config.swing}\nchannels:\n  - file: audition.ch\n`;
+        let files = new Array<SongFile>();
+        let all = this.song.toFiles();
+        for (let i = 0; i < all.length; i++) {
+            let p = all[i].path;
+            if (p.startsWith(PATTERNS_DIR) || p.startsWith(INSTRUMENTS_DIR)) files.push(all[i]);
+        }
+        files.push(new SongFile("song.yaml", yaml));
+        files.push(new SongFile("conductor.ch", conductor));
+        files.push(new SongFile("audition.ch", line));
+        let options = new CompileOptions();
+        options.loops = 0;
+        let score = compileSong(Song.fromFiles(files), options);
+        this.auditioning = true;
+        this.auditionPath = path;
+        this.transport.setLoop(score.loopStart, score.loopEnd);
+        if (keep && this.transport.state == TransportState.Playing) {
+            this.transport.setScore(score, true);
+        } else {
+            this.transport.state = TransportState.Stopped;
+            this.transport.setScore(score, false);
+            this.transport.play(0);
+        }
+        this.say(this.tab == 1 ? `playing pattern ${name} (Cmd+. stops)` : `playing ${name} (Cmd+. stops)`);
+    }
+
+    // `inst(name: …); ` for the instrument pattern `name` plays with: the one
+    // selected before the first call to it in a track, or, through patterns
+    // that call it, the one they play with. "" when none is found.
+    callerInstrument(name: string): string {
+        let inst = this.instrumentCalling(name, 0);
+        return inst.length > 0 ? `inst(name: ${inst}); ` : "";
+    }
+
+    instrumentCalling(name: string, depth: i32): string {
+        if (depth > 8) return "";
+        let channels = this.song.channels;
+        for (let i = 0; i < channels.length; i++) {
+            let inst = instrumentBefore(channels[i].file, name);
+            if (inst != null && inst.length > 0) return inst;
+        }
+        // Patterns that call it, and in turn whatever plays them.
+        let names = this.song.patternNames;
+        for (let i = 0; i < names.length; i++) {
+            if (names[i] == name) continue;
+            let inst = instrumentBefore(this.song.patterns.get(names[i]), name);
+            if (inst == null) continue;
+            if (inst.length > 0) return inst;
+            let outer = this.instrumentCalling(names[i], depth + 1);
+            if (outer.length > 0) return outer;
+        }
+        return "";
+    }
+
+    endAudition(): void {
+        if (!this.auditioning) return;
+        this.auditioning = false;
+        this.patternsView.playRow = -1;
+        this.instrumentsView.playRow = -1;
     }
 
     log(message: string): void {
@@ -150,11 +576,66 @@ export class Partition extends Layout {
         this.menuOpen = open;
         let vm = this.vm;
         if (vm == null) return;
+        if (open) {
+            this.moreOpen = false;
+            this.diagnosticsOpen = false;
+        }
         vm.setNum(vm.song, "song", "examplesDisplay", open ? 0 : 1);
-        vm.setStr(vm.song, "song", "examplesLabel", open ? "Examples ▴" : "Examples ▾");
         if (!open) {
             for (let i = 0; i < this.exampleItems.length; i++) setItemNum(this.exampleItems[i], "hover", 0);
         }
+    }
+
+    // Closes every popover; true if one was open.
+    closePopovers(): bool {
+        let any = this.menuOpen || this.moreOpen || this.diagnosticsOpen;
+        this.setMenu(false);
+        this.moreOpen = false;
+        this.diagnosticsOpen = false;
+        return any;
+    }
+
+    get popoverOpen(): bool {
+        return this.menuOpen || this.moreOpen || this.diagnosticsOpen;
+    }
+
+    // Whether a point (in this layout's coordinates) is on an open popover.
+    onPopover(x: f64, y: f64): bool {
+        let w = this.layoutW;
+        if (this.onMenu(x, y)) return true;
+        if (this.moreOpen && x >= w - 8 - MORE_WIDTH && x <= w - 8 && y >= 0 && y <= MORE_HEIGHT) return true;
+        if (this.diagnosticsOpen) {
+            let n = <f64>max<i32>(min<i32>(this.diagnosticItems.length, DIAG_LIMIT), 0);
+            let h = 8 + n * DIAG_ROW + Math.max(n - 1, 0) * 2;
+            let bottom = this.layoutH - 3; // the popover sits 3 px above the footer's rule
+            if (x >= w - 8 - DIAG_WIDTH && x <= w - 8 && y >= bottom - h && y <= bottom) return true;
+        }
+        return false;
+    }
+
+    // Moves the cursor to a problem's place and shows it.
+    jumpTo(d: Diagnostic): void {
+        let tab = this.tabOf(d.path);
+        this.setTab(tab);
+        if (tab > 0) {
+            let slash = d.path.lastIndexOf("/");
+            let dot = d.path.lastIndexOf(".");
+            this.showFile(tab, d.path.substring(slash + 1, dot));
+        }
+        let columns = this.view.columns;
+        for (let i = 0; i < columns.length; i++) {
+            let c = columns[i];
+            if (c.doc.path != d.path) continue;
+            this.view.focus = i;
+            c.collapsed = false;
+            c.doc.moveTo(new Pos(max<i32>(d.line - 1, 0), max<i32>(d.col - 1, 0)), false);
+            this.view.fit();
+            this.view.relayout();
+            this.view.follow = false;
+            this.view.reveal();
+            return;
+        }
+        this.say(`${d.path}:${d.line}: ${d.message}`);
     }
 
     // Whether a point (in this layout's coordinates) is on the open dropdown.
@@ -162,13 +643,14 @@ export class Partition extends Layout {
         if (!this.menuOpen) return false;
         let rows = <f64>((examples().length + 1) / 2);
         let height = MENU_PAD * 2 + rows * MENU_ROW + Math.max(rows - 1, 0) * MENU_GAP;
-        let right = this.view.width - MENU_RIGHT;
+        let right = this.layoutW - MENU_RIGHT;
         return x >= right - MENU_WIDTH && x <= right && y >= 0 && y <= height;
     }
 
     // Replaces the whole song: new columns, a fresh score, the transport stopped.
     setSong(song: Song): void {
         this.transport.stop();
+        this.editedSinceLoad = false;
         this.song = song;
         this.startRow = 0;
         this.userLoop = false;
@@ -181,12 +663,21 @@ export class Partition extends Layout {
             let width = ch.config.widthSet ? ch.config.width : autoWidth(doc, 26);
             columns.push(new Column(doc, ch.name, width, false, ch.config.mute, ch.config.solo));
         }
-        this.view.setColumns(columns);
-        this.view.focus = columns.length > 1 ? 1 : 0;
-        this.view.scrollY = 0;
-        this.view.scrollX = 0;
+        this.endAudition();
+        let tracks = this.tracksView;
+        tracks.setColumns(columns);
+        tracks.focus = columns.length > 1 ? 1 : 0;
+        tracks.scrollY = 0;
+        tracks.scrollX = 0;
+        this.patternsView.columns = [];
+        this.instrumentsView.columns = [];
+        this.refreshFileTabs();
+        this.patternsView.focus = 0;
+        this.instrumentsView.focus = 0;
         this.applyMix();
-        this.compileNow();
+        // Compile on the next frame: parsing a large song and compiling it in
+        // one call can pass the frame budget on the interpreter.
+        this.compileAt = this.clock + 1e-6; // strictly after this frame
     }
 
     compileNow(): void {
@@ -195,28 +686,68 @@ export class Partition extends Layout {
         options.startRow = this.startRow;
         let score = compileSong(this.song, options);
         this.score = score;
-        this.view.grid = score.grid;
+        this.tracksView.grid = score.grid;
+        this.patternsView.grid = this.patternGrid();
         this.assignDiagnostics(score.diagnostics);
-        let state = this.transport.state;
-        this.transport.setScore(score, state != TransportState.Stopped);
-        if (!this.userLoop) this.transport.setLoop(score.loopStart, score.loopEnd);
-        else this.applyUserLoop();
+        this.buildOverviews(score);
+        if (this.auditioning) {
+            // An edit during an audition is heard in the audition.
+            this.auditionFile(true);
+        } else {
+            let state = this.transport.state;
+            this.transport.setScore(score, state != TransportState.Stopped);
+            if (!this.userLoop) this.transport.setLoop(score.loopStart, score.loopEnd);
+            else this.applyUserLoop();
+        }
         this.publishSong();
     }
 
+    // Every column's overview strip (§10.6), from the source as just checked.
+    buildOverviews(score: Score): void {
+        let pb = score.playback;
+        let rows = score.grid.rows.length;
+        let bpm = new Array<f64>(rows);
+        let fallback = this.song.config.bpm;
+        for (let r = 0; r < rows; r++) bpm[r] = -1;
+        for (let p = 0; p < pb.count; p++) {
+            let r = pb.source[p];
+            if (r < rows && bpm[r] < 0) bpm[r] = pb.bpm[p];
+        }
+        for (let r = 0; r < rows; r++) {
+            if (bpm[r] < 0) bpm[r] = r > 0 ? bpm[r - 1] : fallback;
+        }
+        let patternGrid = this.patternsView.grid!;
+        let views = [this.tracksView, this.patternsView];
+        for (let v = 0; v < views.length; v++) {
+            let columns = views[v].columns;
+            let grid = v == 0 ? score.grid : patternGrid;
+            for (let i = 0; i < columns.length; i++) {
+                let file = this.song.checked(columns[i].doc.path);
+                if (file == null) continue;
+                let ov = buildOverview(file, this.song, grid, bpm);
+                ov.revision = this.song.revision;
+                columns[i].overview = ov;
+            }
+        }
+    }
+
     assignDiagnostics(all: Array<Diagnostic>): void {
-        let columns = this.view.columns;
-        for (let i = 0; i < columns.length; i++) {
-            let c = columns[i];
-            let mine = new Array<Diagnostic>();
-            for (let k = 0; k < all.length; k++) if (all[k].path == c.doc.path) mine.push(all[k]);
-            c.diagnostics = mine;
+        let views = this.views();
+        for (let v = 0; v < views.length; v++) {
+            let columns = views[v].columns;
+            for (let i = 0; i < columns.length; i++) {
+                let c = columns[i];
+                let mine = new Array<Diagnostic>();
+                for (let k = 0; k < all.length; k++) if (all[k].path == c.doc.path) mine.push(all[k]);
+                c.diagnostics = mine;
+            }
         }
     }
 
     // A file changed in the editor: tell the song, then compile shortly.
     fileEdited(path: string, text: string): void {
         this.song.setFile(path, text);
+        this.editedSinceLoad = true;
         this.compileAt = this.clock + COMPILE_DELAY;
         this.changedAt = this.clock + CHANGED_DELAY;
         if (!this.changedPaths.includes(path)) this.changedPaths.push(path);
@@ -226,6 +757,7 @@ export class Partition extends Layout {
     // --- Transport ---------------------------------------------------------------
 
     playFrom(row: i32): void {
+        this.endAudition();
         this.startRow = row;
         this.transport.state = TransportState.Stopped;
         this.compileNow();
@@ -234,6 +766,11 @@ export class Partition extends Layout {
 
     togglePlay(): void {
         let t = this.transport;
+        // After an audition, play starts the song again.
+        if (this.auditioning) {
+            this.playFrom(0);
+            return;
+        }
         if (t.state == TransportState.Playing) t.pause();
         else if (t.state == TransportState.Paused) t.play(-1);
         else this.playFrom(this.userLoop ? this.loopStartRow : 0);
@@ -242,10 +779,21 @@ export class Partition extends Layout {
     stop(): void {
         this.transport.stop();
         this.startRow = 0;
+        if (this.auditioning) {
+            this.endAudition();
+            // Hand the processor the song again, stopped.
+            let score = this.score;
+            if (score != null) this.transport.setScore(score, false);
+        }
     }
 
     audition(): void {
-        let row = this.view.cursorRow();
+        if (this.tab != 0) {
+            this.auditionFile(false);
+            return;
+        }
+        this.endAudition();
+        let row = this.tracksView.cursorRow();
         this.startRow = row;
         this.transport.state = TransportState.Stopped;
         this.compileNow();
@@ -257,7 +805,7 @@ export class Partition extends Layout {
     }
 
     toggleLoop(): void {
-        let c = this.view.focused;
+        let c = this.tracksView.focused;
         if (this.userLoop && (c == null || !c.doc.hasSelection)) {
             this.userLoop = false;
             let score = this.score;
@@ -273,8 +821,8 @@ export class Partition extends Layout {
         let last = b < c.map.band.length ? c.map.band[b] : first;
         if (!c.doc.hasSelection) {
             // No selection: loop the bar the cursor is in.
-            let grid = this.view.grid;
-            let row = this.view.cursorRow();
+            let grid = this.tracksView.grid;
+            let row = this.tracksView.cursorRow();
             if (grid != null && row < grid.rows.length) {
                 let bar = grid.rows[row].bar;
                 first = row;
@@ -312,7 +860,7 @@ export class Partition extends Layout {
     applyMix(): void {
         let mute = 0;
         let solo = 0;
-        let columns = this.view.columns;
+        let columns = this.tracksView.columns;
         for (let i = 1; i < columns.length && i - 1 < MAX_CHANNELS; i++) {
             if (columns[i].mute) mute |= 1 << (i - 1);
             if (columns[i].solo) solo |= 1 << (i - 1);
@@ -330,10 +878,17 @@ export class Partition extends Layout {
             if (!this.ready) return true;
         }
         this.handleActions();
-        let changed = this.view.takeChanged();
-        for (let i = 0; i < changed.length; i++) {
-            let c = this.view.columns[changed[i]];
-            this.fileEdited(c.doc.path, c.doc.text());
+        this.handleListActions();
+        this.rail.advance(seconds);
+        this.patternList.advance(seconds);
+        this.instrumentList.advance(seconds);
+        let views = this.views();
+        for (let v = 0; v < views.length; v++) {
+            let changed = views[v].takeChanged();
+            for (let i = 0; i < changed.length; i++) {
+                let c = views[v].columns[changed[i]];
+                this.fileEdited(c.doc.path, c.doc.text());
+            }
         }
         if (this.compileAt >= 0 && this.clock >= this.compileAt) this.compileNow();
         this.transport.poll(seconds);
@@ -343,7 +898,7 @@ export class Partition extends Layout {
         }
         this.exporter.advance(seconds);
         this.syncView();
-        this.view.advance(seconds);
+        for (let v = 0; v < views.length; v++) views[v].advance(seconds);
         this.syncVm(seconds);
         return true;
     }
@@ -360,18 +915,41 @@ export class Partition extends Layout {
 
     handle(action: string): void {
         let vm = this.vm;
-        if (action == "play" || action == "transport.toggle") this.togglePlay();
+        if (action.startsWith("tab:")) this.setTab(<i32>parseInt(action.substring(4)));
+        else if (action == "newFile") this.newFile();
+        // In the pattern and instrument tabs, the play keys audition the file.
+        else if ((action == "play" || action == "playFromCursor" || action == "transport.toggle" || action == "transport.play") && this.tab != 0) {
+            if (this.auditioning && this.transport.state == TransportState.Playing) this.stop();
+            else this.auditionFile(false);
+        } else if (action == "play" || action == "transport.toggle") this.togglePlay();
         else if (action == "transport.play") {
             if (this.transport.state == TransportState.Paused) this.transport.play(-1);
             else if (this.transport.state == TransportState.Stopped) this.playFrom(0);
         } else if (action == "transport.pause") {
             if (this.transport.state == TransportState.Playing) this.transport.pause();
         } else if (action == "stop" || action == "transport.stop") this.stop();
-        else if (action == "playFromCursor" || action == "transport.playFromCursor") this.playFrom(this.view.cursorRow());
+        else if (action == "playFromCursor" || action == "transport.playFromCursor") this.playFrom(this.tracksView.cursorRow());
         else if (action == "audition") this.audition();
         else if (action == "loop" || action == "transport.loopToggle") this.toggleLoop();
         else if (action == "editor.followToggle") this.view.follow = !this.view.follow;
+        else if (action == "editor.collapseAll") this.view.toggleAll();
         else if (action == "menu.toggle") this.setMenu(!this.menuOpen);
+        else if (action == "app.moreToggle") {
+            let open = !this.moreOpen;
+            this.closePopovers();
+            this.moreOpen = open;
+        } else if (action == "app.diagnosticsToggle") {
+            let open = !this.diagnosticsOpen;
+            this.closePopovers();
+            this.diagnosticsOpen = open;
+        } else if (action == "app.docsToggle") {
+            this.closePopovers();
+            this.view.toggleDocs();
+        } else if (action.startsWith("diag:")) {
+            let index = <i32>parseInt(action.substring(5));
+            this.diagnosticsOpen = false;
+            if (index >= 0 && index < this.diagnosticItems.length) this.jumpTo(this.diagnosticItems[index]);
+        }
         else if (action == "menu.close") this.setMenu(false);
         else if (action.startsWith("example:")) {
             this.setMenu(false);
@@ -379,8 +957,8 @@ export class Partition extends Layout {
         }
         else if (action.startsWith("mute:") || action.startsWith("solo:")) {
             let index = <i32>parseInt(action.substring(5));
-            if (index > 0 && index < this.view.columns.length) {
-                let c = this.view.columns[index];
+            if (this.tab == 0 && index > 0 && index < this.tracksView.columns.length) {
+                let c = this.tracksView.columns[index];
                 if (action.startsWith("mute:")) c.mute = !c.mute;
                 else c.solo = !c.solo;
                 this.applyMix();
@@ -418,9 +996,24 @@ export class Partition extends Layout {
     syncView(): void {
         let st = this.transport.status;
         let playing = this.transport.state == TransportState.Playing && st.playing > 0;
-        this.view.playing = playing;
-        this.view.playRow = this.transport.state == TransportState.Stopped && st.playing == 0 ? -1 : <i32>st.row;
-        let columns = this.view.columns;
+        let idle = this.transport.state == TransportState.Stopped && st.playing == 0;
+        let tracks = this.tracksView;
+        if (this.auditioning) {
+            // The audition's playhead runs through the pattern being heard.
+            tracks.playing = false;
+            tracks.playRow = -1;
+            let config = this.song.config;
+            let rowDur = 60 / (config.bpm * <f64>config.rowsPerBeat);
+            let view = this.patternsView;
+            let length = 0;
+            for (let i = 0; i < view.columns.length; i++) if (view.columns[i].doc.path == this.auditionPath) length = view.columns[i].map.bands;
+            view.playing = playing && length > 0;
+            view.playRow = idle || length == 0 ? -1 : <i32>Math.floor(st.time / rowDur) % length;
+            return;
+        }
+        tracks.playing = playing;
+        tracks.playRow = idle ? -1 : <i32>st.row;
+        let columns = tracks.columns;
         for (let i = 1; i < columns.length && i - 1 < MAX_CHANNELS; i++) columns[i].meter = st.channelPeaks[i - 1];
     }
 
@@ -576,10 +1169,15 @@ export class Partition extends Layout {
         let list = vm.list(s, "diagnostics");
         if (list != null) {
             list.clear();
-            let n = min<i32>(score.diagnostics.length, 200);
+            let n = min<i32>(score.diagnostics.length, DIAG_LIMIT);
+            this.diagnosticItems = [];
+            for (let i = 0; i < n; i++) this.diagnosticItems.push(score.diagnostics[i]);
             for (let i = 0; i < n; i++) {
                 let d = score.diagnostics[i];
                 let item = newItem("Diagnostic");
+                setItemStr(item, "where", `${d.path}:${d.line}:${d.col}`);
+                setItemColor(item, "dot", d.isError ? 0xFFF05A6E : 0xFFE8A35C);
+                vm.listen(item, "select", `diag:${i}`);
                 setItemStr(item, "path", d.path);
                 setItemNum(item, "line", <f64>d.line);
                 setItemNum(item, "col", <f64>d.col);
@@ -616,6 +1214,31 @@ export class Partition extends Layout {
         let state = this.transport.state;
         vm.setEnum(t, "transport", "state", state == TransportState.Playing ? "playing" : state == TransportState.Paused ? "paused" : "stopped");
         vm.setStr(t, "transport", "playLabel", state == TransportState.Playing ? "Pause" : "Play");
+        // The play button turns into pause while playing (displayValue: 0 shown, 1 hidden).
+        vm.setNum(t, "transport", "playDisplay", state == TransportState.Playing ? 1 : 0);
+        vm.setNum(t, "transport", "pauseDisplay", state == TransportState.Playing ? 0 : 1);
+        vm.setColor(t, "transport", "loopColor", this.userLoop ? TOGGLE_ON : TOGGLE_OFF);
+        this.look(vm, "loop", this.userLoop);
+        this.look(vm, "follow", this.view.follow);
+        this.look(vm, "collapse", this.view.allCollapsed);
+        this.look(vm, "docs", this.view.docsOpen);
+        this.look(vm, "more", this.moreOpen);
+        this.look(vm, "examples", this.menuOpen);
+        this.look(vm, "diagnostics", this.diagnosticsOpen);
+
+        let a = vm.app;
+        vm.setNum(a, "app", "wideDisplay", this.narrow ? 1 : 0);
+        vm.setNum(a, "app", "narrowDisplay", this.narrow ? 0 : 1);
+        vm.setNum(a, "app", "moreDisplay", this.moreOpen ? 0 : 1);
+        vm.setNum(a, "app", "diagnosticsDisplay", this.diagnosticsOpen && this.diagnosticItems.length > 0 ? 0 : 1);
+        vm.setStr(a, "app", "menuLoop", this.userLoop ? "Loop  ·  on" : "Loop");
+        vm.setStr(a, "app", "menuFollow", this.view.follow ? "Follow  ·  on" : "Follow");
+        vm.setStr(a, "app", "menuCollapse", this.view.allCollapsed ? "Expand all" : "Collapse all");
+        let problems = this.diagnosticItems.length;
+        vm.setStr(a, "app", "diagnosticsLabel", problems == 0 ? "No problems" : `${problems}${problems >= DIAG_LIMIT ? "+" : ""} problem${problems == 1 ? "" : "s"}`);
+        let hosted = vm.bool(a, "hosted");
+        vm.setStr(a, "app", "status", hosted ? (this.editedSinceLoad ? "Edited" : "Saved") : (this.editedSinceLoad ? "Edited, in memory" : "In memory"));
+        vm.setStr(a, "app", "sampleRate", `${<i32>Math.round(Audio.sampleRate() / 1000)} kHz`);
         let row = <i32>st.row;
         let score = this.score;
         let bar = 1;
@@ -640,8 +1263,14 @@ export class Partition extends Layout {
         let rest = secs - <f64>minutes * 60;
         let tenths = <i32>Math.floor(rest * 10) % 10;
         let whole = <i32>Math.floor(rest);
-        vm.setStr(t, "transport", "position", `${bar}.${beat}  ${minutes}:${whole < 10 ? "0" : ""}${whole}.${tenths}  ${<i32>Math.round(bpm)} bpm`);
-        vm.setStr(t, "transport", "info", `${<i32>st.voices} voices${this.userLoop ? " · loop" : ""}${this.view.follow ? " · follow" : ""}`);
+        let barText = bar < 10 ? `00${bar}` : bar < 100 ? `0${bar}` : `${bar}`;
+        vm.setStr(t, "transport", "position", `${barText}.${beat}`);
+        vm.setStr(t, "transport", "time", `${minutes < 10 ? "0" : ""}${minutes}:${whole < 10 ? "0" : ""}${whole}.${tenths}`);
+        vm.setStr(t, "transport", "tempo", `${<i32>Math.round(bpm)}`);
+        let meter = "4/4";
+        if (score != null && row < score.grid.rows.length) meter = `${score.grid.rows[row].sigNum}/${score.grid.rows[row].sigDen}`;
+        vm.setStr(t, "transport", "meter", meter);
+        vm.setStr(t, "transport", "info", `${<i32>st.voices} voices`);
 
         // Editor
         let e = vm.editor;
@@ -652,7 +1281,17 @@ export class Partition extends Layout {
             vm.setNum(e, "editor", "cursorCol", <f64>focused.doc.cursor.ch);
         }
         vm.setBool(e, "editor", "follow", this.view.follow);
-        let hint = this.clock < this.messageUntil ? this.message : this.view.hint();
+        vm.setColor(e, "editor", "followColor", this.view.follow ? TOGGLE_ON : TOGGLE_OFF);
+        vm.setStr(e, "editor", "collapseLabel", this.view.allCollapsed ? "Expand all" : "Collapse all");
+        // The breadcrumb: the track, then the command under the cursor.
+        let hint = "";
+        if (this.clock < this.messageUntil) {
+            hint = this.message;
+        } else if (focused != null) {
+            let line = focused.doc.cursor.line < focused.doc.lines.length ? focused.doc.lines[focused.doc.cursor.line] : "";
+            let summary = summaryAt(line, focused.doc.cursor.ch);
+            hint = summary.length > 0 ? `${focused.name}  /  ${summary}` : focused.name;
+        }
         vm.setStr(e, "editor", "hint", hint);
 
         // Export
@@ -682,53 +1321,115 @@ export class Partition extends Layout {
         }
     }
 
+    // A toggle's look: lit (white label, pressed fill, visible edge) when on.
+    look(vm: Bindings, key: string, on: bool): void {
+        let a = vm.app;
+        vm.setColor(a, "app", key + "Fill", on ? LOOK_FILL_ON : LOOK_FILL);
+        vm.setColor(a, "app", key + "Ink", on ? LOOK_INK_ON : LOOK_INK);
+        vm.setColor(a, "app", key + "Edge", on ? LOOK_EDGE_ON : LOOK_EDGE);
+    }
+
     // --- Input and drawing ---------------------------------------------------------------
 
     // While the dropdown is open the editor under it takes no clicks: a click
     // on a row belongs to the row's listener, and one anywhere else closes it.
     override pointerDown(event: PointerEvent): void {
-        if (this.menuOpen) {
-            let x = <f64>event.position.x;
-            let y = <f64>event.position.y;
-            if (!this.onMenu(x, y)) {
-                if (y >= 0) {
-                    this.setMenu(false);
-                    event.hit();
-                }
+        let x = <f64>event.position.x;
+        let y = <f64>event.position.y;
+        if (this.popoverOpen) {
+            // On a popover the press belongs to its rows; elsewhere in the
+            // editor it closes them (presses on the bars above and below
+            // belong to their own buttons).
+            if (!this.onPopover(x, y) && y >= 0 && y <= this.layoutH) {
+                this.closePopovers();
+                event.hit();
             }
+            return;
+        }
+        if (y < 0 || y > this.layoutH) return;
+        if (x < RAIL_WIDTH) {
+            event.hit();
+            let tab = this.rail.hit(x, y);
+            if (tab >= 0) this.setTab(tab);
+            return;
+        }
+        if (this.tab != 0 && x < RAIL_WIDTH + LIST_WIDTH) {
+            event.hit();
+            this.listFor(this.tab).pointerDown(x - RAIL_WIDTH, y);
             return;
         }
         this.view.pointerDown(event);
     }
 
     override pointerMove(event: PointerEvent): void {
-        if (this.menuOpen) return;
+        let x = <f64>event.position.x;
+        let y = <f64>event.position.y;
+        this.rail.pointerMove(x, y >= 0 && y <= this.layoutH ? y : -1000);
+        if (this.tab != 0) this.listFor(this.tab).pointerMove(x - RAIL_WIDTH, y);
+        if (this.popoverOpen) return;
         this.view.pointerMove(event);
     }
 
     override pointerUp(event: PointerEvent): void {
-        if (this.menuOpen) return;
+        if (this.popoverOpen) return;
         this.view.pointerUp(event);
     }
 
+    override pointerExit(event: PointerEvent): void {
+        this.rail.pointerExit();
+        this.patternList.hover = -1;
+        this.instrumentList.hover = -1;
+    }
+
     override pointerScroll(event: ScrollEvent): void {
-        if (this.menuOpen && this.onMenu(<f64>event.position.x, <f64>event.position.y)) return;
+        let x = <f64>event.position.x;
+        if (this.popoverOpen && this.onPopover(x, <f64>event.position.y)) return;
+        if (x < RAIL_WIDTH || (this.tab != 0 && x < RAIL_WIDTH + LIST_WIDTH)) return;
         this.view.pointerScroll(event);
     }
 
     override keyboardEvent(event: KeyboardEvent): bool {
-        if (this.menuOpen && <i32>event.key == 256 && event.phase != "up") {
-            this.setMenu(false);
+        let key = <i32>event.key;
+        if (this.popoverOpen && key == 256 && event.phase != "up") {
+            this.closePopovers();
             return true;
+        }
+        // A file being renamed takes the keys; F2 starts renaming.
+        if (this.tab != 0 && event.phase != "up" && !event.meta && !event.control) {
+            if (this.listFor(this.tab).key(key)) return true;
         }
         return this.view.keyboard(event);
     }
 
     override textEvent(event: TextInput): bool {
+        if (this.tab != 0 && this.listFor(this.tab).typeText(event.text)) return true;
         return this.view.textInput(event);
     }
 
     override draw(renderer: Renderer): void {
+        // The editor, offset to the right of the rail (and the file list).
+        renderer.save();
+        renderer.transform(Mat2D.withTranslation(<f32>this.view.originX, 0));
         this.view.draw(renderer);
+        renderer.restore();
+        if (this.tab != 0) this.listFor(this.tab).draw(renderer, this.view, RAIL_WIDTH, this.layoutH);
+        this.rail.draw(renderer, this.view, this.layoutH);
+        this.rail.drawHint(renderer, this.view);
     }
+}
+
+// The instrument `file` has selected when it first calls pattern `name`: ""
+// when it selects none, null when it never calls it.
+function instrumentBefore(file: CheckedFile, name: string): string? {
+    let inst = "";
+    let rows = file.rows;
+    for (let r = 0; r < rows.length; r++) {
+        let cmds = rows[r];
+        for (let k = 0; k < cmds.length; k++) {
+            let c = cmds[k];
+            if (c.name == "inst") inst = c.str("name", "");
+            if (c.name == "pattern" && c.str("name", "") == name) return inst;
+        }
+    }
+    return null;
 }

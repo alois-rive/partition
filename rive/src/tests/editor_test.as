@@ -153,13 +153,13 @@ export class EditorTests extends Tests {
             test("positions map back through bands and indentation", (expect) => {
                 let v = view(["a\n\tb\nc\n", "x\ny\n"]);
                 let top = v.gridTop();
-                let x1 = v.columnX(1) + v.padX;
+                let x1 = v.textLeft(1);
                 // Column 1, grid line 2 is band 1 (row y) because band 0 is two lines tall.
                 let p = v.posAt(1, x1 + v.charW * 1, top + v.lineH * 2 + 2);
                 expect.that(p.line).is(1);
                 expect.that(p.ch).is(1);
                 // Column 0, line 1 starts with a tab shown two characters wide.
-                let x0 = v.columnX(0) + v.padX;
+                let x0 = v.textLeft(0);
                 let q = v.posAt(0, x0 + v.charW * 3, top + v.lineH * 1 + 2);
                 expect.that(q.line).is(1);
                 expect.that(q.ch).is(2);

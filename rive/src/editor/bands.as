@@ -65,6 +65,16 @@ export class Bands {
         return b;
     }
 
+    // `count` bands one line each: the compact overview, where no column shows text.
+    static uniform(count: i32): Bands {
+        let b = new Bands();
+        for (let r = 0; r < count; r++) {
+            b.heights.push(1);
+            b.tops.push(r);
+        }
+        return b;
+    }
+
     get count(): i32 {
         return this.heights.length;
     }

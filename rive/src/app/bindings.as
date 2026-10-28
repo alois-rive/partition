@@ -36,6 +36,10 @@ export class Bindings {
         this.listen(song, "examplesToggle", "menu.toggle");
         this.listen(editor, "pasteRequested", "editor.paste");
         this.listen(editor, "followToggle", "editor.followToggle");
+        this.listen(editor, "collapseAll", "editor.collapseAll");
+        this.listen(app, "moreToggle", "app.moreToggle");
+        this.listen(app, "docsToggle", "app.docsToggle");
+        this.listen(app, "diagnosticsToggle", "app.diagnosticsToggle");
         this.listen(transport, "play", "transport.play");
         this.listen(transport, "pause", "transport.pause");
         this.listen(transport, "stop", "transport.stop");
@@ -145,6 +149,15 @@ export class Bindings {
         if (p != null) p.value = value;
     }
 
+    setColor(vm: ViewModel, key: string, name: string, value: u32): void {
+        let k = key + "/" + name;
+        let s = value.toString();
+        if (this.written.has(k) && this.written.get(k) == s) return;
+        this.written.set(k, s);
+        let p = vm.getColor(name);
+        if (p != null) p.value = value;
+    }
+
     fire(vm: ViewModel, name: string): void {
         let t = vm.getTrigger(name);
         if (t != null) t.fire();
@@ -192,4 +205,9 @@ export function setItemBool(vm: ViewModel, name: string, value: bool): void {
 export function itemBool(vm: ViewModel, name: string): bool {
     let p = vm.getBoolean(name);
     return p != null ? p.value : false;
+}
+
+export function setItemColor(vm: ViewModel, name: string, value: u32): void {
+    let p = vm.getColor(name);
+    if (p != null) p.value = value;
 }

@@ -1,6 +1,14 @@
 name: partition
 main: Partition
 scripting: wasm
+# macOS: the scene's 28 px title bar holds the window controls (other
+# desktops keep their own frame).
+window:
+  titleBar: integrated
+  controls:
+    x: 14
+    y: 14
+  dragHeight: 28
 logs:
   file: build/rive.log
   problems: build/problems.log

@@ -39,6 +39,8 @@ export class Doc {
     clock: f64 = 0; // seconds, advanced by the view
     // The column the cursor wants when moving vertically through shorter lines.
     goalCh: i32 = -1;
+    // Keep empty lines at the end: a pattern's trailing rests set its length.
+    keepTrailing: bool = false;
 
     constructor(public path: string, text: string) {
         this.setText(text);
@@ -52,10 +54,14 @@ export class Doc {
         this.revision++;
     }
 
-    // The file's text with a final newline. Empty lines after the last one
-    // with text are dropped: in a channel they play nothing (rows padded by
-    // clicking below the end come and go with them).
+    // The file's text with a final newline. Unless `keepTrailing` is set,
+    // empty lines after the last one with text are dropped: in a channel they
+    // play nothing (rows padded by clicking below the end come and go with them).
     text(): string {
+        if (this.keepTrailing) {
+            if (this.lines.length == 1 && this.lines[0].length == 0) return "";
+            return this.lines.join("\n") + "\n";
+        }
         let n = this.lines.length;
         while (n > 0 && this.lines[n - 1].length == 0) n--;
         if (n == 0) return "";

@@ -18,6 +18,9 @@ In the window:
 - **Play and stop:** Cmd+Enter plays and pauses, Cmd+Shift+Enter plays from the cursor's row, and Cmd+. stops.
 - **Audition:** Alt+Enter plays just the cursor's row.
 - **Loop:** Cmd+L loops the selected rows, or the cursor's bar.
+- **Documentation:** **Docs** in the title bar (or Cmd+/) opens a reference for every command, scrolled to the one under the cursor.
+- **Tabs:** the rail on the left switches between Tracks (Cmd+1), Patterns (Cmd+2) and Instruments (Cmd+3). In Patterns and Instruments, a list adds, renames (F2) and deletes files; renaming updates every reference. Play there loops only the selected pattern, or an example phrase on the selected instrument.
+- **Overview:** each column starts with a strip that draws every command as a line or shape. Cmd+E collapses a column to just its strip; **Collapse all** (Cmd+Shift+E) shows the whole song at once, with Cmd+= and Cmd+- to zoom.
 - **Mute and solo:** Cmd+M mutes the current channel and Cmd+Shift+S solos it. The M and S buttons in each column header do the same.
 - **Toolbar:** **Examples ▾** opens a dropdown of the 22 bundled songs, **New** starts an empty one, and **Export WAV** renders the song. Saving to disk needs a host (spec §12); in the previewer, edits stay in memory.
 
@@ -57,4 +60,6 @@ rive inspect rive --summary # lint the scene
 rive rive --test --aot      # run the test suites (the audio tests need compiled code)
 ```
 
-JetBrains Mono is bundled under the SIL Open Font License (`rive/assets/fonts/OFL-JetBrainsMono.txt`).
+Fonts: Iosevka (code) and Barlow Semi Condensed (labels), both under the SIL Open Font License (`rive/assets/fonts/`), subset to the characters the app uses.
+
+The chrome (`rive/scene.rml`) is generated: after changing `tools/gen_scene.py` or adding an example song, run `python3 tools/gen_scene.py`.

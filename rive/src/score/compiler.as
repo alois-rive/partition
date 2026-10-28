@@ -317,6 +317,13 @@ class Compiler {
                     last = max<i32>(last, p + 1);
                 }
             }
+            // Finished instances are dropped, or songs that call a pattern
+            // every bar would walk every instance ever made on every row.
+            if (this.instances.length > 8) {
+                let live = new Array<Instance>();
+                for (let i = 0; i < this.instances.length; i++) if (this.instances[i].active) live.push(this.instances[i]);
+                if (live.length < this.instances.length) this.instances = live;
+            }
             p++;
         }
         return last;
