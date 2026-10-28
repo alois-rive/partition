@@ -35,6 +35,9 @@ function example(name: string): string {
     if (name == "lfo") return "lfo(param: cutoff, rate: 1bar, depth: 0.4, shape: tri)";
     if (name == "lfo_off") return "lfo_off(param: cutoff)";
     if (name == "fx") return "fx(type: comp, threshold: -30dB, ratio: 8, release: 180ms, sidechain: kick)\nfx(type: filter, mode: highpass, cutoff: 300)";
+    if (name == "humanize") return "humanize(time: 8ms, vel: 0.15)";
+    if (name == "euclid") return "euclid(hits: 5, steps: 16, p: C4, inst: rim, prob: 0.8, times: 4)";
+    if (name == "pick") return "pick(from: [fill_a, fill_b, fill_c], on: 4/4)";
     if (name == "key") return "key(root: A, mode: minor)";
     if (name == "prog") return "prog(chords: \"i VI III VII\", every: 1bar, strum: 20ms)";
     if (name == "args") return "args(root: C4, busy: false)";
@@ -90,6 +93,13 @@ export function docBlocks(): Array<DocBlock> {
     out.push(new DocBlock(DocKind.Paragraph, "Durations: 2 (rows), 1/8 (a note value), 1b (beats), 2bar (bars), 250ms or 1.5s. Gains: 0.8, 80% or -6dB. Frequencies: 440, 440Hz or 2k. Intervals: 7st or 25c. Pitches: C4, F#3, Bb2, a MIDI number such as 60, or C alone to use the octave set by oct()."));
 
     commands(out, "Notes", "", ["note", "chord", "cut"]);
+
+    out.push(new DocBlock(DocKind.Heading, "Randomness", "random"));
+    out.push(new DocBlock(DocKind.Paragraph, "Partition can choose for you, the same way every time: song.yaml's seed: (the Settings tab has it, and Shuffle for a new one) decides every random choice, so the same seed plays and renders the same song, bit for bit. Each choice also depends on the track, the row as played and the command, so every pass of a loop (jump(times: …)) draws again: a loop that never repeats exactly. A loop that runs forever repeats its last pass."));
+    out.push(new DocBlock(DocKind.Paragraph, "prob: on any track or pattern command plays it with that chance (prob: 0.7 or 70%). humanize(time: 8ms, vel: 0.1) moves each later note of the track up to 8 ms early or late and its velocity up to 0.1 (humanize(time: 0) stops it). note(p: [C4, E4, G4, B4], pick: 1) plays one note of the list, a different one each time; with degrees (note(d: [1, 3, 5, 7], pick: 2)) it stays in the key."));
+    out.push(new DocBlock(DocKind.Paragraph, "euclid(hits: 5, steps: 16) spreads 5 hits as evenly as they go over 16 steps (a step is a row; every: sets another length), rot: moves them later, times: repeats them; it plays p: or d: like note, and its prob: draws for each hit. pick(from: [fill_a, fill_b]) plays one of the patterns, drawn again on each pass, and passes its variables on."));
+    out.push(new DocBlock(DocKind.Code, "humanize(time: 6ms, vel: 0.15)\neuclid(hits: 11, steps: 16, p: C4, inst: hat_closed, prob: 0.85, times: 4)\nnote(d: [5, 7, 8, 10], pick: 1, prob: 0.6)\npick(from: [fill_roll, fill_toms], on: 4/4)"));
+    commands(out, "Randomness commands", "", ["humanize", "euclid", "pick"]);
 
     out.push(new DocBlock(DocKind.Heading, "Keys and degrees", "keys"));
     out.push(new DocBlock(DocKind.Paragraph, "key(root: D, mode: dorian) sets a key: in conductor.ch for the whole song from that row (C major until one says otherwise), or in a track for that track. Modes: major, minor, dorian, phrygian, lydian, mixolydian, locrian, harmonic_minor, melodic_minor, pentatonic, minor_pentatonic, blues, chromatic."));

@@ -38,6 +38,7 @@ export class SongConfig {
     rowsPerBeat: i32 = 4;
     swing: f64 = 0;
     masterVolume: f64 = 1;
+    seed: i32 = 1; // what every random choice starts from (§6.5)
     channels: Array<ChannelConfig> = [];
     buses: Array<BusConfig> = [];
 }
@@ -46,7 +47,7 @@ export class ConfigResult {
     constructor(public config: SongConfig, public diagnostics: Diagnostics) {}
 }
 
-const SONG_KEYS: Array<string> = ["title", "author", "bpm", "signature", "rows_per_beat", "swing", "master_volume", "channels", "buses"];
+const SONG_KEYS: Array<string> = ["title", "author", "bpm", "signature", "rows_per_beat", "swing", "master_volume", "seed", "channels", "buses"];
 const CHANNEL_KEYS: Array<string> = ["name", "file", "width", "mute", "solo", "bus"];
 const BUS_KEYS: Array<string> = ["name", "file"];
 export const MAX_SONG_BUSES: i32 = 4;
@@ -152,6 +153,7 @@ export function parseSongConfig(text: string): ConfigResult {
         else if (key == "bpm") config.bpm = reader.number(v, key, ArgType.Number, 20, 999, false, config.bpm);
         else if (key == "rows_per_beat") config.rowsPerBeat = <i32>reader.number(v, key, ArgType.Number, 1, 64, true, config.rowsPerBeat);
         else if (key == "swing") config.swing = reader.number(v, key, ArgType.Number, 0, 0.75, false, config.swing);
+        else if (key == "seed") config.seed = <i32>reader.number(v, key, ArgType.Number, 0, 999999999, true, <f64>config.seed);
         else if (key == "master_volume") config.masterVolume = reader.number(v, key, ArgType.Gain, 0, 4, false, config.masterVolume);
         else if (key == "signature") readSignature(reader, v, config);
         else if (key == "channels") readChannels(reader, v, config);
@@ -279,6 +281,7 @@ export function songConfigText(config: SongConfig): string {
     out += `rows_per_beat: ${config.rowsPerBeat}\n`;
     if (config.swing != 0) out += `swing: ${fmt(config.swing)}\n`;
     if (config.masterVolume != 1) out += `master_volume: ${fmt(config.masterVolume)}\n`;
+    if (config.seed != 1) out += `seed: ${config.seed}\n`;
     out += "channels:\n";
     for (let i = 0; i < config.channels.length; i++) {
         let c = config.channels[i];

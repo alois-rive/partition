@@ -92,7 +92,7 @@ export class CommandSpec {
         let shown = 0;
         for (let i = 0; i < this.args.length; i++) {
             let a = this.args[i];
-            if (a.name == "on" || a.name == "except" || a.name == "if") continue;
+            if (a.name == "on" || a.name == "except" || a.name == "if" || a.name == "prob") continue;
             if (shown++ > 0) out += ", ";
             out += a.name + (a.required ? "" : "?");
         }
@@ -181,7 +181,8 @@ export function registry(): Registry {
     // Notes (§5.1)
     b.cmd("note", CH, "play one note, or several from a list, by pitch (p) or scale degree (d)")
         .opt("p", ArgType.Pitches).opt("d", ArgType.Degrees).opt("len", ArgType.Duration).opt("vel", ArgType.Gain, 0, 1)
-        .opt("inst", ArgType.Name).opt("glide", ArgType.Duration).opt("at", ArgType.Duration);
+        .opt("inst", ArgType.Name).opt("glide", ArgType.Duration).opt("at", ArgType.Duration)
+        .opt("pick", T, 1, 32).int();
     b.cmd("chord", CH, "play a chord on a root, or on a scale degree (d)")
         .opt("root", ArgType.Pitch).opt("d", ArgType.Number, -28, 28).int().opt("size", ArgType.Number, 3, 5).int()
         .opt("type", ArgType.Ident).oneOf(CHORD_TYPES)
@@ -192,6 +193,16 @@ export function registry(): Registry {
     b.cmd("prog", CH, "play a chord progression in the key, one chord per step")
         .req("chords", ArgType.Text).opt("every", ArgType.Duration).opt("len", ArgType.Duration)
         .opt("vel", ArgType.Gain, 0, 1).opt("inv", T, 0, 8).int().opt("spread", T, 0, 3).int().opt("strum", ArgType.Duration);
+
+    // Randomness (§6.5), from the song's seed.
+    b.cmd("humanize", CH, "shift each later note's start and velocity a little, at random")
+        .opt("time", ArgType.Duration).opt("vel", T, 0, 1);
+    b.cmd("euclid", CH, "spread hits evenly over steps (a Euclidean rhythm), from this row")
+        .req("hits", T, 0, 64).int().req("steps", T, 1, 64).int().opt("rot", T, -64, 64).int()
+        .opt("p", ArgType.Pitches).opt("d", ArgType.Degrees).opt("every", ArgType.Duration).opt("times", T, 1, 1000).int()
+        .opt("len", ArgType.Duration).opt("vel", ArgType.Gain, 0, 1).opt("inst", ArgType.Name);
+    b.cmd("pick", CH, "play one of several patterns, chosen at random on each pass")
+        .req("from", ArgType.Names).opt("times", T, 1, 100000).int().variables();
 
     // Keys (§5.6): the track's, or (in the conductor) the song's.
     b.cmd("key", CH | CO, "set the key that scale degrees and progressions use")
@@ -291,6 +302,7 @@ export function registry(): Registry {
         spec.args.push(new ArgSpec("on", ArgType.Pass, false, -Infinity, Infinity));
         spec.args.push(new ArgSpec("except", ArgType.Pass, false, -Infinity, Infinity));
         spec.args.push(new ArgSpec("if", ArgType.Bool, false, -Infinity, Infinity));
+        spec.args.push(new ArgSpec("prob", ArgType.Gain, false, 0, 1));
     }
 
     let made = new Registry(b.specs, b.names);

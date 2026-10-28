@@ -94,6 +94,7 @@ export class SettingsPanel extends Form {
         if (id == "bpm") return decimals(c.bpm, 2);
         if (id == "sigNum") return `${c.sigNum}`;
         if (id == "rpb") return `${c.rowsPerBeat}`;
+        if (id == "seed") return `${c.seed}`;
         if (id.startsWith("trk:")) {
             let parts = id.split(":");
             let i = <i32>parseInt(parts[1]);
@@ -128,6 +129,9 @@ export class SettingsPanel extends Form {
         } else if (id == "sigNum") {
             problem = this.check("signature", `${value}/${c.sigDen}`);
             if (problem.length == 0) c.sigNum = parseSongConfig(`signature: ${value}/${c.sigDen}\n`).config.sigNum;
+        } else if (id == "seed") {
+            problem = this.check("seed", value);
+            if (problem.length == 0) c.seed = parseSongConfig(`seed: ${value}\n`).config.seed;
         } else if (id == "rpb") {
             problem = this.check("rows_per_beat", value);
             if (problem.length == 0) c.rowsPerBeat = parseSongConfig(`rows_per_beat: ${value}\n`).config.rowsPerBeat;
@@ -172,6 +176,7 @@ export class SettingsPanel extends Form {
         if (id == "bpm") c.bpm = Math.min(Math.max(Math.round(c.bpm) + <f64>delta, 20), 999);
         else if (id == "sigNum") c.sigNum = min<i32>(max<i32>(c.sigNum + delta, 1), 32);
         else if (id == "rpb") c.rowsPerBeat = min<i32>(max<i32>(c.rowsPerBeat + delta, 1), 16);
+        else if (id == "seed") c.seed = min<i32>(max<i32>(c.seed + delta, 0), 999999999);
         else return;
         this.cancelEdit();
         this.write();
@@ -246,7 +251,7 @@ export class SettingsPanel extends Form {
     // --- Input (coordinates relative to the panel's top left) -----------------------
 
     isTextField(id: string): bool {
-        return id == "title" || id == "author" || id == "bpm" || id == "sigNum" || id == "rpb" ||
+        return id == "title" || id == "author" || id == "bpm" || id == "sigNum" || id == "rpb" || id == "seed" ||
             (id.startsWith("trk:") && (id.endsWith(":name") || id.endsWith(":width")));
     }
 
@@ -306,6 +311,14 @@ export class SettingsPanel extends Form {
             this.dragging = id;
             this.sliderX = h.x;
             this.setSlider(id, (x - h.x) / SLIDER_W);
+            return;
+        }
+        if (id == "shuffle") {
+            // A new seed: every random choice in the song is drawn again.
+            let h = <u32>this.config.seed * 2654435761 + 1013904223;
+            this.config.seed = <i32>((h ^ (h >> 13)) % 999999999);
+            this.cancelEdit();
+            this.write();
             return;
         }
         if (id == "addTrack") {
@@ -408,10 +421,14 @@ export class SettingsPanel extends Form {
         this.label(ui, "Author", "", x, y);
         this.field(ui, "author", x + LABEL_W, y, Math.min(320, w - LABEL_W));
         y += ROW_H;
+        this.label(ui, "Seed", "Every random choice (prob, humanize, pick) follows it: the same seed plays the same song.", x, y);
+        let after = this.stepper(ui, "seed", x + LABEL_W, y, 96);
+        this.button(ui, "shuffle", "Shuffle", after + 8, y, 80, false);
+        y += ROW_H;
 
         y = this.section(ui, "Time", x, y, w);
         this.label(ui, "Tempo", "Beats per minute at the start. bpm() in the conductor changes it.", x, y);
-        let after = this.stepper(ui, "bpm", x + LABEL_W, y, 64);
+        after = this.stepper(ui, "bpm", x + LABEL_W, y, 64);
         this.text(ui, ui.labelIn("BPM", ui.hintStyle, "sh:"), after + 8, y + 5);
         y += ROW_H;
         this.label(ui, "Signature", "Beats per bar, over the note value of a beat.", x, y);

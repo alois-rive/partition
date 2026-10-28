@@ -97,6 +97,8 @@ class ChannelState {
     len: Typed = Typed.duration(DurUnit.Rows, 1);
     keyRoot: i32 = -1; // the track's own key (§5.6), or -1 to follow the song's
     keyMode: i32 = 0;
+    humanizeTime: Typed? = null; // humanize (§6.5): the most a note moves, and its velocity
+    humanizeVel: f64 = 0;
     // Keyed by (instrument + 1) × 256 + param: channel-strip params use instrument -1.
     params: Map<i32, ParamTrack> = new Map<i32, ParamTrack>();
 
@@ -109,6 +111,8 @@ class ChannelState {
         s.len = this.len;
         s.keyRoot = this.keyRoot;
         s.keyMode = this.keyMode;
+        s.humanizeTime = this.humanizeTime;
+        s.humanizeVel = this.humanizeVel;
         let keys = this.params.keys();
         for (let i = 0; i < keys.length; i++) s.params.set(keys[i], this.params.get(keys[i]).clone());
         return s;
@@ -164,6 +168,7 @@ class Compiler {
     // Per channel while it is simulated:
     channel: i32 = 0;
     fxCount: i32 = 0; // effects declared so far on the channel being compiled
+    seed: u32 = 1; // song.yaml's seed (§6.5)
     path: string = "";
     nextOwner: i32 = 1;
     instances: Array<Instance> = [];
@@ -206,6 +211,7 @@ class Compiler {
     compile(): Score {
         let song = this.song;
         let score = this.score;
+        this.seed = <u32>song.config.seed;
         let rows = songRows(song);
         this.grid = buildGrid(song, max<i32>(rows, song.rowCount), this.diagnostics);
         let po = new PlaybackOptions();
@@ -414,7 +420,10 @@ class Compiler {
                 if (bound == null) continue;
                 c = bound;
             }
-            if (this.passes(c, pass)) this.run(c, p, state, owner, inst, path);
+            if (!this.passes(c, pass)) continue;
+            // prob: plays this time with that chance (euclid draws per hit instead).
+            if (c.has("prob") && c.name != "euclid" && this.random(c, p, owner, SALT_PROB, 0) >= c.num("prob", 1)) continue;
+            this.run(c, p, state, owner, inst, path);
         }
     }
 
@@ -425,6 +434,74 @@ class Compiler {
         if (c.has("on") && !onPass(c.get("on"), pass)) return false;
         if (c.has("except") && onPass(c.get("except"), pass)) return false;
         return true;
+    }
+
+    // A number in [0, 1) for command `c` on played row `p` (§6.5): a hash of
+    // the song's seed, the track, the row, the owner, where the command is
+    // written, what it is for (`salt`) and which draw it is (`k`). The same
+    // seed gives the same numbers; every pass of a loop gets new ones.
+    random(c: CheckedCommand, p: i32, owner: i32, salt: u32, k: i32): f64 {
+        let h = mix32(this.seed ^ 0x9E3779B9);
+        h = mix32(h ^ <u32>(this.channel + 17));
+        h = mix32(h ^ <u32>p);
+        h = mix32(h ^ <u32>owner);
+        h = mix32(h ^ <u32>c.line);
+        h = mix32(h ^ <u32>c.node.col);
+        h = mix32(h ^ salt);
+        h = mix32(h ^ <u32>k);
+        return <f64>h / 4294967296.0;
+    }
+
+    // humanize: a note's start and velocity, moved at random within the track's limits.
+    jitter(c: CheckedCommand, p: i32, owner: i32, state: ChannelState, k: i32, start: f64, vel: f64): Array<f64> {
+        let t = start;
+        let v = vel;
+        let amount = state.humanizeTime;
+        if (amount != null) {
+            let range = this.playback.secondsOf(amount, <f64>p);
+            t = Math.max(start + (this.random(c, p, owner, SALT_TIME, k) * 2 - 1) * range, 0);
+        }
+        if (state.humanizeVel > 0) v = Math.min(Math.max(vel + (this.random(c, p, owner, SALT_VEL, k) * 2 - 1) * state.humanizeVel, 0.01), 1);
+        return [t, v];
+    }
+
+    // euclid(hits: 5, steps: 8): hits spread as evenly as they go over the
+    // steps, `rot` steps later, one step per `every` (a row by default).
+    euclid(c: CheckedCommand, p: i32, state: ChannelState, owner: i32, path: string): void {
+        let pb = this.playback;
+        let hits = <i32>c.num("hits", 0);
+        let steps = <i32>c.num("steps", 1);
+        let rot = <i32>c.num("rot", 0);
+        let times = <i32>c.num("times", 1);
+        let step = c.has("every") ? pb.rowsOf(c.get("every"), p) : 1;
+        if (step <= 0 || hits <= 0) return;
+        let instIndex = state.inst;
+        if (c.has("inst")) {
+            instIndex = this.instrument(c, c.str("inst", ""), path);
+            if (instIndex < 0) return;
+        }
+        let pitches = new Array<f64>();
+        if (c.has("d")) {
+            let d = c.get("d");
+            if (d.items.length == 0) pitches.push(this.degreePitch(<i32>d.num, state, p));
+            for (let i = 0; i < d.items.length; i++) pitches.push(this.degreePitch(<i32>d.items[i].num, state, p));
+        } else {
+            let items = c.get("p").items;
+            for (let i = 0; i < items.length; i++) pitches.push(this.pitchOf(items[i], state));
+        }
+        let prob = c.num("prob", 1);
+        let vel = c.num("vel", state.vel);
+        let len = c.has("len") ? c.get("len") : state.len;
+        for (let t = 0; t < times; t++) {
+            for (let i = 0; i < steps; i++) {
+                if (!euclidHit(i, hits, steps, rot)) continue;
+                let n = t * steps + i;
+                if (prob < 1 && this.random(c, p, owner, SALT_PROB, n) >= prob) continue;
+                let pos = <f64>p + <f64>n * step;
+                let start = pb.timeAt(pos);
+                this.emitNotes(pitches, start, pb.secondsOf(len, pos), vel, instIndex, owner, 0, c.line, c, p, state, n);
+            }
+        }
     }
 
     // `c` with its variables replaced by the pattern's values and typed (§8.1).
@@ -469,6 +546,17 @@ class Compiler {
                 let pitches = c.get("p").items;
                 for (let i = 0; i < pitches.length; i++) list.push(this.pitchOf(pitches[i], state));
             }
+            if (c.has("pick")) {
+                // pick: n of the listed notes, different ones, at random.
+                let count = min<i32>(<i32>c.num("pick", 1), list.length);
+                for (let k = 0; k < count; k++) {
+                    let j = k + min<i32>(<i32>(this.random(c, p, owner, SALT_PICK, k) * <f64>(list.length - k)), list.length - k - 1);
+                    let swap = list[k];
+                    list[k] = list[j];
+                    list[j] = swap;
+                }
+                list = list.slice(0, count);
+            }
             this.notes(c, p, state, owner, list, 0, path);
         } else if (n == "key") {
             let root = c.get("root");
@@ -478,6 +566,17 @@ class Compiler {
             // Defaults, read when the pattern starts.
         } else if (n == "prog") {
             this.progression(c, p, state, owner);
+        } else if (n == "humanize") {
+            let time = c.has("time") ? c.get("time") : null;
+            state.humanizeTime = time != null && time.num > 0 ? time : null;
+            state.humanizeVel = c.num("vel", 0);
+        } else if (n == "euclid") {
+            this.euclid(c, p, state, owner, path);
+        } else if (n == "pick") {
+            // One pattern of the list, drawn again on every pass.
+            let names = c.get("from").items;
+            let i = min<i32>(<i32>(this.random(c, p, owner, SALT_PICK, 0) * <f64>names.length), names.length - 1);
+            this.startNamed(c, names[i].str, names[i], p, state, owner, inst, path);
         } else if (n == "chord") {
             let list = new Array<f64>();
             if (c.has("d") && !c.has("type")) {
@@ -637,20 +736,22 @@ class Compiler {
             let list = new Array<f64>();
             for (let k = 0; k < intervals.length; k++) list.push(base + <f64>(n.root + intervals[k]));
             voice(list, inv, spread);
-            this.emitNotes(list, start, seconds, vel, state.inst, owner, strum, c.line);
+            this.emitNotes(list, start, seconds, vel, state.inst, owner, strum, c.line, c, p, state, i);
         }
     }
 
     // Notes at `start` (strummed `strum` apart), like note(…) emits them.
-    emitNotes(pitches: Array<f64>, start: f64, seconds: f64, vel: f64, instIndex: i32, owner: i32, strum: f64, line: i32): void {
+    emitNotes(pitches: Array<f64>, start: f64, seconds: f64, vel: f64, instIndex: i32, owner: i32, strum: f64, line: i32,
+        c: CheckedCommand, p: i32, state: ChannelState, k: i32): void {
         for (let i = 0; i < pitches.length; i++) {
-            let at = start + strum * <f64>i;
+            let moved = this.jitter(c, p, owner, state, k * 16 + i, start + strum * <f64>i, vel);
+            let at = moved[0];
             let note = this.nextNote++;
             let on = this.emit(EventKind.NoteOn, at);
             on.owner = owner;
             on.note = note;
             on.pitch = pitches[i];
-            on.vel = vel;
+            on.vel = moved[1];
             on.inst = instIndex;
             on.seconds = seconds;
             on.from = NaN;
@@ -701,13 +802,14 @@ class Compiler {
         let vel = c.num("vel", state.vel);
         let glide = c.has("glide") ? pb.secondsOf(c.get("glide"), pos) : 0;
         for (let i = 0; i < pitches.length; i++) {
-            let start = rowStart + at + strum * <f64>i;
+            let moved = this.jitter(c, p, owner, state, i, rowStart + at + strum * <f64>i, vel);
+            let start = moved[0];
             let note = this.nextNote++;
             let on = this.emit(EventKind.NoteOn, start);
             on.owner = owner;
             on.note = note;
             on.pitch = pitches[i];
-            on.vel = vel;
+            on.vel = moved[1];
             on.inst = instIndex;
             on.seconds = seconds;
             on.from = glide > 0 ? this.lastPitch : NaN;
@@ -799,9 +901,13 @@ class Compiler {
     }
 
     startPattern(c: CheckedCommand, p: i32, state: ChannelState, owner: i32, caller: Instance?, path: string): void {
-        let name = c.str("name", "");
+        this.startNamed(c, c.str("name", ""), c.get("name"), p, state, owner, caller, path);
+    }
+
+    // Starts pattern `name` as `c` asks (pattern, or the one pick drew); `v`
+    // is where the name is written.
+    startNamed(c: CheckedCommand, name: string, v: Typed, p: i32, state: ChannelState, owner: i32, caller: Instance?, path: string): void {
         let song = this.song;
-        let v = c.get("name");
         if (!song.patterns.has(name)) {
             this.report(path, c.line, v.col, v.endCol, "unknown-pattern", `there is no pattern named '${name}' (patterns/${name}.pat)`);
             return;
@@ -964,4 +1070,28 @@ function substitute(v: ValueNode, vars: Map<string, ValueNode>, missing: Array<s
         return out;
     }
     return v;
+}
+
+// What each random draw is for, so they do not repeat each other (§6.5).
+const SALT_PROB: u32 = 1;
+const SALT_TIME: u32 = 2;
+const SALT_VEL: u32 = 3;
+const SALT_PICK: u32 = 4;
+
+// A 32-bit integer hash (lowbias32).
+function mix32(x: u32): u32 {
+    let h = x;
+    h ^= h >> 16;
+    h *= 0x7feb352d;
+    h ^= h >> 15;
+    h *= 0x846ca68b;
+    h ^= h >> 16;
+    return h;
+}
+
+// Whether step `i` of a Euclidean rhythm of `hits` over `steps`, rotated
+// `rot` steps later, is a hit.
+export function euclidHit(i: i32, hits: i32, steps: i32, rot: i32): bool {
+    let j = (((i - rot) % steps) + steps) % steps;
+    return (j * hits) % steps < hits;
 }

@@ -268,7 +268,7 @@ class Checker {
             ok = false;
         }
         if (ok && node.name == "fx") ok = this.checkFx(checked);
-        if (node.name == "note" || node.name == "chord") ok = this.checkOneOf(checked, node.name == "note" ? "p" : "root", "d") && ok;
+        if (node.name == "note" || node.name == "chord" || node.name == "euclid") ok = this.checkOneOf(checked, node.name == "chord" ? "root" : "p", "d") && ok;
         if (ok && node.name == "prog" && checked.has("chords")) ok = this.checkProg(checked);
         if (ok && node.name == "lfo") ok = this.checkLfoParam(checked);
         if (ok && node.name == "lfo_off") ok = this.checkLfoParam(checked);

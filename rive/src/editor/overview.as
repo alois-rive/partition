@@ -13,6 +13,7 @@ import { DurUnit, Typed } from "../lang/types";
 import { chordIntervals, MODES } from "../lang/commands";
 import { degreeSemitones, parseNumeral, progressionTokens } from "../lang/scales";
 import { Grid, durationRows } from "../score/timeline";
+import { euclidHit } from "../score/compiler";
 
 export enum Mark {
     Note = 0,
@@ -240,6 +241,27 @@ class Builder {
                 for (let i = 0; i < items.length; i++) pitches.push(this.pitchOf(items[i], s));
             }
             this.note(c, row, s, pitches, pitches.length > 1 ? Mark.Chord : Mark.Note, depth);
+        } else if (n == "euclid") {
+            // Every hit that can play (prob draws are left to the compiler).
+            let pitches = new Array<f64>();
+            if (c.has("d")) {
+                let d = c.get("d");
+                if (d.items.length == 0) pitches.push(this.degree(<i32>d.num, s));
+                for (let i = 0; i < d.items.length; i++) pitches.push(this.degree(<i32>d.items[i].num, s));
+            } else {
+                let items = c.get("p").items;
+                for (let i = 0; i < items.length; i++) pitches.push(this.pitchOf(items[i], s));
+            }
+            let hits = <i32>c.num("hits", 0);
+            let steps = <i32>c.num("steps", 1);
+            let rot = <i32>c.num("rot", 0);
+            let step = c.has("every") ? this.rows(c.get("every"), row) : 1;
+            let times = <i32>c.num("times", 1);
+            for (let t = 0; t < times && !this.full(); t++) {
+                for (let i = 0; i < steps; i++) {
+                    if (euclidHit(i, hits, steps, rot)) this.note(c, row + <f64>(t * steps + i) * step, s, pitches, Mark.Note, depth);
+                }
+            }
         } else if (n == "key") {
             s.keyRoot = (((<i32>c.get("root").num) % 12) + 12) % 12;
             s.keyMode = max<i32>(MODES.indexOf(c.str("mode", "major")), 0);

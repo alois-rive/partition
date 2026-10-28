@@ -21,6 +21,7 @@ export enum ArgType {
     Phase, // 0..1, or `random`
     Pass, // which passes: 3 (the third), 4/4 (the 4th of every 4)
     Degrees, // a scale degree, or a list of them (§5.6)
+    Names, // a name, or a list of them (pick's patterns)
 }
 
 export enum DurUnit {
@@ -97,6 +98,7 @@ export function typeName(type: ArgType): string {
         case ArgType.Phase: return "a phase (0..1 or random)";
         case ArgType.Pass: return "a pass (3, or 4/4 for the 4th of every 4)";
         case ArgType.Degrees: return "a scale degree or a list of them (5, [1, 3, 5])";
+        case ArgType.Names: return "a name or a list of names ([fill_a, fill_b])";
         default: return "a value";
     }
 }
@@ -174,6 +176,19 @@ export function typeValue(v: ValueNode, type: ArgType): TypeResult {
 }
 
 function typeScalarOrList(v: ValueNode, type: ArgType): TypeResult {
+    if (type == ArgType.Names) {
+        let names = new Typed();
+        names.type = ArgType.Names;
+        let items = v.kind == ValueKind.List ? v.items : [v];
+        for (let i = 0; i < items.length; i++) {
+            let item = typeValue(items[i], ArgType.Name);
+            let value = item.value;
+            if (value == null) return item;
+            names.items.push(value);
+        }
+        if (names.items.length == 0) return TypeResult.fail("a name list cannot be empty");
+        return TypeResult.ok(names);
+    }
     if (v.kind == ValueKind.List && type == ArgType.Degrees) {
         let degrees = new Typed();
         degrees.type = ArgType.Degrees;

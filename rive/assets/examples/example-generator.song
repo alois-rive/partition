@@ -1,0 +1,531 @@
+%partition-bundle 1
+=== song.yaml
+title: Drift Machine
+author: Partition examples
+bpm: 118
+signature: 4/4
+rows_per_beat: 4
+seed: 2718
+channels:
+  - name: kick
+    file: channels/kick.ch
+  - name: hats
+    file: channels/hats.ch
+  - name: perc
+    file: channels/perc.ch
+  - name: bass
+    file: channels/bass.ch
+  - name: pad
+    file: channels/pad.ch
+  - name: lead
+    file: channels/lead.ch
+=== conductor.ch
+key(root: E, mode: dorian); mark(name: loop)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+jump(to: loop, times: 15)
+end()
+=== channels/bass.ch
+inst(name: acid_bass); vol(v: 0.6); oct(v: 2); lfo(param: cutoff, rate: 4bar, depth: 1.5); euclid(hits: 7, steps: 16, rot: 0, d: 1, len: 1, prob: 0.9)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+euclid(hits: 7, steps: 16, rot: 1, d: 1, len: 1, prob: 0.9)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+euclid(hits: 7, steps: 16, rot: 2, d: 4, len: 1, prob: 0.9)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+euclid(hits: 7, steps: 16, rot: 3, d: 7, len: 1, prob: 0.9)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+=== channels/hats.ch
+inst(name: hat_closed); humanize(time: 6ms, vel: 0.15); euclid(hits: 11, steps: 16, p: C4, vel: 0.35, prob: 0.85, times: 4); euclid(hits: 3, steps: 8, rot: 2, p: C4, inst: hat_open, vel: 0.3, prob: 0.35, times: 8)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+=== channels/kick.ch
+inst(name: kick); euclid(hits: 4, steps: 16, p: C1, times: 4); euclid(hits: 3, steps: 16, rot: 3, p: C1, vel: 0.45, prob: 0.4, times: 4)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pick(from: [fill_roll, fill_toms, fill_claps], prob: 0.8)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+=== channels/lead.ch
+inst(name: pluck); vol(v: 0.45); oct(v: 4); set(delay: 0.35, reverb: 0.3); humanize(time: 12ms, vel: 0.2); pattern(name: step, times: 32)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+=== channels/pad.ch
+inst(name: pad); vol(v: 0.35); oct(v: 3); set(reverb: 0.5); prog(chords: "i IV i VII", every: 1bar, strum: 40ms)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+=== channels/perc.ch
+inst(name: rim); pan(v: 0.4); set(delay: 0.25); euclid(hits: 5, steps: 16, rot: 1, p: C4, vel: 0.5, prob: 0.7, times: 4); euclid(hits: 2, steps: 16, rot: 4, p: C4, inst: clap, vel: 0.6, times: 4)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+=== patterns/fill_claps.pat
+
+
+
+
+
+
+
+
+
+
+
+
+note(p: C4, inst: clap, vel: 0.7)
+
+note(p: C4, inst: clap, vel: 0.5)
+note(p: C4, inst: clap, vel: 0.8)
+=== patterns/fill_roll.pat
+
+
+
+
+
+
+
+
+note(p: C4, inst: snare, vel: 0.35)
+
+note(p: C4, inst: snare, vel: 0.45)
+
+note(p: C4, inst: snare, vel: 0.55)
+note(p: C4, inst: snare, vel: 0.60)
+note(p: C4, inst: snare, vel: 0.65)
+note(p: C4, inst: snare, vel: 0.70)
+=== patterns/fill_toms.pat
+
+
+
+
+
+
+
+
+euclid(hits: 5, steps: 8, p: C4, inst: tom, vel: 0.6)
+
+
+
+
+
+
+
+=== patterns/step.pat
+note(d: [5, 7, 8, 9, 10, 12], pick: 1, prob: 0.55, len: 2)
+
