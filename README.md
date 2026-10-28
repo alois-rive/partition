@@ -22,13 +22,30 @@ In the window:
 - **Tabs:** the rail on the left switches between Tracks (Cmd+1), Patterns (Cmd+2), Instruments (Cmd+3) and Song settings (Cmd+4 or Cmd+,, the cog at the bottom). Settings edits song.yaml as a form: title, tempo, signature, rows per beat, swing, master volume, and the track list. In Patterns and Instruments, a list adds, renames (F2) and deletes files; renaming updates every reference. Play there loops only the selected pattern, or an example phrase on the selected instrument.
 - **Overview:** each column starts with a strip that draws every command as a line or shape. Cmd+E collapses a column to just its strip; **Collapse all** (Cmd+Shift+E) shows the whole song at once, with Cmd+= and Cmd+- to zoom.
 - **Mute and solo:** Cmd+M mutes the current channel and Cmd+Shift+S solos it. The M and S buttons in each column header do the same.
-- **Toolbar:** **Examples ▾** opens a dropdown of the 22 bundled songs, **New** starts an empty one, and **Export WAV** renders the song. Saving to disk needs a host (spec §12); in the previewer, edits stay in memory.
+- **Toolbar:** **Examples ▾** opens a dropdown of the 22 bundled songs, **New** starts an empty one, and **Export WAV** renders the song. Saving to disk needs the shell (below); in the plain previewer, edits stay in memory.
 
 Render a song to WAV without a window:
 
 ```bash
 rive rive --render-audio=song.wav --data=song/exampleId=techno --data=song/autoplay=true --advance=70s
 ```
+
+## The `partition` shell
+
+`shell/` is a Rust command line that opens songs from disk in a window and keeps them saved, and renders and checks them without one (spec §12). It runs the app on the Rive CLI, so `rive` must be installed and signed in.
+
+```bash
+cd shell && cargo build --release        # or download a macOS release (Releases on GitHub)
+partition new my-song --template deep-house
+partition my-song                         # the window; every edit is saved to my-song/
+partition check my-song                   # diagnostics; exit 1 on errors
+partition render my-song -o my-song.wav   # headless; --rate, --format pcm16|float32, --loops, --from, --to, --tail
+partition pack my-song -o my-song.song    # and `unpack`, `examples`
+```
+
+In the window, Export WAV writes `my-song/exports/<title>.wav`. Edits made to the song's files elsewhere (another editor, git) reopen it in the window. `cargo test` runs the shell's tests (the `check` and `render` ones use the Rive CLI when it is on `PATH`).
+
+Releases: pushing a `v<version>` tag that matches `shell/Cargo.toml` makes the Release workflow build a universal macOS binary (signed ad hoc, not notarized) and publish it with its checksum. Run the workflow by hand to get the build as an artifact only. After downloading, `xattr -d com.apple.quarantine partition` lets macOS run it.
 
 ## Web
 
@@ -50,6 +67,7 @@ rive rive --publish=web --uat
   - `scene.rml`: the chrome and the view-model contract (M6).
   - `assets/examples`: the 22 bundled songs.
   - `src/tests`: the test suites.
+- `shell/`: the `partition` shell (M7), with `.github/workflows` for CI and macOS releases.
 - `spikes/m0/`: the platform spike, with results in [docs/m0-findings.md](docs/m0-findings.md).
 
 ## Checks

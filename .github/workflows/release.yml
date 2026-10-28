@@ -1,0 +1,79 @@
+# Builds the macOS release of the shell: one universal binary (Apple silicon
+# and Intel), ad-hoc signed, in a tarball with its checksum. A `v*` tag
+# publishes a GitHub release; a manual run only keeps the build as an artifact.
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  macos:
+    runs-on: macos-14
+    defaults:
+      run:
+        working-directory: shell
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin, x86_64-apple-darwin
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: shell
+
+      - name: Version
+        id: version
+        run: |
+          version=$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[0].version')
+          if [[ "$GITHUB_REF_TYPE" == "tag" && "${GITHUB_REF_NAME#v}" != "$version" ]]; then
+            echo "::error::tag $GITHUB_REF_NAME does not match shell/Cargo.toml version $version"
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Test
+        run: cargo test --locked
+
+      - name: Build
+        run: |
+          cargo build --release --locked --target aarch64-apple-darwin
+          cargo build --release --locked --target x86_64-apple-darwin
+
+      - name: Package
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          name="partition-$VERSION-macos-universal"
+          mkdir -p "dist/$name"
+          lipo -create \
+            target/aarch64-apple-darwin/release/partition \
+            target/x86_64-apple-darwin/release/partition \
+            -output "dist/$name/partition"
+          codesign --force --sign - "dist/$name/partition"
+          lipo -info "dist/$name/partition"
+          "dist/$name/partition" --version
+          cp ../README.md "dist/$name/README.md"
+          tar -C dist -czf "dist/$name.tar.gz" "$name"
+          (cd dist && shasum -a 256 "$name.tar.gz" > "$name.tar.gz.sha256")
+          echo "ARCHIVE=$name" >> "$GITHUB_ENV"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.ARCHIVE }}
+          path: |
+            shell/dist/${{ env.ARCHIVE }}.tar.gz
+            shell/dist/${{ env.ARCHIVE }}.tar.gz.sha256
+
+      - name: Publish the release
+        if: github.ref_type == 'tag'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            "dist/$ARCHIVE.tar.gz" "dist/$ARCHIVE.tar.gz.sha256" \
+            --title "Partition $GITHUB_REF_NAME" --generate-notes

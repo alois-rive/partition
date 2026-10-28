@@ -1016,7 +1016,7 @@ paths below are relative to it. "rw" means writable by the host.
 
 | Path | Type | rw | Meaning |
 |---|---|---|---|
-| `app/hosted` | bool | rw | Set by the shell. Enables save requests and hides the "not persisted" badge |
+| `app/hosted` | bool | rw | Set by a host, or by the app when it opened the shell's `host-song` (§12.2). Enables save requests and hides the "not persisted" badge |
 | `app/version` | string | | Program version |
 | `app/platformMod` | enum `cmd\|ctrl` | rw | Key map modifier |
 
@@ -1086,6 +1086,7 @@ paths below are relative to it. "rw" means writable by the host.
 | `render/chunkIndex`, `render/chunkCount` | number | | |
 | `render/chunkReady` | trigger | | `chunk` holds a new chunk |
 | `render/ack` | trigger | rw | The host consumed the chunk, so the app publishes the next one |
+| `render/realtime` | bool | rw | Playback uses `loops`, `fromRow` and `toRow`, with no endless loop: how `partition render` captures the processor (§12.3) |
 
 `render/label` (string) is the export button's text. `editor/followToggle`
 (trigger) and `editor/hint` (string, the status line) serve the chrome.
@@ -1108,46 +1109,101 @@ through `rive --render-audio` (§13.2).
 
 ## 12. Rust shell (`partition`)
 
-A native host that embeds the Rive runtime, loads `partition.riv`, and wires the
-view-model contract to the file system. It holds no music logic.
+A native host (`shell/`, a Rust crate) that opens songs from disk, keeps them
+saved, and renders and checks them headless. It holds no music logic.
 
 ### 12.1 Command line
 
 ```
-partition [SONG_DIR | FILE.song]             open a window (default: last song, else the examples browser)
-partition new DIR [--template ID]            create a song from a template (default: empty)
+partition [SONG_DIR | FILE.song]             open a window (default: the last song opened, else the examples)
+          [--no-autosave] [--verbose]
+partition new DIR [--template ID]            create a song from an example (default: empty)
 partition examples                           list the embedded examples
-partition render SONG -o OUT.wav [--rate 48000] [--format pcm16|float32]
-                 [--loops N] [--from ROW] [--to ROW]    headless WAV render
+partition render SONG -o OUT.wav [--rate 44100|48000|96000] [--format pcm16|float32]
+                 [--loops N] [--from ROW] [--to ROW] [--tail SECONDS]    headless WAV render
 partition check SONG                         print diagnostics, exit 1 on errors
 partition pack SONG_DIR -o FILE.song         folder → bundle
 partition unpack FILE.song -o DIR            bundle → folder
 ```
 
-With no subcommand, `partition` opens the window. `render` and `check` run
-headless: no window and no audio device. They drive the same `.riv` through the
-contract (§11) and wait for `render/state = done` or for diagnostics.
+`SONG` is a folder, a `.song` bundle, or the id of an embedded example. Exit
+codes: 0 success, 1 `check` found errors, 2 anything else (with a message).
 
-### 12.2 Wiring
+### 12.2 Runtime: the Rive CLI
+
+The Rive runtime with AnimaScript and the audio engine is not available as a
+library (§18.3), so the shell runs the app on the installed `rive` CLI
+(`PARTITION_RIVE`, else `rive` on `PATH`, else `~/.rive/bin/rive`):
+
+- **The project travels inside the binary.** `build.rs` embeds `rive/`
+  (`rive.yaml`, `scene.rml`, `src/`, `assets/`). Every window or command
+  writes a working copy under the cache folder (`~/Library/Caches/partition/runs/`
+  on macOS, `PARTITION_CACHE` to override). The copy is removed when done, and
+  copies older than a day are swept.
+- **Shell → app.** The song is packed into the copy's
+  `assets/host/song.song`, which `scene.rml` declares as the blob `host-song`
+  (in the repository it holds a placeholder that is not a bundle). At start,
+  the app opens that bundle when it parses: it sets `app/hosted`, and the
+  examples are not loaded. Rewriting the file makes a running previewer
+  rebuild, and the app reopens the new song (editor state is not kept).
+- **App → shell.** When opened from `host-song`, the app writes one JSON
+  object per log line, as `PARTITION-HOST {…}`. The shell reads the CLI's
+  output.
+
+| Message | When |
+|---|---|
+| `{"op":"ready","title","duration","errors","diagnostics":[{path,line,col,severity,code,message}]}` | After the first compile |
+| `{"op":"write","path","text"}` | A file changed in the app (300 ms debounce): edits, new files, renames, the settings form |
+| `{"op":"remove","path"}` | A file was deleted or renamed away |
+| `{"op":"save"}` | `Mod+S` (pending writes are sent first) |
+| `{"op":"export","title"}` | Export WAV in the app: the shell renders instead (§12.3) |
+| `{"op":"playing","clock","duration"}` | Playback started with `render/realtime` |
+
+### 12.3 Wiring
 
 | Event | Shell action |
 |---|---|
-| Open a song | Read every file → fill `song/files` → `app/hosted = true` → fire `song/load` |
-| `editor/changed` | Write the dirty files atomically (temp file + rename), then clear `dirty`. Autosave by default. `--no-autosave` saves only on `saveRequested` |
-| `editor/saveRequested` | Save now |
-| File changed on disk (watcher, 100 ms debounce, ignoring the shell's own writes) | Set `text` and bump `revision`. If the file was dirty, keep the disk version and back up the in-app text to `<file>.partition-backup` |
-| `editor/copied` / `pasteRequested` | Bridge to the OS clipboard |
-| `render/chunkReady` | Append the chunk to `OUT.wav.part` → fire `render/ack` → on `done`, rename to `OUT.wav` |
-| Window menu | Open, Save As, Export WAV (sets `render/*` then fires `render/start`) |
+| Open a song | Read every song file (`song.yaml`, `*.ch`, `*.pat`, `*.inst`; not `exports/` or hidden files), pack it, start `rive <copy> --aot` (the previewer window) |
+| `write` / `remove` | Apply to the song: write atomically (temp file + rename), or delete. With `--no-autosave`, keep it pending until `save`. A bundle is rewritten whole |
+| `save` | Write what is pending |
+| `export` | Render the song as the app has it to `exports/<title>.wav` in the folder (next to a bundle), on a thread; report in the terminal |
+| A song file changes on disk (watcher, 100 ms debounce; the shell's own writes are recognized by content) | Reread the song and rewrite `host-song`, so the window reopens it. A pending unsaved edit of that file is kept as `<file>.partition-backup` |
+| The previewer exits | The shell exits with its code, warning about unsaved edits |
 
-### 12.3 Runtime
+`render` makes two headless runs of the copy with `--data=render/realtime=true`
+and the render settings (§11.5), and `song/autoplay=true`:
 
-The shell links the Rive C++ runtime (with its audio engine and AnimaScript
-support) through FFI, or Rive's Rust bindings if they cover scripting and
-audio (see §18). It opens a window with `winit`, uses the GPU renderer, and
-forwards keyboard and text input. It uses `notify` for file watching, `arboard`
-for the clipboard, and `clap` for the CLI. The `.riv` is built with
-`rive rive/ --publish` (signed) and embedded in the binary with `include_bytes!`.
+1. A short run reads `ready` and `playing`: the diagnostics and the duration
+   of what will play.
+2. `--render-audio` for duration + tail (`--advance`). The capture starts
+   when playback does. The shell keeps the song, then its release until the
+   sound drops below −100 dBFS (at most `--tail`), and writes PCM16 or float32.
+
+`check` makes the first run only, and prints the diagnostics.
+
+### 12.4 Limits
+
+- The window is the `rive` previewer. Its menus, title and window settings
+  come from `rive.yaml`, and the shell adds no native menu (Open, Save As).
+  Opening another song means starting `partition` again.
+- Reopening after an outside change rebuilds the app, which resets scroll,
+  undo and the transport.
+- The clipboard is the editor's own (`editor/clipboard`). It is not bridged
+  to the OS.
+- Running needs the Rive CLI, installed and signed in. The first run of a new
+  build compiles the scripts ahead of time (about 30 s), and later runs reuse
+  that.
+
+### 12.5 Releases
+
+`.github/workflows/shell.yml` checks formatting, lints (`clippy -D warnings`)
+and tests the crate on macOS for every change under `shell/` or `rive/`.
+`.github/workflows/release.yml` builds `aarch64` and `x86_64` binaries, joins
+them with `lipo`, signs the result ad hoc, and packs
+`partition-<version>-macos-universal.tar.gz` with its SHA-256. A `v<version>`
+tag (matching `shell/Cargo.toml`) publishes a GitHub release, and a manual
+run keeps the build as an artifact. The binaries are not notarized, so
+Gatekeeper quarantines a downloaded copy (`xattr -d com.apple.quarantine partition`).
 
 ---
 
@@ -1195,7 +1251,7 @@ render at the same rate in float32 format (§14).
 | Performance | `--bench` and processor load on the deep-house example at 64 voices, AOT, under 50 % of the block |
 | Editor | `--screenshot` with `--key` / `--pointer` sequences (typing, continuation alignment, scroll sync, playhead), compared with `--compare` |
 | Contract | `--data` + `--data-dump(-every)` runs that check every path in §11, including the render chunk handshake |
-| Shell | Rust integration tests: open/save/watch round trips, `check` exit codes, `render` producing a valid WAV |
+| Shell | `cargo test` in `shell/`: bundles, song folders, WAV, host messages, save/watch/backup sessions, and the binary itself (`new`, `pack`/`unpack`, `check` exit codes, `render` length and level; the last two skip without the Rive CLI) |
 
 Before every commit: `rive rive/ --verify`, `rive inspect rive/ --summary`
 (no problems), `rive rive/ --test --aot`. The audio tests render seconds of
@@ -1224,9 +1280,11 @@ partition/
       fonts/Iosevka-*.ttf, BarlowSemiCondensed-*.ttf
       presets/*.inst
       examples/index.json, example-*.song
-  shell/                                Rust crate `partition`
-    Cargo.toml
-    src/ main.rs cli.rs host.rs contract.rs fs.rs render.rs
+  shell/                                Rust crate `partition` (§12)
+    Cargo.toml  build.rs (embeds rive/)
+    src/ main.rs bundle.rs songdir.rs project.rs rivecli.rs host.rs render.rs wav.rs
+    tests/cli.rs
+  .github/workflows/  shell.yml (CI)  release.yml (macOS releases)
 ```
 
 Blob assets in an RML project must be declared, as
@@ -1364,7 +1422,7 @@ The full songs are written during milestone M6.
 | M4 ✅ | `PartitionProcessor`, transport, live score swap, watchdog (`audio/processor.as`, `app/transport.as`) | Plays the examples glitch-free with AOT |
 | M5 ✅ | `ChannelGrid` editor: aligned bands, synced scroll, editing, highlighting, playhead (`rive/src/editor`) | Screenshot tests |
 | M6 ✅ | RML chrome, view-model contract, examples (`rive/scene.rml`, `rive/src/app`, `rive/assets/examples`) | Contract tests, all six examples |
-| M7 | Rust shell: window, wiring, watch, CLI, headless render | Shell integration tests |
+| M7 ✅ | Rust shell: window, wiring, watch, CLI, headless render, macOS releases (`shell/`, `.github/workflows`) | Shell unit and integration tests (`cargo test`), real renders and checks through the Rive CLI |
 
 ---
 
@@ -1374,13 +1432,16 @@ The full songs are written during milestone M6.
    songs get hard to read without them. Should `//` to end of line come in v1.1?
 2. **Positional shorthand.** `note(C4)` for a command's main argument would
    halve typing. Should it come in v1.1?
-3. **Host runtime.** Does the Rive C++ runtime (or the Rust bindings) available
-   to the shell let a host read a view model **blob** property? The CLI's data
-   dump cannot (`blobs report their type only`). Fallback: chunk the WAV as
-   base64 in a string property. That costs 33 % more and needs a decoder in the
-   shell, which is acceptable.
-4. **Host audio.** The shell must use the runtime's built-in audio engine with
-   AnimaScript processors. This needs confirming for an embedded runtime (M0).
+3. **Host runtime (resolved in M7).** The Rive runtime with AnimaScript and
+   the audio engine is not available to embed. The `rive` CLI is one binary,
+   and the public Rust and C++ runtimes do not run AnimaScript processors. The
+   shell therefore runs the app on the installed CLI (§12.2). Blobs never
+   cross to the host: the song goes in as a blob asset, and everything comes
+   back as log lines, including renders, which are captured with
+   `--render-audio` instead of chunked through `render/chunk`. If an embeddable
+   runtime appears, the contract in §11 is what it would drive.
+4. **Host audio (resolved in M7).** The previewer plays through the built-in
+   engine with `--aot`, and headless renders run the same processor.
 5. **Text input.** No IME composition or dead keys are documented, so typing
    accented characters may fail on some layouts. Commands are ASCII, so this
    affects only strings.

@@ -6,432 +6,432 @@
         <LayoutComponentStyle name="Artboard Style" id="0:5"/>
         <LayoutComponent clip="true" width="1280" height="800" styleId="0:11" name="Root" id="0:10">
             <LayoutComponentStyle flexDirectionValue="column" layoutWidthScaleType="fill" layoutHeightScaleType="fill" widthUnitsValue="auto" heightUnitsValue="auto" name="Root Style" id="0:11"/>
-            <LayoutComponent clip="true" width="616" height="40" styleId="0:20176" name="Examples Panel" id="0:20175">
-                <LayoutComponentStyle positionTypeValue="absolute" positionRight="8" positionRightUnitsValue="points" flexDirectionValue="row" layoutWidthScaleType="fixed" layoutHeightScaleType="hug" gapHorizontal="4" gapHorizontalUnitsValue="points" gapVertical="2" gapVerticalUnitsValue="points" paddingLeft="4" paddingLeftUnitsValue="points" paddingRight="4" paddingRightUnitsValue="points" paddingTop="4" paddingTopUnitsValue="points" paddingBottom="4" paddingBottomUnitsValue="points" cornerRadiusTL="3" displayValue="none" flexWrapValue="wrap" positionTop="68" positionTopUnitsValue="points" name="Examples Panel Style" id="0:20176">
-                    <DataBindContext sourcePathIds="0:20031-0:20170-0:20107" propertyKey="596"/>
+            <LayoutComponent clip="true" width="616" height="40" styleId="0:20177" name="Examples Panel" id="0:20176">
+                <LayoutComponentStyle positionTypeValue="absolute" positionRight="8" positionRightUnitsValue="points" flexDirectionValue="row" layoutWidthScaleType="fixed" layoutHeightScaleType="hug" gapHorizontal="4" gapHorizontalUnitsValue="points" gapVertical="2" gapVerticalUnitsValue="points" paddingLeft="4" paddingLeftUnitsValue="points" paddingRight="4" paddingRightUnitsValue="points" paddingTop="4" paddingTopUnitsValue="points" paddingBottom="4" paddingBottomUnitsValue="points" cornerRadiusTL="3" displayValue="none" flexWrapValue="wrap" positionTop="68" positionTopUnitsValue="points" name="Examples Panel Style" id="0:20177">
+                    <DataBindContext sourcePathIds="0:20031-0:20171-0:20107" propertyKey="596"/>
                 </LayoutComponentStyle>
                 <Fill name="Fill"><SolidColor colorValue="FF0A0A0A" name="Color"/></Fill>
                 <Stroke thickness="1" name="Border"><SolidColor colorValue="FF666666" name="Color"/></Stroke>
-                <ArtboardComponentList name="Examples Panel List" id="0:20174">
-                    <DataBindContext sourcePathIds="0:20031-0:20170-0:20100" propertyKey="800"/>
+                <ArtboardComponentList name="Examples Panel List" id="0:20175">
+                    <DataBindContext sourcePathIds="0:20031-0:20171-0:20100" propertyKey="800"/>
                 </ArtboardComponentList>
             </LayoutComponent>
-            <LayoutComponent clip="true" width="196" height="40" styleId="0:20208" name="More Menu" id="0:20207">
-                <LayoutComponentStyle positionTypeValue="absolute" positionRight="8" positionRightUnitsValue="points" flexDirectionValue="column" layoutWidthScaleType="fixed" layoutHeightScaleType="hug" gapHorizontal="4" gapHorizontalUnitsValue="points" gapVertical="2" gapVerticalUnitsValue="points" paddingLeft="4" paddingLeftUnitsValue="points" paddingRight="4" paddingRightUnitsValue="points" paddingTop="4" paddingTopUnitsValue="points" paddingBottom="4" paddingBottomUnitsValue="points" cornerRadiusTL="3" displayValue="none" positionTop="68" positionTopUnitsValue="points" name="More Menu Style" id="0:20208">
-                    <DataBindContext sourcePathIds="0:20031-0:20169-0:20039" propertyKey="596"/>
+            <LayoutComponent clip="true" width="196" height="40" styleId="0:20209" name="More Menu" id="0:20208">
+                <LayoutComponentStyle positionTypeValue="absolute" positionRight="8" positionRightUnitsValue="points" flexDirectionValue="column" layoutWidthScaleType="fixed" layoutHeightScaleType="hug" gapHorizontal="4" gapHorizontalUnitsValue="points" gapVertical="2" gapVerticalUnitsValue="points" paddingLeft="4" paddingLeftUnitsValue="points" paddingRight="4" paddingRightUnitsValue="points" paddingTop="4" paddingTopUnitsValue="points" paddingBottom="4" paddingBottomUnitsValue="points" cornerRadiusTL="3" displayValue="none" positionTop="68" positionTopUnitsValue="points" name="More Menu Style" id="0:20209">
+                    <DataBindContext sourcePathIds="0:20031-0:20170-0:20039" propertyKey="596"/>
                 </LayoutComponentStyle>
                 <Fill name="Fill"><SolidColor colorValue="FF0A0A0A" name="Color"/></Fill>
                 <Stroke thickness="1" name="Border"><SolidColor colorValue="FF666666" name="Color"/></Stroke>
-                <LayoutComponent clip="true" width="180" height="26" styleId="0:20178" name="Menu Loop" id="0:20177">
-                    <LayoutComponentStyle flexDirectionValue="row" layoutWidthScaleType="fill" layoutHeightScaleType="fixed" layoutAlignmentType="centerLeft" paddingLeft="8" paddingLeftUnitsValue="points" cornerRadiusTL="2" name="Menu Loop Style" id="0:20178"/>
+                <LayoutComponent clip="true" width="180" height="26" styleId="0:20179" name="Menu Loop" id="0:20178">
+                    <LayoutComponentStyle flexDirectionValue="row" layoutWidthScaleType="fill" layoutHeightScaleType="fixed" layoutAlignmentType="centerLeft" paddingLeft="8" paddingLeftUnitsValue="points" cornerRadiusTL="2" name="Menu Loop Style" id="0:20179"/>
                     <Fill name="Fill"><SolidColor colorValue="FF0A0A0A" name="Color"/></Fill>
-                    <Text sizingValue="autoWidth" name="Menu Loop Label" id="0:20180">
+                    <Text sizingValue="autoWidth" name="Menu Loop Label" id="0:20181">
                         <LayoutParticipant layoutWidthScaleType="hug" layoutHeightScaleType="hug" name="Menu Loop Label Layout"/>
-                        <TextStylePaint fontSize="12" fontAssetId="0:92" name="Menu Loop Label Style" id="0:20181">
+                        <TextStylePaint fontSize="12" fontAssetId="0:92" name="Menu Loop Label Style" id="0:20182">
                             <Fill name="Fill"><SolidColor colorValue="FFFFFFFF" name="Color"/></Fill>
                         </TextStylePaint>
-                        <TextValueRun styleId="0:20181" text="Loop" name="Run">
-                            <DataBindContext sourcePathIds="0:20031-0:20169-0:20046" propertyKey="268"/>
+                        <TextValueRun styleId="0:20182" text="Loop" name="Run">
+                            <DataBindContext sourcePathIds="0:20031-0:20170-0:20046" propertyKey="268"/>
                         </TextValueRun>
                     </Text>
                 </LayoutComponent>
-                <LayoutComponent clip="true" width="180" height="26" styleId="0:20183" name="Menu Follow" id="0:20182">
-                    <LayoutComponentStyle flexDirectionValue="row" layoutWidthScaleType="fill" layoutHeightScaleType="fixed" layoutAlignmentType="centerLeft" paddingLeft="8" paddingLeftUnitsValue="points" cornerRadiusTL="2" name="Menu Follow Style" id="0:20183"/>
+                <LayoutComponent clip="true" width="180" height="26" styleId="0:20184" name="Menu Follow" id="0:20183">
+                    <LayoutComponentStyle flexDirectionValue="row" layoutWidthScaleType="fill" layoutHeightScaleType="fixed" layoutAlignmentType="centerLeft" paddingLeft="8" paddingLeftUnitsValue="points" cornerRadiusTL="2" name="Menu Follow Style" id="0:20184"/>
                     <Fill name="Fill"><SolidColor colorValue="FF0A0A0A" name="Color"/></Fill>
-                    <Text sizingValue="autoWidth" name="Menu Follow Label" id="0:20185">
+                    <Text sizingValue="autoWidth" name="Menu Follow Label" id="0:20186">
                         <LayoutParticipant layoutWidthScaleType="hug" layoutHeightScaleType="hug" name="Menu Follow Label Layout"/>
-                        <TextStylePaint fontSize="12" fontAssetId="0:92" name="Menu Follow Label Style" id="0:20186">
+                        <TextStylePaint fontSize="12" fontAssetId="0:92" name="Menu Follow Label Style" id="0:20187">
                             <Fill name="Fill"><SolidColor colorValue="FFFFFFFF" name="Color"/></Fill>
                         </TextStylePaint>
-                        <TextValueRun styleId="0:20186" text="Follow" name="Run">
-                            <DataBindContext sourcePathIds="0:20031-0:20169-0:20047" propertyKey="268"/>
+                        <TextValueRun styleId="0:20187" text="Follow" name="Run">
+                            <DataBindContext sourcePathIds="0:20031-0:20170-0:20047" propertyKey="268"/>
                         </TextValueRun>
                     </Text>
                 </LayoutComponent>
-                <LayoutComponent clip="true" width="180" height="26" styleId="0:20188" name="Menu Collapse" id="0:20187">
-                    <LayoutComponentStyle flexDirectionValue="row" layoutWidthScaleType="fill" layoutHeightScaleType="fixed" layoutAlignmentType="centerLeft" paddingLeft="8" paddingLeftUnitsValue="points" cornerRadiusTL="2" name="Menu Collapse Style" id="0:20188"/>
+                <LayoutComponent clip="true" width="180" height="26" styleId="0:20189" name="Menu Collapse" id="0:20188">
+                    <LayoutComponentStyle flexDirectionValue="row" layoutWidthScaleType="fill" layoutHeightScaleType="fixed" layoutAlignmentType="centerLeft" paddingLeft="8" paddingLeftUnitsValue="points" cornerRadiusTL="2" name="Menu Collapse Style" id="0:20189"/>
                     <Fill name="Fill"><SolidColor colorValue="FF0A0A0A" name="Color"/></Fill>
-                    <Text sizingValue="autoWidth" name="Menu Collapse Label" id="0:20190">
+                    <Text sizingValue="autoWidth" name="Menu Collapse Label" id="0:20191">
                         <LayoutParticipant layoutWidthScaleType="hug" layoutHeightScaleType="hug" name="Menu Collapse Label Layout"/>
-                        <TextStylePaint fontSize="12" fontAssetId="0:92" name="Menu Collapse Label Style" id="0:20191">
+                        <TextStylePaint fontSize="12" fontAssetId="0:92" name="Menu Collapse Label Style" id="0:20192">
                             <Fill name="Fill"><SolidColor colorValue="FFFFFFFF" name="Color"/></Fill>
                         </TextStylePaint>
-                        <TextValueRun styleId="0:20191" text="Collapse all" name="Run">
-                            <DataBindContext sourcePathIds="0:20031-0:20169-0:20048" propertyKey="268"/>
+                        <TextValueRun styleId="0:20192" text="Collapse all" name="Run">
+                            <DataBindContext sourcePathIds="0:20031-0:20170-0:20048" propertyKey="268"/>
                         </TextValueRun>
                     </Text>
                 </LayoutComponent>
-                <LayoutComponent clip="true" width="180" height="26" styleId="0:20193" name="Menu New" id="0:20192">
-                    <LayoutComponentStyle flexDirectionValue="row" layoutWidthScaleType="fill" layoutHeightScaleType="fixed" layoutAlignmentType="centerLeft" paddingLeft="8" paddingLeftUnitsValue="points" cornerRadiusTL="2" name="Menu New Style" id="0:20193"/>
+                <LayoutComponent clip="true" width="180" height="26" styleId="0:20194" name="Menu New" id="0:20193">
+                    <LayoutComponentStyle flexDirectionValue="row" layoutWidthScaleType="fill" layoutHeightScaleType="fixed" layoutAlignmentType="centerLeft" paddingLeft="8" paddingLeftUnitsValue="points" cornerRadiusTL="2" name="Menu New Style" id="0:20194"/>
                     <Fill name="Fill"><SolidColor colorValue="FF0A0A0A" name="Color"/></Fill>
-                    <Text sizingValue="autoWidth" name="Menu New Label" id="0:20195">
+                    <Text sizingValue="autoWidth" name="Menu New Label" id="0:20196">
                         <LayoutParticipant layoutWidthScaleType="hug" layoutHeightScaleType="hug" name="Menu New Label Layout"/>
-                        <TextStylePaint fontSize="12" fontAssetId="0:92" name="Menu New Label Style" id="0:20196">
+                        <TextStylePaint fontSize="12" fontAssetId="0:92" name="Menu New Label Style" id="0:20197">
                             <Fill name="Fill"><SolidColor colorValue="FFFFFFFF" name="Color"/></Fill>
                         </TextStylePaint>
-                        <TextValueRun styleId="0:20196" text="New song" name="Run"></TextValueRun>
+                        <TextValueRun styleId="0:20197" text="New song" name="Run"></TextValueRun>
                     </Text>
                 </LayoutComponent>
-                <LayoutComponent clip="true" width="180" height="26" styleId="0:20198" name="Menu Examples" id="0:20197">
-                    <LayoutComponentStyle flexDirectionValue="row" layoutWidthScaleType="fill" layoutHeightScaleType="fixed" layoutAlignmentType="centerLeft" paddingLeft="8" paddingLeftUnitsValue="points" cornerRadiusTL="2" name="Menu Examples Style" id="0:20198"/>
+                <LayoutComponent clip="true" width="180" height="26" styleId="0:20199" name="Menu Examples" id="0:20198">
+                    <LayoutComponentStyle flexDirectionValue="row" layoutWidthScaleType="fill" layoutHeightScaleType="fixed" layoutAlignmentType="centerLeft" paddingLeft="8" paddingLeftUnitsValue="points" cornerRadiusTL="2" name="Menu Examples Style" id="0:20199"/>
                     <Fill name="Fill"><SolidColor colorValue="FF0A0A0A" name="Color"/></Fill>
-                    <Text sizingValue="autoWidth" name="Menu Examples Label" id="0:20200">
+                    <Text sizingValue="autoWidth" name="Menu Examples Label" id="0:20201">
                         <LayoutParticipant layoutWidthScaleType="hug" layoutHeightScaleType="hug" name="Menu Examples Label Layout"/>
-                        <TextStylePaint fontSize="12" fontAssetId="0:92" name="Menu Examples Label Style" id="0:20201">
+                        <TextStylePaint fontSize="12" fontAssetId="0:92" name="Menu Examples Label Style" id="0:20202">
                             <Fill name="Fill"><SolidColor colorValue="FFFFFFFF" name="Color"/></Fill>
                         </TextStylePaint>
-                        <TextValueRun styleId="0:20201" text="Examples…" name="Run"></TextValueRun>
+                        <TextValueRun styleId="0:20202" text="Examples…" name="Run"></TextValueRun>
                     </Text>
                 </LayoutComponent>
-                <LayoutComponent clip="true" width="180" height="26" styleId="0:20203" name="Menu Export" id="0:20202">
-                    <LayoutComponentStyle flexDirectionValue="row" layoutWidthScaleType="fill" layoutHeightScaleType="fixed" layoutAlignmentType="centerLeft" paddingLeft="8" paddingLeftUnitsValue="points" cornerRadiusTL="2" name="Menu Export Style" id="0:20203"/>
+                <LayoutComponent clip="true" width="180" height="26" styleId="0:20204" name="Menu Export" id="0:20203">
+                    <LayoutComponentStyle flexDirectionValue="row" layoutWidthScaleType="fill" layoutHeightScaleType="fixed" layoutAlignmentType="centerLeft" paddingLeft="8" paddingLeftUnitsValue="points" cornerRadiusTL="2" name="Menu Export Style" id="0:20204"/>
                     <Fill name="Fill"><SolidColor colorValue="FF0A0A0A" name="Color"/></Fill>
-                    <Text sizingValue="autoWidth" name="Menu Export Label" id="0:20205">
+                    <Text sizingValue="autoWidth" name="Menu Export Label" id="0:20206">
                         <LayoutParticipant layoutWidthScaleType="hug" layoutHeightScaleType="hug" name="Menu Export Label Layout"/>
-                        <TextStylePaint fontSize="12" fontAssetId="0:92" name="Menu Export Label Style" id="0:20206">
+                        <TextStylePaint fontSize="12" fontAssetId="0:92" name="Menu Export Label Style" id="0:20207">
                             <Fill name="Fill"><SolidColor colorValue="FFFFFFFF" name="Color"/></Fill>
                         </TextStylePaint>
-                        <TextValueRun styleId="0:20206" text="Export WAV" name="Run">
-                            <DataBindContext sourcePathIds="0:20031-0:20173-0:20168" propertyKey="268"/>
+                        <TextValueRun styleId="0:20207" text="Export WAV" name="Run">
+                            <DataBindContext sourcePathIds="0:20031-0:20174-0:20168" propertyKey="268"/>
                         </TextValueRun>
                     </Text>
                 </LayoutComponent>
             </LayoutComponent>
-            <LayoutComponent clip="true" width="576" height="40" styleId="0:20211" name="Diagnostics Panel" id="0:20210">
-                <LayoutComponentStyle positionTypeValue="absolute" positionRight="8" positionRightUnitsValue="points" flexDirectionValue="column" layoutWidthScaleType="fixed" layoutHeightScaleType="hug" gapHorizontal="4" gapHorizontalUnitsValue="points" gapVertical="2" gapVerticalUnitsValue="points" paddingLeft="4" paddingLeftUnitsValue="points" paddingRight="4" paddingRightUnitsValue="points" paddingTop="4" paddingTopUnitsValue="points" paddingBottom="4" paddingBottomUnitsValue="points" cornerRadiusTL="3" displayValue="none" positionBottom="28" positionBottomUnitsValue="points" name="Diagnostics Panel Style" id="0:20211">
-                    <DataBindContext sourcePathIds="0:20031-0:20169-0:20042" propertyKey="596"/>
+            <LayoutComponent clip="true" width="576" height="40" styleId="0:20212" name="Diagnostics Panel" id="0:20211">
+                <LayoutComponentStyle positionTypeValue="absolute" positionRight="8" positionRightUnitsValue="points" flexDirectionValue="column" layoutWidthScaleType="fixed" layoutHeightScaleType="hug" gapHorizontal="4" gapHorizontalUnitsValue="points" gapVertical="2" gapVerticalUnitsValue="points" paddingLeft="4" paddingLeftUnitsValue="points" paddingRight="4" paddingRightUnitsValue="points" paddingTop="4" paddingTopUnitsValue="points" paddingBottom="4" paddingBottomUnitsValue="points" cornerRadiusTL="3" displayValue="none" positionBottom="28" positionBottomUnitsValue="points" name="Diagnostics Panel Style" id="0:20212">
+                    <DataBindContext sourcePathIds="0:20031-0:20170-0:20042" propertyKey="596"/>
                 </LayoutComponentStyle>
                 <Fill name="Fill"><SolidColor colorValue="FF0A0A0A" name="Color"/></Fill>
                 <Stroke thickness="1" name="Border"><SolidColor colorValue="FF666666" name="Color"/></Stroke>
-                <ArtboardComponentList name="Diagnostics Panel List" id="0:20209">
-                    <DataBindContext sourcePathIds="0:20031-0:20170-0:20104" propertyKey="800"/>
+                <ArtboardComponentList name="Diagnostics Panel List" id="0:20210">
+                    <DataBindContext sourcePathIds="0:20031-0:20171-0:20104" propertyKey="800"/>
                 </ArtboardComponentList>
             </LayoutComponent>
-            <LayoutComponent clip="true" width="1280" height="28" styleId="0:20234" name="Title Bar" id="0:20233">
-                <LayoutComponentStyle flexDirectionValue="row" layoutWidthScaleType="fill" layoutHeightScaleType="fixed" layoutAlignmentType="centerLeft" gapHorizontal="2" gapHorizontalUnitsValue="points" paddingLeft="8" paddingLeftUnitsValue="points" paddingRight="8" paddingRightUnitsValue="points" name="Title Bar Style" id="0:20234"/>
+            <LayoutComponent clip="true" width="1280" height="28" styleId="0:20235" name="Title Bar" id="0:20234">
+                <LayoutComponentStyle flexDirectionValue="row" layoutWidthScaleType="fill" layoutHeightScaleType="fixed" layoutAlignmentType="centerLeft" gapHorizontal="2" gapHorizontalUnitsValue="points" paddingLeft="8" paddingLeftUnitsValue="points" paddingRight="8" paddingRightUnitsValue="points" name="Title Bar Style" id="0:20235"/>
                 <Fill name="Fill"><SolidColor colorValue="FF0A0A0A" name="Color"/></Fill>
-                <LayoutComponent width="66" height="1" styleId="0:20226" name="Gap" id="0:20225">
-                    <LayoutComponentStyle layoutWidthScaleType="fixed" layoutHeightScaleType="fixed" name="Gap Style" id="0:20226"/>
+                <LayoutComponent width="66" height="1" styleId="0:20227" name="Gap" id="0:20226">
+                    <LayoutComponentStyle layoutWidthScaleType="fixed" layoutHeightScaleType="fixed" name="Gap Style" id="0:20227"/>
                 </LayoutComponent>
-                <Text sizingValue="autoWidth" name="App Name" id="0:20227">
+                <Text sizingValue="autoWidth" name="App Name" id="0:20228">
                     <LayoutParticipant layoutWidthScaleType="hug" layoutHeightScaleType="hug" name="App Name Layout"/>
-                    <TextStylePaint fontSize="13" fontAssetId="0:93" name="App Name Style" id="0:20228">
+                    <TextStylePaint fontSize="13" fontAssetId="0:93" name="App Name Style" id="0:20229">
                         <Fill name="Fill"><SolidColor colorValue="FFFFFFFF" name="Color"/></Fill>
                     </TextStylePaint>
-                    <TextValueRun styleId="0:20228" text="Partition" name="Run"></TextValueRun>
+                    <TextValueRun styleId="0:20229" text="Partition" name="Run"></TextValueRun>
                 </Text>
-                <LayoutComponent width="0" height="1" styleId="0:20230" name="Spring" id="0:20229">
-                    <LayoutComponentStyle layoutWidthScaleType="fill" layoutHeightScaleType="fixed" name="Spring Style" id="0:20230"/>
+                <LayoutComponent width="0" height="1" styleId="0:20231" name="Spring" id="0:20230">
+                    <LayoutComponentStyle layoutWidthScaleType="fill" layoutHeightScaleType="fixed" name="Spring Style" id="0:20231"/>
                 </LayoutComponent>
-                <LayoutComponent clip="false" width="10" height="24" styleId="0:20224" name="Song Group" id="0:20223">
-                    <LayoutComponentStyle flexDirectionValue="row" layoutWidthScaleType="hug" layoutHeightScaleType="hug" layoutAlignmentType="centerLeft" gapHorizontal="6" gapHorizontalUnitsValue="points" name="Song Group Style" id="0:20224">
-                        <DataBindContext sourcePathIds="0:20031-0:20169-0:20036" propertyKey="596"/>
+                <LayoutComponent clip="false" width="10" height="24" styleId="0:20225" name="Song Group" id="0:20224">
+                    <LayoutComponentStyle flexDirectionValue="row" layoutWidthScaleType="hug" layoutHeightScaleType="hug" layoutAlignmentType="centerLeft" gapHorizontal="6" gapHorizontalUnitsValue="points" name="Song Group Style" id="0:20225">
+                        <DataBindContext sourcePathIds="0:20031-0:20170-0:20036" propertyKey="596"/>
                     </LayoutComponentStyle>
-                    <Text sizingValue="autoWidth" name="Song Title" id="0:20219">
+                    <Text sizingValue="autoWidth" name="Song Title" id="0:20220">
                         <LayoutParticipant layoutWidthScaleType="hug" layoutHeightScaleType="hug" name="Song Title Layout"/>
-                        <TextStylePaint fontSize="13" fontAssetId="0:92" name="Song Title Style" id="0:20220">
+                        <TextStylePaint fontSize="13" fontAssetId="0:92" name="Song Title Style" id="0:20221">
                             <Fill name="Fill"><SolidColor colorValue="FFFFFFFF" name="Color"/></Fill>
                         </TextStylePaint>
-                        <TextValueRun styleId="0:20220" text="" name="Run">
-                            <DataBindContext sourcePathIds="0:20031-0:20170-0:20101" propertyKey="268"/>
+                        <TextValueRun styleId="0:20221" text="" name="Run">
+                            <DataBindContext sourcePathIds="0:20031-0:20171-0:20101" propertyKey="268"/>
                         </TextValueRun>
                     </Text>
-                    <Text sizingValue="autoWidth" name="Dot" id="0:20221">
+                    <Text sizingValue="autoWidth" name="Dot" id="0:20222">
                         <LayoutParticipant layoutWidthScaleType="hug" layoutHeightScaleType="hug" name="Dot Layout"/>
-                        <TextStylePaint fontSize="12" fontAssetId="0:92" name="Dot Style" id="0:20222">
+                        <TextStylePaint fontSize="12" fontAssetId="0:92" name="Dot Style" id="0:20223">
                             <Fill name="Fill"><SolidColor colorValue="FF808080" name="Color"/></Fill>
                         </TextStylePaint>
-                        <TextValueRun styleId="0:20222" text="•" name="Run"></TextValueRun>
+                        <TextValueRun styleId="0:20223" text="•" name="Run"></TextValueRun>
                     </Text>
-                    <Text sizingValue="autoWidth" name="Status" id="0:20212">
+                    <Text sizingValue="autoWidth" name="Status" id="0:20213">
                         <LayoutParticipant layoutWidthScaleType="hug" layoutHeightScaleType="hug" name="Status Layout"/>
-                        <TextStylePaint fontSize="12" fontAssetId="0:92" name="Status Style" id="0:20213">
+                        <TextStylePaint fontSize="12" fontAssetId="0:92" name="Status Style" id="0:20214">
                             <Fill name="Fill"><SolidColor colorValue="FF808080" name="Color"/></Fill>
                         </TextStylePaint>
-                        <TextValueRun styleId="0:20213" text="In memory" name="Run">
-                            <DataBindContext sourcePathIds="0:20031-0:20169-0:20044" propertyKey="268"/>
+                        <TextValueRun styleId="0:20214" text="In memory" name="Run">
+                            <DataBindContext sourcePathIds="0:20031-0:20170-0:20044" propertyKey="268"/>
                         </TextValueRun>
                     </Text>
                 </LayoutComponent>
-                <LayoutComponent width="0" height="1" styleId="0:20232" name="Spring" id="0:20231">
-                    <LayoutComponentStyle layoutWidthScaleType="fill" layoutHeightScaleType="fixed" name="Spring Style" id="0:20232"/>
+                <LayoutComponent width="0" height="1" styleId="0:20233" name="Spring" id="0:20232">
+                    <LayoutComponentStyle layoutWidthScaleType="fill" layoutHeightScaleType="fixed" name="Spring Style" id="0:20233"/>
                 </LayoutComponent>
-                <LayoutComponent clip="true" width="40" height="24" styleId="0:20217" name="Docs" id="0:20216">
-                    <LayoutComponentStyle flexDirectionValue="row" layoutHeightScaleType="fixed" layoutAlignmentType="center" gapHorizontal="4" gapHorizontalUnitsValue="points" paddingLeft="7" paddingLeftUnitsValue="points" paddingRight="7" paddingRightUnitsValue="points" cornerRadiusTL="3" layoutWidthScaleType="hug" name="Docs Style" id="0:20217"/>
+                <LayoutComponent clip="true" width="40" height="24" styleId="0:20218" name="Docs" id="0:20217">
+                    <LayoutComponentStyle flexDirectionValue="row" layoutHeightScaleType="fixed" layoutAlignmentType="center" gapHorizontal="4" gapHorizontalUnitsValue="points" paddingLeft="7" paddingLeftUnitsValue="points" paddingRight="7" paddingRightUnitsValue="points" cornerRadiusTL="3" layoutWidthScaleType="hug" name="Docs Style" id="0:20218"/>
                     <Fill name="Fill"><SolidColor colorValue="FF151515" name="Color">
-                            <DataBindContext sourcePathIds="0:20031-0:20169-0:20058" propertyKey="37"/>
+                            <DataBindContext sourcePathIds="0:20031-0:20170-0:20058" propertyKey="37"/>
                         </SolidColor></Fill>
                     <Stroke thickness="1" name="Border"><SolidColor colorValue="FF303030" name="Color">
-                            <DataBindContext sourcePathIds="0:20031-0:20169-0:20060" propertyKey="37"/>
+                            <DataBindContext sourcePathIds="0:20031-0:20170-0:20060" propertyKey="37"/>
                         </SolidColor></Stroke>
-                    <Text sizingValue="autoWidth" name="Docs Label" id="0:20214">
+                    <Text sizingValue="autoWidth" name="Docs Label" id="0:20215">
                         <LayoutParticipant layoutWidthScaleType="hug" layoutHeightScaleType="hug" name="Docs Label Layout"/>
-                        <TextStylePaint fontSize="12" fontAssetId="0:92" name="Docs Label Style" id="0:20215">
+                        <TextStylePaint fontSize="12" fontAssetId="0:92" name="Docs Label Style" id="0:20216">
                             <Fill name="Fill"><SolidColor colorValue="FFA0A0A0" name="Color">
-                                <DataBindContext sourcePathIds="0:20031-0:20169-0:20059" propertyKey="37"/>
+                                <DataBindContext sourcePathIds="0:20031-0:20170-0:20059" propertyKey="37"/>
                             </SolidColor></Fill>
                         </TextStylePaint>
-                        <TextValueRun styleId="0:20215" text="Docs" name="Run"></TextValueRun>
+                        <TextValueRun styleId="0:20216" text="Docs" name="Run"></TextValueRun>
                     </Text>
                 </LayoutComponent>
             </LayoutComponent>
-            <LayoutComponent width="1280" height="1" styleId="0:20236" name="Title Rule" id="0:20235">
-                <LayoutComponentStyle layoutWidthScaleType="fill" layoutHeightScaleType="fixed" name="Title Rule Style" id="0:20236"/>
+            <LayoutComponent width="1280" height="1" styleId="0:20237" name="Title Rule" id="0:20236">
+                <LayoutComponentStyle layoutWidthScaleType="fill" layoutHeightScaleType="fixed" name="Title Rule Style" id="0:20237"/>
                 <Fill name="Fill"><SolidColor colorValue="FF303030" name="Color"/></Fill>
             </LayoutComponent>
-            <LayoutComponent clip="true" width="1280" height="38" styleId="0:20319" name="Transport" id="0:20318">
-                <LayoutComponentStyle flexDirectionValue="row" layoutWidthScaleType="fill" layoutHeightScaleType="fixed" layoutAlignmentType="centerLeft" gapHorizontal="4" gapHorizontalUnitsValue="points" paddingLeft="10" paddingLeftUnitsValue="points" paddingRight="10" paddingRightUnitsValue="points" name="Transport Style" id="0:20319"/>
+            <LayoutComponent clip="true" width="1280" height="38" styleId="0:20320" name="Transport" id="0:20319">
+                <LayoutComponentStyle flexDirectionValue="row" layoutWidthScaleType="fill" layoutHeightScaleType="fixed" layoutAlignmentType="centerLeft" gapHorizontal="4" gapHorizontalUnitsValue="points" paddingLeft="10" paddingLeftUnitsValue="points" paddingRight="10" paddingRightUnitsValue="points" name="Transport Style" id="0:20320"/>
                 <Fill name="Fill"><SolidColor colorValue="FF0A0A0A" name="Color"/></Fill>
-                <LayoutComponent clip="true" width="36" height="24" styleId="0:20239" name="Play" id="0:20238">
-                    <LayoutComponentStyle flexDirectionValue="row" layoutHeightScaleType="fixed" layoutAlignmentType="center" gapHorizontal="4" gapHorizontalUnitsValue="points" paddingLeft="7" paddingLeftUnitsValue="points" paddingRight="7" paddingRightUnitsValue="points" cornerRadiusTL="3" layoutWidthScaleType="fixed" name="Play Style" id="0:20239">
-                        <DataBindContext sourcePathIds="0:20031-0:20172-0:20145" propertyKey="596"/>
+                <LayoutComponent clip="true" width="36" height="24" styleId="0:20240" name="Play" id="0:20239">
+                    <LayoutComponentStyle flexDirectionValue="row" layoutHeightScaleType="fixed" layoutAlignmentType="center" gapHorizontal="4" gapHorizontalUnitsValue="points" paddingLeft="7" paddingLeftUnitsValue="points" paddingRight="7" paddingRightUnitsValue="points" cornerRadiusTL="3" layoutWidthScaleType="fixed" name="Play Style" id="0:20240">
+                        <DataBindContext sourcePathIds="0:20031-0:20173-0:20145" propertyKey="596"/>
                     </LayoutComponentStyle>
                     <Fill name="Fill"><SolidColor colorValue="FFFFFFFF" name="Color"/></Fill>
                     <Stroke thickness="1" name="Border"><SolidColor colorValue="FFFFFFFF" name="Color"/></Stroke>
-                    <Shape name="Play Icon" id="0:20237">
+                    <Shape name="Play Icon" id="0:20238">
                         <LayoutParticipant layoutWidthScaleType="hug" layoutHeightScaleType="hug" name="Play Icon Layout"/>
                         <Triangle rotation="1.5707963" width="11" height="10" name="Path"/>
                         <Fill name="Fill"><SolidColor colorValue="FF000000" name="Color"/></Fill>
                     </Shape>
                 </LayoutComponent>
-                <LayoutComponent clip="true" width="36" height="24" styleId="0:20243" name="Pause" id="0:20242">
-                    <LayoutComponentStyle flexDirectionValue="row" layoutHeightScaleType="fixed" layoutAlignmentType="center" gapHorizontal="4" gapHorizontalUnitsValue="points" paddingLeft="7" paddingLeftUnitsValue="points" paddingRight="7" paddingRightUnitsValue="points" cornerRadiusTL="3" layoutWidthScaleType="fixed" name="Pause Style" id="0:20243">
-                        <DataBindContext sourcePathIds="0:20031-0:20172-0:20146" propertyKey="596"/>
+                <LayoutComponent clip="true" width="36" height="24" styleId="0:20244" name="Pause" id="0:20243">
+                    <LayoutComponentStyle flexDirectionValue="row" layoutHeightScaleType="fixed" layoutAlignmentType="center" gapHorizontal="4" gapHorizontalUnitsValue="points" paddingLeft="7" paddingLeftUnitsValue="points" paddingRight="7" paddingRightUnitsValue="points" cornerRadiusTL="3" layoutWidthScaleType="fixed" name="Pause Style" id="0:20244">
+                        <DataBindContext sourcePathIds="0:20031-0:20173-0:20146" propertyKey="596"/>
                     </LayoutComponentStyle>
                     <Fill name="Fill"><SolidColor colorValue="FFFFFFFF" name="Color"/></Fill>
                     <Stroke thickness="1" name="Border"><SolidColor colorValue="FFFFFFFF" name="Color"/></Stroke>
-                    <Shape name="Pause Icon" id="0:20241">
+                    <Shape name="Pause Icon" id="0:20242">
                         <LayoutParticipant layoutWidthScaleType="hug" layoutHeightScaleType="hug" name="Pause Icon Layout"/>
                         <Rectangle x="-2.5" width="3" height="10" name="Left"/>
                         <Rectangle x="2.5" width="3" height="10" name="Right"/>
                         <Fill name="Fill"><SolidColor colorValue="FF000000" name="Color"/></Fill>
                     </Shape>
                 </LayoutComponent>
-                <LayoutComponent clip="true" width="30" height="24" styleId="0:20247" name="Stop" id="0:20246">
-                    <LayoutComponentStyle flexDirectionValue="row" layoutHeightScaleType="fixed" layoutAlignmentType="center" gapHorizontal="4" gapHorizontalUnitsValue="points" paddingLeft="7" paddingLeftUnitsValue="points" paddingRight="7" paddingRightUnitsValue="points" cornerRadiusTL="3" layoutWidthScaleType="fixed" name="Stop Style" id="0:20247"/>
+                <LayoutComponent clip="true" width="30" height="24" styleId="0:20248" name="Stop" id="0:20247">
+                    <LayoutComponentStyle flexDirectionValue="row" layoutHeightScaleType="fixed" layoutAlignmentType="center" gapHorizontal="4" gapHorizontalUnitsValue="points" paddingLeft="7" paddingLeftUnitsValue="points" paddingRight="7" paddingRightUnitsValue="points" cornerRadiusTL="3" layoutWidthScaleType="fixed" name="Stop Style" id="0:20248"/>
                     <Fill name="Fill"><SolidColor colorValue="FF151515" name="Color"/></Fill>
                     <Stroke thickness="1" name="Border"><SolidColor colorValue="FF303030" name="Color"/></Stroke>
-                    <Shape name="Stop Icon" id="0:20245">
+                    <Shape name="Stop Icon" id="0:20246">
                         <LayoutParticipant layoutWidthScaleType="hug" layoutHeightScaleType="hug" name="Stop Icon Layout"/>
                         <Rectangle width="9" height="9" name="Path"/>
                         <Fill name="Fill"><SolidColor colorValue="FFFFFFFF" name="Color"/></Fill>
                     </Shape>
                 </LayoutComponent>
-                <LayoutComponent width="12" height="1" styleId="0:20313" name="Gap" id="0:20312">
-                    <LayoutComponentStyle layoutWidthScaleType="fixed" layoutHeightScaleType="fixed" name="Gap Style" id="0:20313">
-                        <DataBindContext sourcePathIds="0:20031-0:20169-0:20036" propertyKey="596"/>
+                <LayoutComponent width="12" height="1" styleId="0:20314" name="Gap" id="0:20313">
+                    <LayoutComponentStyle layoutWidthScaleType="fixed" layoutHeightScaleType="fixed" name="Gap Style" id="0:20314">
+                        <DataBindContext sourcePathIds="0:20031-0:20170-0:20036" propertyKey="596"/>
                     </LayoutComponentStyle>
                 </LayoutComponent>
-                <LayoutComponent clip="false" width="10" height="24" styleId="0:20265" name="Toggles" id="0:20264">
-                    <LayoutComponentStyle flexDirectionValue="row" layoutWidthScaleType="hug" layoutHeightScaleType="hug" layoutAlignmentType="centerLeft" gapHorizontal="4" gapHorizontalUnitsValue="points" name="Toggles Style" id="0:20265">
-                        <DataBindContext sourcePathIds="0:20031-0:20169-0:20036" propertyKey="596"/>
+                <LayoutComponent clip="false" width="10" height="24" styleId="0:20266" name="Toggles" id="0:20265">
+                    <LayoutComponentStyle flexDirectionValue="row" layoutWidthScaleType="hug" layoutHeightScaleType="hug" layoutAlignmentType="centerLeft" gapHorizontal="4" gapHorizontalUnitsValue="points" name="Toggles Style" id="0:20266">
+                        <DataBindContext sourcePathIds="0:20031-0:20170-0:20036" propertyKey="596"/>
                     </LayoutComponentStyle>
-                    <LayoutComponent clip="true" width="40" height="24" styleId="0:20252" name="Loop" id="0:20251">
-                        <LayoutComponentStyle flexDirectionValue="row" layoutHeightScaleType="fixed" layoutAlignmentType="center" gapHorizontal="4" gapHorizontalUnitsValue="points" paddingLeft="7" paddingLeftUnitsValue="points" paddingRight="7" paddingRightUnitsValue="points" cornerRadiusTL="3" layoutWidthScaleType="hug" name="Loop Style" id="0:20252"/>
+                    <LayoutComponent clip="true" width="40" height="24" styleId="0:20253" name="Loop" id="0:20252">
+                        <LayoutComponentStyle flexDirectionValue="row" layoutHeightScaleType="fixed" layoutAlignmentType="center" gapHorizontal="4" gapHorizontalUnitsValue="points" paddingLeft="7" paddingLeftUnitsValue="points" paddingRight="7" paddingRightUnitsValue="points" cornerRadiusTL="3" layoutWidthScaleType="hug" name="Loop Style" id="0:20253"/>
                         <Fill name="Fill"><SolidColor colorValue="FF151515" name="Color">
-                                <DataBindContext sourcePathIds="0:20031-0:20169-0:20049" propertyKey="37"/>
+                                <DataBindContext sourcePathIds="0:20031-0:20170-0:20049" propertyKey="37"/>
                             </SolidColor></Fill>
                         <Stroke thickness="1" name="Border"><SolidColor colorValue="FF303030" name="Color">
-                                <DataBindContext sourcePathIds="0:20031-0:20169-0:20051" propertyKey="37"/>
+                                <DataBindContext sourcePathIds="0:20031-0:20170-0:20051" propertyKey="37"/>
                             </SolidColor></Stroke>
-                        <Text sizingValue="autoWidth" name="Loop Label" id="0:20249">
+                        <Text sizingValue="autoWidth" name="Loop Label" id="0:20250">
                             <LayoutParticipant layoutWidthScaleType="hug" layoutHeightScaleType="hug" name="Loop Label Layout"/>
-                            <TextStylePaint fontSize="12" fontAssetId="0:92" name="Loop Label Style" id="0:20250">
+                            <TextStylePaint fontSize="12" fontAssetId="0:92" name="Loop Label Style" id="0:20251">
                                 <Fill name="Fill"><SolidColor colorValue="FFA0A0A0" name="Color">
-                                    <DataBindContext sourcePathIds="0:20031-0:20169-0:20050" propertyKey="37"/>
+                                    <DataBindContext sourcePathIds="0:20031-0:20170-0:20050" propertyKey="37"/>
                                 </SolidColor></Fill>
                             </TextStylePaint>
-                            <TextValueRun styleId="0:20250" text="Loop" name="Run"></TextValueRun>
+                            <TextValueRun styleId="0:20251" text="Loop" name="Run"></TextValueRun>
                         </Text>
                     </LayoutComponent>
-                    <LayoutComponent clip="true" width="40" height="24" styleId="0:20257" name="Follow" id="0:20256">
-                        <LayoutComponentStyle flexDirectionValue="row" layoutHeightScaleType="fixed" layoutAlignmentType="center" gapHorizontal="4" gapHorizontalUnitsValue="points" paddingLeft="7" paddingLeftUnitsValue="points" paddingRight="7" paddingRightUnitsValue="points" cornerRadiusTL="3" layoutWidthScaleType="hug" name="Follow Style" id="0:20257"/>
+                    <LayoutComponent clip="true" width="40" height="24" styleId="0:20258" name="Follow" id="0:20257">
+                        <LayoutComponentStyle flexDirectionValue="row" layoutHeightScaleType="fixed" layoutAlignmentType="center" gapHorizontal="4" gapHorizontalUnitsValue="points" paddingLeft="7" paddingLeftUnitsValue="points" paddingRight="7" paddingRightUnitsValue="points" cornerRadiusTL="3" layoutWidthScaleType="hug" name="Follow Style" id="0:20258"/>
                         <Fill name="Fill"><SolidColor colorValue="FF151515" name="Color">
-                                <DataBindContext sourcePathIds="0:20031-0:20169-0:20052" propertyKey="37"/>
+                                <DataBindContext sourcePathIds="0:20031-0:20170-0:20052" propertyKey="37"/>
                             </SolidColor></Fill>
                         <Stroke thickness="1" name="Border"><SolidColor colorValue="FF303030" name="Color">
-                                <DataBindContext sourcePathIds="0:20031-0:20169-0:20054" propertyKey="37"/>
+                                <DataBindContext sourcePathIds="0:20031-0:20170-0:20054" propertyKey="37"/>
                             </SolidColor></Stroke>
-                        <Text sizingValue="autoWidth" name="Follow Label" id="0:20254">
+                        <Text sizingValue="autoWidth" name="Follow Label" id="0:20255">
                             <LayoutParticipant layoutWidthScaleType="hug" layoutHeightScaleType="hug" name="Follow Label Layout"/>
-                            <TextStylePaint fontSize="12" fontAssetId="0:92" name="Follow Label Style" id="0:20255">
+                            <TextStylePaint fontSize="12" fontAssetId="0:92" name="Follow Label Style" id="0:20256">
                                 <Fill name="Fill"><SolidColor colorValue="FFA0A0A0" name="Color">
-                                    <DataBindContext sourcePathIds="0:20031-0:20169-0:20053" propertyKey="37"/>
+                                    <DataBindContext sourcePathIds="0:20031-0:20170-0:20053" propertyKey="37"/>
                                 </SolidColor></Fill>
                             </TextStylePaint>
-                            <TextValueRun styleId="0:20255" text="Follow" name="Run"></TextValueRun>
+                            <TextValueRun styleId="0:20256" text="Follow" name="Run"></TextValueRun>
                         </Text>
                     </LayoutComponent>
-                    <LayoutComponent clip="true" width="40" height="24" styleId="0:20262" name="Collapse" id="0:20261">
-                        <LayoutComponentStyle flexDirectionValue="row" layoutHeightScaleType="fixed" layoutAlignmentType="center" gapHorizontal="4" gapHorizontalUnitsValue="points" paddingLeft="7" paddingLeftUnitsValue="points" paddingRight="7" paddingRightUnitsValue="points" cornerRadiusTL="3" layoutWidthScaleType="hug" name="Collapse Style" id="0:20262"/>
+                    <LayoutComponent clip="true" width="40" height="24" styleId="0:20263" name="Collapse" id="0:20262">
+                        <LayoutComponentStyle flexDirectionValue="row" layoutHeightScaleType="fixed" layoutAlignmentType="center" gapHorizontal="4" gapHorizontalUnitsValue="points" paddingLeft="7" paddingLeftUnitsValue="points" paddingRight="7" paddingRightUnitsValue="points" cornerRadiusTL="3" layoutWidthScaleType="hug" name="Collapse Style" id="0:20263"/>
                         <Fill name="Fill"><SolidColor colorValue="FF151515" name="Color">
-                                <DataBindContext sourcePathIds="0:20031-0:20169-0:20055" propertyKey="37"/>
+                                <DataBindContext sourcePathIds="0:20031-0:20170-0:20055" propertyKey="37"/>
                             </SolidColor></Fill>
                         <Stroke thickness="1" name="Border"><SolidColor colorValue="FF303030" name="Color">
-                                <DataBindContext sourcePathIds="0:20031-0:20169-0:20057" propertyKey="37"/>
+                                <DataBindContext sourcePathIds="0:20031-0:20170-0:20057" propertyKey="37"/>
                             </SolidColor></Stroke>
-                        <Text sizingValue="autoWidth" name="Collapse Label" id="0:20259">
+                        <Text sizingValue="autoWidth" name="Collapse Label" id="0:20260">
                             <LayoutParticipant layoutWidthScaleType="hug" layoutHeightScaleType="hug" name="Collapse Label Layout"/>
-                            <TextStylePaint fontSize="12" fontAssetId="0:92" name="Collapse Label Style" id="0:20260">
+                            <TextStylePaint fontSize="12" fontAssetId="0:92" name="Collapse Label Style" id="0:20261">
                                 <Fill name="Fill"><SolidColor colorValue="FFA0A0A0" name="Color">
-                                    <DataBindContext sourcePathIds="0:20031-0:20169-0:20056" propertyKey="37"/>
+                                    <DataBindContext sourcePathIds="0:20031-0:20170-0:20056" propertyKey="37"/>
                                 </SolidColor></Fill>
                             </TextStylePaint>
-                            <TextValueRun styleId="0:20260" text="Collapse all" name="Run">
-                                <DataBindContext sourcePathIds="0:20031-0:20171-0:20123" propertyKey="268"/>
+                            <TextValueRun styleId="0:20261" text="Collapse all" name="Run">
+                                <DataBindContext sourcePathIds="0:20031-0:20172-0:20123" propertyKey="268"/>
                             </TextValueRun>
                         </Text>
                     </LayoutComponent>
                 </LayoutComponent>
-                <LayoutComponent width="8" height="1" styleId="0:20315" name="Gap" id="0:20314">
-                    <LayoutComponentStyle layoutWidthScaleType="fixed" layoutHeightScaleType="fixed" name="Gap Style" id="0:20315"/>
+                <LayoutComponent width="8" height="1" styleId="0:20316" name="Gap" id="0:20315">
+                    <LayoutComponentStyle layoutWidthScaleType="fixed" layoutHeightScaleType="fixed" name="Gap Style" id="0:20316"/>
                 </LayoutComponent>
-                <LayoutComponent width="1" height="20" styleId="0:20267" name="Divider" id="0:20266">
-                    <LayoutComponentStyle layoutWidthScaleType="fixed" layoutHeightScaleType="fixed" marginLeft="6" marginLeftUnitsValue="points" marginRight="6" marginRightUnitsValue="points" name="Divider Style" id="0:20267"/>
+                <LayoutComponent width="1" height="20" styleId="0:20268" name="Divider" id="0:20267">
+                    <LayoutComponentStyle layoutWidthScaleType="fixed" layoutHeightScaleType="fixed" marginLeft="6" marginLeftUnitsValue="points" marginRight="6" marginRightUnitsValue="points" name="Divider Style" id="0:20268"/>
                     <Fill name="Fill"><SolidColor colorValue="FF303030" name="Color"/></Fill>
                 </LayoutComponent>
-                <Text sizingValue="autoWidth" name="Position" id="0:20268">
+                <Text sizingValue="autoWidth" name="Position" id="0:20269">
                     <LayoutParticipant layoutWidthScaleType="hug" layoutHeightScaleType="hug" name="Position Layout"/>
-                    <TextStylePaint fontSize="16" fontAssetId="0:90" name="Position Style" id="0:20269">
+                    <TextStylePaint fontSize="16" fontAssetId="0:90" name="Position Style" id="0:20270">
                         <Fill name="Fill"><SolidColor colorValue="FFFFFFFF" name="Color"/></Fill>
                     </TextStylePaint>
-                    <TextValueRun styleId="0:20269" text="001.1" name="Run">
-                        <DataBindContext sourcePathIds="0:20031-0:20172-0:20140" propertyKey="268"/>
+                    <TextValueRun styleId="0:20270" text="001.1" name="Run">
+                        <DataBindContext sourcePathIds="0:20031-0:20173-0:20140" propertyKey="268"/>
                     </TextValueRun>
                 </Text>
-                <LayoutComponent width="1" height="20" styleId="0:20271" name="Divider" id="0:20270">
-                    <LayoutComponentStyle layoutWidthScaleType="fixed" layoutHeightScaleType="fixed" marginLeft="6" marginLeftUnitsValue="points" marginRight="6" marginRightUnitsValue="points" name="Divider Style" id="0:20271"/>
+                <LayoutComponent width="1" height="20" styleId="0:20272" name="Divider" id="0:20271">
+                    <LayoutComponentStyle layoutWidthScaleType="fixed" layoutHeightScaleType="fixed" marginLeft="6" marginLeftUnitsValue="points" marginRight="6" marginRightUnitsValue="points" name="Divider Style" id="0:20272"/>
                     <Fill name="Fill"><SolidColor colorValue="FF303030" name="Color"/></Fill>
                 </LayoutComponent>
-                <Text sizingValue="autoWidth" name="Time" id="0:20272">
+                <Text sizingValue="autoWidth" name="Time" id="0:20273">
                     <LayoutParticipant layoutWidthScaleType="hug" layoutHeightScaleType="hug" name="Time Layout"/>
-                    <TextStylePaint fontSize="13" fontAssetId="0:90" name="Time Style" id="0:20273">
+                    <TextStylePaint fontSize="13" fontAssetId="0:90" name="Time Style" id="0:20274">
                         <Fill name="Fill"><SolidColor colorValue="FFA0A0A0" name="Color"/></Fill>
                     </TextStylePaint>
-                    <TextValueRun styleId="0:20273" text="00:00.0" name="Run">
-                        <DataBindContext sourcePathIds="0:20031-0:20172-0:20148" propertyKey="268"/>
+                    <TextValueRun styleId="0:20274" text="00:00.0" name="Run">
+                        <DataBindContext sourcePathIds="0:20031-0:20173-0:20148" propertyKey="268"/>
                     </TextValueRun>
                 </Text>
-                <LayoutComponent clip="false" width="10" height="24" styleId="0:20285" name="Tempo Group" id="0:20284">
-                    <LayoutComponentStyle flexDirectionValue="row" layoutWidthScaleType="hug" layoutHeightScaleType="hug" layoutAlignmentType="centerLeft" gapHorizontal="4" gapHorizontalUnitsValue="points" name="Tempo Group Style" id="0:20285">
-                        <DataBindContext sourcePathIds="0:20031-0:20169-0:20036" propertyKey="596"/>
+                <LayoutComponent clip="false" width="10" height="24" styleId="0:20286" name="Tempo Group" id="0:20285">
+                    <LayoutComponentStyle flexDirectionValue="row" layoutWidthScaleType="hug" layoutHeightScaleType="hug" layoutAlignmentType="centerLeft" gapHorizontal="4" gapHorizontalUnitsValue="points" name="Tempo Group Style" id="0:20286">
+                        <DataBindContext sourcePathIds="0:20031-0:20170-0:20036" propertyKey="596"/>
                     </LayoutComponentStyle>
-                    <LayoutComponent width="1" height="20" styleId="0:20275" name="Divider" id="0:20274">
-                        <LayoutComponentStyle layoutWidthScaleType="fixed" layoutHeightScaleType="fixed" marginLeft="6" marginLeftUnitsValue="points" marginRight="6" marginRightUnitsValue="points" name="Divider Style" id="0:20275"/>
+                    <LayoutComponent width="1" height="20" styleId="0:20276" name="Divider" id="0:20275">
+                        <LayoutComponentStyle layoutWidthScaleType="fixed" layoutHeightScaleType="fixed" marginLeft="6" marginLeftUnitsValue="points" marginRight="6" marginRightUnitsValue="points" name="Divider Style" id="0:20276"/>
                         <Fill name="Fill"><SolidColor colorValue="FF303030" name="Color"/></Fill>
                     </LayoutComponent>
-                    <Text sizingValue="autoWidth" name="Tempo" id="0:20276">
+                    <Text sizingValue="autoWidth" name="Tempo" id="0:20277">
                         <LayoutParticipant layoutWidthScaleType="hug" layoutHeightScaleType="hug" name="Tempo Layout"/>
-                        <TextStylePaint fontSize="13" fontAssetId="0:90" name="Tempo Style" id="0:20277">
+                        <TextStylePaint fontSize="13" fontAssetId="0:90" name="Tempo Style" id="0:20278">
                             <Fill name="Fill"><SolidColor colorValue="FFFFFFFF" name="Color"/></Fill>
                         </TextStylePaint>
-                        <TextValueRun styleId="0:20277" text="120" name="Run">
-                            <DataBindContext sourcePathIds="0:20031-0:20172-0:20149" propertyKey="268"/>
+                        <TextValueRun styleId="0:20278" text="120" name="Run">
+                            <DataBindContext sourcePathIds="0:20031-0:20173-0:20149" propertyKey="268"/>
                         </TextValueRun>
                     </Text>
-                    <Text sizingValue="autoWidth" name="BPM" id="0:20278">
+                    <Text sizingValue="autoWidth" name="BPM" id="0:20279">
                         <LayoutParticipant layoutWidthScaleType="hug" layoutHeightScaleType="hug" name="BPM Layout"/>
-                        <TextStylePaint fontSize="11" fontAssetId="0:92" name="BPM Style" id="0:20279">
+                        <TextStylePaint fontSize="11" fontAssetId="0:92" name="BPM Style" id="0:20280">
                             <Fill name="Fill"><SolidColor colorValue="FF808080" name="Color"/></Fill>
                         </TextStylePaint>
-                        <TextValueRun styleId="0:20279" text="BPM" name="Run"></TextValueRun>
+                        <TextValueRun styleId="0:20280" text="BPM" name="Run"></TextValueRun>
                     </Text>
-                    <LayoutComponent width="1" height="20" styleId="0:20281" name="Divider" id="0:20280">
-                        <LayoutComponentStyle layoutWidthScaleType="fixed" layoutHeightScaleType="fixed" marginLeft="6" marginLeftUnitsValue="points" marginRight="6" marginRightUnitsValue="points" name="Divider Style" id="0:20281"/>
+                    <LayoutComponent width="1" height="20" styleId="0:20282" name="Divider" id="0:20281">
+                        <LayoutComponentStyle layoutWidthScaleType="fixed" layoutHeightScaleType="fixed" marginLeft="6" marginLeftUnitsValue="points" marginRight="6" marginRightUnitsValue="points" name="Divider Style" id="0:20282"/>
                         <Fill name="Fill"><SolidColor colorValue="FF303030" name="Color"/></Fill>
                     </LayoutComponent>
-                    <Text sizingValue="autoWidth" name="Meter" id="0:20282">
+                    <Text sizingValue="autoWidth" name="Meter" id="0:20283">
                         <LayoutParticipant layoutWidthScaleType="hug" layoutHeightScaleType="hug" name="Meter Layout"/>
-                        <TextStylePaint fontSize="13" fontAssetId="0:90" name="Meter Style" id="0:20283">
+                        <TextStylePaint fontSize="13" fontAssetId="0:90" name="Meter Style" id="0:20284">
                             <Fill name="Fill"><SolidColor colorValue="FFA0A0A0" name="Color"/></Fill>
                         </TextStylePaint>
-                        <TextValueRun styleId="0:20283" text="4/4" name="Run">
-                            <DataBindContext sourcePathIds="0:20031-0:20172-0:20150" propertyKey="268"/>
+                        <TextValueRun styleId="0:20284" text="4/4" name="Run">
+                            <DataBindContext sourcePathIds="0:20031-0:20173-0:20150" propertyKey="268"/>
                         </TextValueRun>
                     </Text>
                 </LayoutComponent>
-                <LayoutComponent width="0" height="1" styleId="0:20317" name="Spring" id="0:20316">
-                    <LayoutComponentStyle layoutWidthScaleType="fill" layoutHeightScaleType="fixed" name="Spring Style" id="0:20317"/>
+                <LayoutComponent width="0" height="1" styleId="0:20318" name="Spring" id="0:20317">
+                    <LayoutComponentStyle layoutWidthScaleType="fill" layoutHeightScaleType="fixed" name="Spring Style" id="0:20318"/>
                 </LayoutComponent>
-                <LayoutComponent clip="false" width="10" height="24" styleId="0:20305" name="Actions" id="0:20304">
-                    <LayoutComponentStyle flexDirectionValue="row" layoutWidthScaleType="hug" layoutHeightScaleType="hug" layoutAlignmentType="centerLeft" gapHorizontal="4" gapHorizontalUnitsValue="points" name="Actions Style" id="0:20305">
-                        <DataBindContext sourcePathIds="0:20031-0:20169-0:20036" propertyKey="596"/>
+                <LayoutComponent clip="false" width="10" height="24" styleId="0:20306" name="Actions" id="0:20305">
+                    <LayoutComponentStyle flexDirectionValue="row" layoutWidthScaleType="hug" layoutHeightScaleType="hug" layoutAlignmentType="centerLeft" gapHorizontal="4" gapHorizontalUnitsValue="points" name="Actions Style" id="0:20306">
+                        <DataBindContext sourcePathIds="0:20031-0:20170-0:20036" propertyKey="596"/>
                     </LayoutComponentStyle>
-                    <LayoutComponent clip="true" width="40" height="24" styleId="0:20295" name="New" id="0:20294">
-                        <LayoutComponentStyle flexDirectionValue="row" layoutHeightScaleType="fixed" layoutAlignmentType="center" gapHorizontal="4" gapHorizontalUnitsValue="points" paddingLeft="7" paddingLeftUnitsValue="points" paddingRight="7" paddingRightUnitsValue="points" cornerRadiusTL="3" layoutWidthScaleType="hug" name="New Style" id="0:20295"/>
+                    <LayoutComponent clip="true" width="40" height="24" styleId="0:20296" name="New" id="0:20295">
+                        <LayoutComponentStyle flexDirectionValue="row" layoutHeightScaleType="fixed" layoutAlignmentType="center" gapHorizontal="4" gapHorizontalUnitsValue="points" paddingLeft="7" paddingLeftUnitsValue="points" paddingRight="7" paddingRightUnitsValue="points" cornerRadiusTL="3" layoutWidthScaleType="hug" name="New Style" id="0:20296"/>
                         <Fill name="Fill"><SolidColor colorValue="FF151515" name="Color"/></Fill>
                         <Stroke thickness="1" name="Border"><SolidColor colorValue="FF303030" name="Color"/></Stroke>
-                        <Text sizingValue="autoWidth" name="New Label" id="0:20292">
+                        <Text sizingValue="autoWidth" name="New Label" id="0:20293">
                             <LayoutParticipant layoutWidthScaleType="hug" layoutHeightScaleType="hug" name="New Label Layout"/>
-                            <TextStylePaint fontSize="12" fontAssetId="0:92" name="New Label Style" id="0:20293">
+                            <TextStylePaint fontSize="12" fontAssetId="0:92" name="New Label Style" id="0:20294">
                                 <Fill name="Fill"><SolidColor colorValue="FFFFFFFF" name="Color"/></Fill>
                             </TextStylePaint>
-                            <TextValueRun styleId="0:20293" text="New" name="Run"></TextValueRun>
+                            <TextValueRun styleId="0:20294" text="New" name="Run"></TextValueRun>
                         </Text>
                     </LayoutComponent>
-                    <LayoutComponent clip="true" width="40" height="24" styleId="0:20290" name="Examples" id="0:20289">
-                        <LayoutComponentStyle flexDirectionValue="row" layoutHeightScaleType="fixed" layoutAlignmentType="center" gapHorizontal="4" gapHorizontalUnitsValue="points" paddingLeft="7" paddingLeftUnitsValue="points" paddingRight="7" paddingRightUnitsValue="points" cornerRadiusTL="3" layoutWidthScaleType="hug" name="Examples Style" id="0:20290"/>
+                    <LayoutComponent clip="true" width="40" height="24" styleId="0:20291" name="Examples" id="0:20290">
+                        <LayoutComponentStyle flexDirectionValue="row" layoutHeightScaleType="fixed" layoutAlignmentType="center" gapHorizontal="4" gapHorizontalUnitsValue="points" paddingLeft="7" paddingLeftUnitsValue="points" paddingRight="7" paddingRightUnitsValue="points" cornerRadiusTL="3" layoutWidthScaleType="hug" name="Examples Style" id="0:20291"/>
                         <Fill name="Fill"><SolidColor colorValue="FF151515" name="Color">
-                                <DataBindContext sourcePathIds="0:20031-0:20169-0:20064" propertyKey="37"/>
+                                <DataBindContext sourcePathIds="0:20031-0:20170-0:20064" propertyKey="37"/>
                             </SolidColor></Fill>
                         <Stroke thickness="1" name="Border"><SolidColor colorValue="FF303030" name="Color">
-                                <DataBindContext sourcePathIds="0:20031-0:20169-0:20066" propertyKey="37"/>
+                                <DataBindContext sourcePathIds="0:20031-0:20170-0:20066" propertyKey="37"/>
                             </SolidColor></Stroke>
-                        <Text sizingValue="autoWidth" name="Examples Label" id="0:20287">
+                        <Text sizingValue="autoWidth" name="Examples Label" id="0:20288">
                             <LayoutParticipant layoutWidthScaleType="hug" layoutHeightScaleType="hug" name="Examples Label Layout"/>
-                            <TextStylePaint fontSize="12" fontAssetId="0:92" name="Examples Label Style" id="0:20288">
+                            <TextStylePaint fontSize="12" fontAssetId="0:92" name="Examples Label Style" id="0:20289">
                                 <Fill name="Fill"><SolidColor colorValue="FFA0A0A0" name="Color">
-                                    <DataBindContext sourcePathIds="0:20031-0:20169-0:20065" propertyKey="37"/>
+                                    <DataBindContext sourcePathIds="0:20031-0:20170-0:20065" propertyKey="37"/>
                                 </SolidColor></Fill>
                             </TextStylePaint>
-                            <TextValueRun styleId="0:20288" text="Examples" name="Run">
-                                <DataBindContext sourcePathIds="0:20031-0:20170-0:20108" propertyKey="268"/>
+                            <TextValueRun styleId="0:20289" text="Examples" name="Run">
+                                <DataBindContext sourcePathIds="0:20031-0:20171-0:20108" propertyKey="268"/>
                             </TextValueRun>
                         </Text>
-                        <Shape name="Chevron" id="0:20286">
+                        <Shape name="Chevron" id="0:20287">
                             <LayoutParticipant layoutWidthScaleType="hug" layoutHeightScaleType="hug" name="Chevron Layout"/>
                             <Triangle rotation="3.14159265" width="7" height="4" name="Path"/>
                             <Fill name="Fill"><SolidColor colorValue="FFA0A0A0" name="Color"/></Fill>
                         </Shape>
                     </LayoutComponent>
-                    <LayoutComponent width="8" height="1" styleId="0:20298" name="Gap" id="0:20297">
-                        <LayoutComponentStyle layoutWidthScaleType="fixed" layoutHeightScaleType="fixed" name="Gap Style" id="0:20298"/>
+                    <LayoutComponent width="8" height="1" styleId="0:20299" name="Gap" id="0:20298">
+                        <LayoutComponentStyle layoutWidthScaleType="fixed" layoutHeightScaleType="fixed" name="Gap Style" id="0:20299"/>
                     </LayoutComponent>
-                    <LayoutComponent clip="true" width="40" height="24" styleId="0:20302" name="Export" id="0:20301">
-                        <LayoutComponentStyle flexDirectionValue="row" layoutHeightScaleType="fixed" layoutAlignmentType="center" gapHorizontal="4" gapHorizontalUnitsValue="points" paddingLeft="7" paddingLeftUnitsValue="points" paddingRight="7" paddingRightUnitsValue="points" cornerRadiusTL="3" layoutWidthScaleType="hug" name="Export Style" id="0:20302"/>
+                    <LayoutComponent clip="true" width="40" height="24" styleId="0:20303" name="Export" id="0:20302">
+                        <LayoutComponentStyle flexDirectionValue="row" layoutHeightScaleType="fixed" layoutAlignmentType="center" gapHorizontal="4" gapHorizontalUnitsValue="points" paddingLeft="7" paddingLeftUnitsValue="points" paddingRight="7" paddingRightUnitsValue="points" cornerRadiusTL="3" layoutWidthScaleType="hug" name="Export Style" id="0:20303"/>
                         <Fill name="Fill"><SolidColor colorValue="FF222222" name="Color"/></Fill>
                         <Stroke thickness="1" name="Border"><SolidColor colorValue="FF303030" name="Color"/></Stroke>
-                        <Text sizingValue="autoWidth" name="Export Label" id="0:20299">
+                        <Text sizingValue="autoWidth" name="Export Label" id="0:20300">
                             <LayoutParticipant layoutWidthScaleType="hug" layoutHeightScaleType="hug" name="Export Label Layout"/>
-                            <TextStylePaint fontSize="12" fontAssetId="0:92" name="Export Label Style" id="0:20300">
+                            <TextStylePaint fontSize="12" fontAssetId="0:92" name="Export Label Style" id="0:20301">
                                 <Fill name="Fill"><SolidColor colorValue="FFFFFFFF" name="Color"/></Fill>
                             </TextStylePaint>
-                            <TextValueRun styleId="0:20300" text="Export WAV" name="Run">
-                                <DataBindContext sourcePathIds="0:20031-0:20173-0:20168" propertyKey="268"/>
+                            <TextValueRun styleId="0:20301" text="Export WAV" name="Run">
+                                <DataBindContext sourcePathIds="0:20031-0:20174-0:20168" propertyKey="268"/>
                             </TextValueRun>
                         </Text>
                     </LayoutComponent>
                 </LayoutComponent>
-                <LayoutComponent clip="true" width="40" height="24" styleId="0:20310" name="More" id="0:20309">
-                    <LayoutComponentStyle flexDirectionValue="row" layoutHeightScaleType="fixed" layoutAlignmentType="center" gapHorizontal="4" gapHorizontalUnitsValue="points" paddingLeft="7" paddingLeftUnitsValue="points" paddingRight="7" paddingRightUnitsValue="points" cornerRadiusTL="3" layoutWidthScaleType="hug" name="More Style" id="0:20310">
-                        <DataBindContext sourcePathIds="0:20031-0:20169-0:20037" propertyKey="596"/>
+                <LayoutComponent clip="true" width="40" height="24" styleId="0:20311" name="More" id="0:20310">
+                    <LayoutComponentStyle flexDirectionValue="row" layoutHeightScaleType="fixed" layoutAlignmentType="center" gapHorizontal="4" gapHorizontalUnitsValue="points" paddingLeft="7" paddingLeftUnitsValue="points" paddingRight="7" paddingRightUnitsValue="points" cornerRadiusTL="3" layoutWidthScaleType="hug" name="More Style" id="0:20311">
+                        <DataBindContext sourcePathIds="0:20031-0:20170-0:20037" propertyKey="596"/>
                     </LayoutComponentStyle>
                     <Fill name="Fill"><SolidColor colorValue="FF151515" name="Color">
-                            <DataBindContext sourcePathIds="0:20031-0:20169-0:20061" propertyKey="37"/>
+                            <DataBindContext sourcePathIds="0:20031-0:20170-0:20061" propertyKey="37"/>
                         </SolidColor></Fill>
                     <Stroke thickness="1" name="Border"><SolidColor colorValue="FF303030" name="Color">
-                            <DataBindContext sourcePathIds="0:20031-0:20169-0:20063" propertyKey="37"/>
+                            <DataBindContext sourcePathIds="0:20031-0:20170-0:20063" propertyKey="37"/>
                         </SolidColor></Stroke>
-                    <Text sizingValue="autoWidth" name="More Label" id="0:20307">
+                    <Text sizingValue="autoWidth" name="More Label" id="0:20308">
                         <LayoutParticipant layoutWidthScaleType="hug" layoutHeightScaleType="hug" name="More Label Layout"/>
-                        <TextStylePaint fontSize="12" fontAssetId="0:92" name="More Label Style" id="0:20308">
+                        <TextStylePaint fontSize="12" fontAssetId="0:92" name="More Label Style" id="0:20309">
                             <Fill name="Fill"><SolidColor colorValue="FFA0A0A0" name="Color">
-                                <DataBindContext sourcePathIds="0:20031-0:20169-0:20062" propertyKey="37"/>
+                                <DataBindContext sourcePathIds="0:20031-0:20170-0:20062" propertyKey="37"/>
                             </SolidColor></Fill>
                         </TextStylePaint>
-                        <TextValueRun styleId="0:20308" text="More" name="Run"></TextValueRun>
+                        <TextValueRun styleId="0:20309" text="More" name="Run"></TextValueRun>
                     </Text>
-                    <Shape name="Dots" id="0:20306">
+                    <Shape name="Dots" id="0:20307">
                         <LayoutParticipant layoutWidthScaleType="hug" layoutHeightScaleType="hug" name="Dots Layout"/>
                         <Ellipse x="-5" width="3" height="3" name="A"/>
                         <Ellipse width="3" height="3" name="B"/>
@@ -440,8 +440,8 @@
                     </Shape>
                 </LayoutComponent>
             </LayoutComponent>
-            <LayoutComponent width="1280" height="1" styleId="0:20321" name="Transport Rule" id="0:20320">
-                <LayoutComponentStyle layoutWidthScaleType="fill" layoutHeightScaleType="fixed" name="Transport Rule Style" id="0:20321"/>
+            <LayoutComponent width="1280" height="1" styleId="0:20322" name="Transport Rule" id="0:20321">
+                <LayoutComponentStyle layoutWidthScaleType="fill" layoutHeightScaleType="fixed" name="Transport Rule Style" id="0:20322"/>
                 <Fill name="Fill"><SolidColor colorValue="FF303030" name="Color"/></Fill>
             </LayoutComponent>
             <LayoutComponent clip="true" width="1280" height="700" styleId="0:15" name="Editor" id="0:14">
@@ -450,75 +450,75 @@
                     <FocusData name="Focus" id="0:13"/>
                 </ScriptedLayout>
             </LayoutComponent>
-            <LayoutComponent width="1280" height="1" styleId="0:20323" name="Footer Rule" id="0:20322">
-                <LayoutComponentStyle layoutWidthScaleType="fill" layoutHeightScaleType="fixed" name="Footer Rule Style" id="0:20323"/>
+            <LayoutComponent width="1280" height="1" styleId="0:20324" name="Footer Rule" id="0:20323">
+                <LayoutComponentStyle layoutWidthScaleType="fill" layoutHeightScaleType="fixed" name="Footer Rule Style" id="0:20324"/>
                 <Fill name="Fill"><SolidColor colorValue="FF303030" name="Color"/></Fill>
             </LayoutComponent>
-            <LayoutComponent clip="true" width="1280" height="24" styleId="0:20343" name="Footer" id="0:20342">
-                <LayoutComponentStyle flexDirectionValue="row" layoutWidthScaleType="fill" layoutHeightScaleType="fixed" layoutAlignmentType="centerLeft" gapHorizontal="4" gapHorizontalUnitsValue="points" paddingLeft="10" paddingLeftUnitsValue="points" paddingRight="10" paddingRightUnitsValue="points" name="Footer Style" id="0:20343"/>
+            <LayoutComponent clip="true" width="1280" height="24" styleId="0:20344" name="Footer" id="0:20343">
+                <LayoutComponentStyle flexDirectionValue="row" layoutWidthScaleType="fill" layoutHeightScaleType="fixed" layoutAlignmentType="centerLeft" gapHorizontal="4" gapHorizontalUnitsValue="points" paddingLeft="10" paddingLeftUnitsValue="points" paddingRight="10" paddingRightUnitsValue="points" name="Footer Style" id="0:20344"/>
                 <Fill name="Fill"><SolidColor colorValue="FF0A0A0A" name="Color"/></Fill>
-                <Text sizingValue="autoWidth" name="Breadcrumb" id="0:20324">
+                <Text sizingValue="autoWidth" name="Breadcrumb" id="0:20325">
                     <LayoutParticipant layoutWidthScaleType="fill" layoutHeightScaleType="hug" name="Breadcrumb Layout"/>
-                    <TextStylePaint fontSize="12" fontAssetId="0:92" name="Breadcrumb Style" id="0:20325">
+                    <TextStylePaint fontSize="12" fontAssetId="0:92" name="Breadcrumb Style" id="0:20326">
                         <Fill name="Fill"><SolidColor colorValue="FFA0A0A0" name="Color"/></Fill>
                     </TextStylePaint>
-                    <TextValueRun styleId="0:20325" text="" name="Run">
-                        <DataBindContext sourcePathIds="0:20031-0:20171-0:20119" propertyKey="268"/>
+                    <TextValueRun styleId="0:20326" text="" name="Run">
+                        <DataBindContext sourcePathIds="0:20031-0:20172-0:20119" propertyKey="268"/>
                     </TextValueRun>
                 </Text>
-                <Text sizingValue="autoWidth" name="Voices" id="0:20326">
+                <Text sizingValue="autoWidth" name="Voices" id="0:20327">
                     <LayoutParticipant layoutWidthScaleType="hug" layoutHeightScaleType="hug" name="Voices Layout"/>
-                    <TextStylePaint fontSize="12" fontAssetId="0:92" name="Voices Style" id="0:20327">
+                    <TextStylePaint fontSize="12" fontAssetId="0:92" name="Voices Style" id="0:20328">
                         <Fill name="Fill"><SolidColor colorValue="FF808080" name="Color"/></Fill>
                     </TextStylePaint>
-                    <TextValueRun styleId="0:20327" text="0 voices" name="Run">
-                        <DataBindContext sourcePathIds="0:20031-0:20172-0:20144" propertyKey="268"/>
+                    <TextValueRun styleId="0:20328" text="0 voices" name="Run">
+                        <DataBindContext sourcePathIds="0:20031-0:20173-0:20144" propertyKey="268"/>
                     </TextValueRun>
                 </Text>
-                <LayoutComponent width="1" height="20" styleId="0:20329" name="Divider" id="0:20328">
-                    <LayoutComponentStyle layoutWidthScaleType="fixed" layoutHeightScaleType="fixed" marginLeft="6" marginLeftUnitsValue="points" marginRight="6" marginRightUnitsValue="points" name="Divider Style" id="0:20329">
-                        <DataBindContext sourcePathIds="0:20031-0:20169-0:20036" propertyKey="596"/>
+                <LayoutComponent width="1" height="20" styleId="0:20330" name="Divider" id="0:20329">
+                    <LayoutComponentStyle layoutWidthScaleType="fixed" layoutHeightScaleType="fixed" marginLeft="6" marginLeftUnitsValue="points" marginRight="6" marginRightUnitsValue="points" name="Divider Style" id="0:20330">
+                        <DataBindContext sourcePathIds="0:20031-0:20170-0:20036" propertyKey="596"/>
                     </LayoutComponentStyle>
                     <Fill name="Fill"><SolidColor colorValue="FF303030" name="Color"/></Fill>
                 </LayoutComponent>
-                <LayoutComponent clip="false" width="10" height="24" styleId="0:20333" name="Rate Group" id="0:20332">
-                    <LayoutComponentStyle flexDirectionValue="row" layoutWidthScaleType="hug" layoutHeightScaleType="hug" layoutAlignmentType="centerLeft" gapHorizontal="4" gapHorizontalUnitsValue="points" name="Rate Group Style" id="0:20333">
-                        <DataBindContext sourcePathIds="0:20031-0:20169-0:20036" propertyKey="596"/>
+                <LayoutComponent clip="false" width="10" height="24" styleId="0:20334" name="Rate Group" id="0:20333">
+                    <LayoutComponentStyle flexDirectionValue="row" layoutWidthScaleType="hug" layoutHeightScaleType="hug" layoutAlignmentType="centerLeft" gapHorizontal="4" gapHorizontalUnitsValue="points" name="Rate Group Style" id="0:20334">
+                        <DataBindContext sourcePathIds="0:20031-0:20170-0:20036" propertyKey="596"/>
                     </LayoutComponentStyle>
-                    <Text sizingValue="autoWidth" name="Rate" id="0:20330">
+                    <Text sizingValue="autoWidth" name="Rate" id="0:20331">
                         <LayoutParticipant layoutWidthScaleType="hug" layoutHeightScaleType="hug" name="Rate Layout"/>
-                        <TextStylePaint fontSize="12" fontAssetId="0:92" name="Rate Style" id="0:20331">
+                        <TextStylePaint fontSize="12" fontAssetId="0:92" name="Rate Style" id="0:20332">
                             <Fill name="Fill"><SolidColor colorValue="FF808080" name="Color"/></Fill>
                         </TextStylePaint>
-                        <TextValueRun styleId="0:20331" text="48 kHz" name="Run">
-                            <DataBindContext sourcePathIds="0:20031-0:20169-0:20045" propertyKey="268"/>
+                        <TextValueRun styleId="0:20332" text="48 kHz" name="Run">
+                            <DataBindContext sourcePathIds="0:20031-0:20170-0:20045" propertyKey="268"/>
                         </TextValueRun>
                     </Text>
                 </LayoutComponent>
-                <LayoutComponent width="1" height="20" styleId="0:20335" name="Divider" id="0:20334">
-                    <LayoutComponentStyle layoutWidthScaleType="fixed" layoutHeightScaleType="fixed" marginLeft="6" marginLeftUnitsValue="points" marginRight="6" marginRightUnitsValue="points" name="Divider Style" id="0:20335"/>
+                <LayoutComponent width="1" height="20" styleId="0:20336" name="Divider" id="0:20335">
+                    <LayoutComponentStyle layoutWidthScaleType="fixed" layoutHeightScaleType="fixed" marginLeft="6" marginLeftUnitsValue="points" marginRight="6" marginRightUnitsValue="points" name="Divider Style" id="0:20336"/>
                     <Fill name="Fill"><SolidColor colorValue="FF303030" name="Color"/></Fill>
                 </LayoutComponent>
-                <LayoutComponent clip="true" width="40" height="24" styleId="0:20340" name="Diagnostics" id="0:20339">
-                    <LayoutComponentStyle flexDirectionValue="row" layoutHeightScaleType="fixed" layoutAlignmentType="center" gapHorizontal="4" gapHorizontalUnitsValue="points" paddingLeft="7" paddingLeftUnitsValue="points" paddingRight="7" paddingRightUnitsValue="points" cornerRadiusTL="3" layoutWidthScaleType="hug" name="Diagnostics Style" id="0:20340"/>
+                <LayoutComponent clip="true" width="40" height="24" styleId="0:20341" name="Diagnostics" id="0:20340">
+                    <LayoutComponentStyle flexDirectionValue="row" layoutHeightScaleType="fixed" layoutAlignmentType="center" gapHorizontal="4" gapHorizontalUnitsValue="points" paddingLeft="7" paddingLeftUnitsValue="points" paddingRight="7" paddingRightUnitsValue="points" cornerRadiusTL="3" layoutWidthScaleType="hug" name="Diagnostics Style" id="0:20341"/>
                     <Fill name="Fill"><SolidColor colorValue="FF151515" name="Color">
-                            <DataBindContext sourcePathIds="0:20031-0:20169-0:20067" propertyKey="37"/>
+                            <DataBindContext sourcePathIds="0:20031-0:20170-0:20067" propertyKey="37"/>
                         </SolidColor></Fill>
                     <Stroke thickness="1" name="Border"><SolidColor colorValue="FF303030" name="Color">
-                            <DataBindContext sourcePathIds="0:20031-0:20169-0:20069" propertyKey="37"/>
+                            <DataBindContext sourcePathIds="0:20031-0:20170-0:20069" propertyKey="37"/>
                         </SolidColor></Stroke>
-                    <Text sizingValue="autoWidth" name="Diagnostics Label" id="0:20337">
+                    <Text sizingValue="autoWidth" name="Diagnostics Label" id="0:20338">
                         <LayoutParticipant layoutWidthScaleType="hug" layoutHeightScaleType="hug" name="Diagnostics Label Layout"/>
-                        <TextStylePaint fontSize="12" fontAssetId="0:92" name="Diagnostics Label Style" id="0:20338">
+                        <TextStylePaint fontSize="12" fontAssetId="0:92" name="Diagnostics Label Style" id="0:20339">
                             <Fill name="Fill"><SolidColor colorValue="FFA0A0A0" name="Color">
-                                <DataBindContext sourcePathIds="0:20031-0:20169-0:20068" propertyKey="37"/>
+                                <DataBindContext sourcePathIds="0:20031-0:20170-0:20068" propertyKey="37"/>
                             </SolidColor></Fill>
                         </TextStylePaint>
-                        <TextValueRun styleId="0:20338" text="Diagnostics" name="Run">
-                            <DataBindContext sourcePathIds="0:20031-0:20169-0:20043" propertyKey="268"/>
+                        <TextValueRun styleId="0:20339" text="Diagnostics" name="Run">
+                            <DataBindContext sourcePathIds="0:20031-0:20170-0:20043" propertyKey="268"/>
                         </TextValueRun>
                     </Text>
-                    <Shape name="Chevron" id="0:20336">
+                    <Shape name="Chevron" id="0:20337">
                         <LayoutParticipant layoutWidthScaleType="hug" layoutHeightScaleType="hug" name="Chevron Layout"/>
                         <Triangle rotation="3.14159265" width="7" height="4" name="Path"/>
                         <Fill name="Fill"><SolidColor colorValue="FFA0A0A0" name="Color"/></Fill>
@@ -532,219 +532,219 @@
                 <ExitState x="400" y="-120"/>
                 <EntryState/>
             </StateMachineLayer>
-            <StateMachineListenerSingle targetId="0:20177" listenerTypeValue="click" name="Click" id="0:20179">
+            <StateMachineListenerSingle targetId="0:20178" listenerTypeValue="click" name="Click" id="0:20180">
                 <ListenerViewModelChange>
                     <BindablePropertyTrigger propertyValue="1">
-                        <DataBindContext sourcePathIds="0:20031-0:20172-0:20143" propertyKey="686" direction="true"/>
+                        <DataBindContext sourcePathIds="0:20031-0:20173-0:20143" propertyKey="686" direction="true"/>
                     </BindablePropertyTrigger>
                 </ListenerViewModelChange>
                 <ListenerViewModelChange>
                     <BindablePropertyTrigger propertyValue="1">
-                        <DataBindContext sourcePathIds="0:20031-0:20169-0:20038" propertyKey="686" direction="true"/>
-                    </BindablePropertyTrigger>
-                </ListenerViewModelChange>
-            </StateMachineListenerSingle>
-            <StateMachineListenerSingle targetId="0:20182" listenerTypeValue="click" name="Click" id="0:20184">
-                <ListenerViewModelChange>
-                    <BindablePropertyTrigger propertyValue="1">
-                        <DataBindContext sourcePathIds="0:20031-0:20171-0:20120" propertyKey="686" direction="true"/>
-                    </BindablePropertyTrigger>
-                </ListenerViewModelChange>
-                <ListenerViewModelChange>
-                    <BindablePropertyTrigger propertyValue="1">
-                        <DataBindContext sourcePathIds="0:20031-0:20169-0:20038" propertyKey="686" direction="true"/>
+                        <DataBindContext sourcePathIds="0:20031-0:20170-0:20038" propertyKey="686" direction="true"/>
                     </BindablePropertyTrigger>
                 </ListenerViewModelChange>
             </StateMachineListenerSingle>
-            <StateMachineListenerSingle targetId="0:20187" listenerTypeValue="click" name="Click" id="0:20189">
+            <StateMachineListenerSingle targetId="0:20183" listenerTypeValue="click" name="Click" id="0:20185">
                 <ListenerViewModelChange>
                     <BindablePropertyTrigger propertyValue="1">
-                        <DataBindContext sourcePathIds="0:20031-0:20171-0:20122" propertyKey="686" direction="true"/>
+                        <DataBindContext sourcePathIds="0:20031-0:20172-0:20120" propertyKey="686" direction="true"/>
                     </BindablePropertyTrigger>
                 </ListenerViewModelChange>
                 <ListenerViewModelChange>
                     <BindablePropertyTrigger propertyValue="1">
-                        <DataBindContext sourcePathIds="0:20031-0:20169-0:20038" propertyKey="686" direction="true"/>
-                    </BindablePropertyTrigger>
-                </ListenerViewModelChange>
-            </StateMachineListenerSingle>
-            <StateMachineListenerSingle targetId="0:20192" listenerTypeValue="click" name="Click" id="0:20194">
-                <ListenerViewModelChange>
-                    <BindablePropertyTrigger propertyValue="1">
-                        <DataBindContext sourcePathIds="0:20031-0:20170-0:20096" propertyKey="686" direction="true"/>
-                    </BindablePropertyTrigger>
-                </ListenerViewModelChange>
-                <ListenerViewModelChange>
-                    <BindablePropertyTrigger propertyValue="1">
-                        <DataBindContext sourcePathIds="0:20031-0:20169-0:20038" propertyKey="686" direction="true"/>
+                        <DataBindContext sourcePathIds="0:20031-0:20170-0:20038" propertyKey="686" direction="true"/>
                     </BindablePropertyTrigger>
                 </ListenerViewModelChange>
             </StateMachineListenerSingle>
-            <StateMachineListenerSingle targetId="0:20197" listenerTypeValue="click" name="Click" id="0:20199">
+            <StateMachineListenerSingle targetId="0:20188" listenerTypeValue="click" name="Click" id="0:20190">
                 <ListenerViewModelChange>
                     <BindablePropertyTrigger propertyValue="1">
-                        <DataBindContext sourcePathIds="0:20031-0:20170-0:20106" propertyKey="686" direction="true"/>
+                        <DataBindContext sourcePathIds="0:20031-0:20172-0:20122" propertyKey="686" direction="true"/>
                     </BindablePropertyTrigger>
                 </ListenerViewModelChange>
                 <ListenerViewModelChange>
                     <BindablePropertyTrigger propertyValue="1">
-                        <DataBindContext sourcePathIds="0:20031-0:20169-0:20038" propertyKey="686" direction="true"/>
-                    </BindablePropertyTrigger>
-                </ListenerViewModelChange>
-            </StateMachineListenerSingle>
-            <StateMachineListenerSingle targetId="0:20202" listenerTypeValue="click" name="Click" id="0:20204">
-                <ListenerViewModelChange>
-                    <BindablePropertyTrigger propertyValue="1">
-                        <DataBindContext sourcePathIds="0:20031-0:20173-0:20157" propertyKey="686" direction="true"/>
-                    </BindablePropertyTrigger>
-                </ListenerViewModelChange>
-                <ListenerViewModelChange>
-                    <BindablePropertyTrigger propertyValue="1">
-                        <DataBindContext sourcePathIds="0:20031-0:20169-0:20038" propertyKey="686" direction="true"/>
+                        <DataBindContext sourcePathIds="0:20031-0:20170-0:20038" propertyKey="686" direction="true"/>
                     </BindablePropertyTrigger>
                 </ListenerViewModelChange>
             </StateMachineListenerSingle>
-            <StateMachineListenerSingle targetId="0:20216" listenerTypeValue="click" name="Click" id="0:20218">
+            <StateMachineListenerSingle targetId="0:20193" listenerTypeValue="click" name="Click" id="0:20195">
                 <ListenerViewModelChange>
                     <BindablePropertyTrigger propertyValue="1">
-                        <DataBindContext sourcePathIds="0:20031-0:20169-0:20040" propertyKey="686" direction="true"/>
+                        <DataBindContext sourcePathIds="0:20031-0:20171-0:20096" propertyKey="686" direction="true"/>
+                    </BindablePropertyTrigger>
+                </ListenerViewModelChange>
+                <ListenerViewModelChange>
+                    <BindablePropertyTrigger propertyValue="1">
+                        <DataBindContext sourcePathIds="0:20031-0:20170-0:20038" propertyKey="686" direction="true"/>
                     </BindablePropertyTrigger>
                 </ListenerViewModelChange>
             </StateMachineListenerSingle>
-            <StateMachineListenerSingle targetId="0:20238" listenerTypeValue="click" name="Click" id="0:20240">
+            <StateMachineListenerSingle targetId="0:20198" listenerTypeValue="click" name="Click" id="0:20200">
                 <ListenerViewModelChange>
                     <BindablePropertyTrigger propertyValue="1">
-                        <DataBindContext sourcePathIds="0:20031-0:20172-0:20142" propertyKey="686" direction="true"/>
+                        <DataBindContext sourcePathIds="0:20031-0:20171-0:20106" propertyKey="686" direction="true"/>
+                    </BindablePropertyTrigger>
+                </ListenerViewModelChange>
+                <ListenerViewModelChange>
+                    <BindablePropertyTrigger propertyValue="1">
+                        <DataBindContext sourcePathIds="0:20031-0:20170-0:20038" propertyKey="686" direction="true"/>
                     </BindablePropertyTrigger>
                 </ListenerViewModelChange>
             </StateMachineListenerSingle>
-            <StateMachineListenerSingle targetId="0:20242" listenerTypeValue="click" name="Click" id="0:20244">
+            <StateMachineListenerSingle targetId="0:20203" listenerTypeValue="click" name="Click" id="0:20205">
                 <ListenerViewModelChange>
                     <BindablePropertyTrigger propertyValue="1">
-                        <DataBindContext sourcePathIds="0:20031-0:20172-0:20142" propertyKey="686" direction="true"/>
+                        <DataBindContext sourcePathIds="0:20031-0:20174-0:20157" propertyKey="686" direction="true"/>
+                    </BindablePropertyTrigger>
+                </ListenerViewModelChange>
+                <ListenerViewModelChange>
+                    <BindablePropertyTrigger propertyValue="1">
+                        <DataBindContext sourcePathIds="0:20031-0:20170-0:20038" propertyKey="686" direction="true"/>
                     </BindablePropertyTrigger>
                 </ListenerViewModelChange>
             </StateMachineListenerSingle>
-            <StateMachineListenerSingle targetId="0:20246" listenerTypeValue="click" name="Click" id="0:20248">
+            <StateMachineListenerSingle targetId="0:20217" listenerTypeValue="click" name="Click" id="0:20219">
                 <ListenerViewModelChange>
                     <BindablePropertyTrigger propertyValue="1">
-                        <DataBindContext sourcePathIds="0:20031-0:20172-0:20126" propertyKey="686" direction="true"/>
+                        <DataBindContext sourcePathIds="0:20031-0:20170-0:20040" propertyKey="686" direction="true"/>
                     </BindablePropertyTrigger>
                 </ListenerViewModelChange>
             </StateMachineListenerSingle>
-            <StateMachineListenerSingle targetId="0:20251" listenerTypeValue="click" name="Click" id="0:20253">
+            <StateMachineListenerSingle targetId="0:20239" listenerTypeValue="click" name="Click" id="0:20241">
                 <ListenerViewModelChange>
                     <BindablePropertyTrigger propertyValue="1">
-                        <DataBindContext sourcePathIds="0:20031-0:20172-0:20143" propertyKey="686" direction="true"/>
+                        <DataBindContext sourcePathIds="0:20031-0:20173-0:20142" propertyKey="686" direction="true"/>
                     </BindablePropertyTrigger>
                 </ListenerViewModelChange>
             </StateMachineListenerSingle>
-            <StateMachineListenerSingle targetId="0:20256" listenerTypeValue="click" name="Click" id="0:20258">
+            <StateMachineListenerSingle targetId="0:20243" listenerTypeValue="click" name="Click" id="0:20245">
                 <ListenerViewModelChange>
                     <BindablePropertyTrigger propertyValue="1">
-                        <DataBindContext sourcePathIds="0:20031-0:20171-0:20120" propertyKey="686" direction="true"/>
+                        <DataBindContext sourcePathIds="0:20031-0:20173-0:20142" propertyKey="686" direction="true"/>
                     </BindablePropertyTrigger>
                 </ListenerViewModelChange>
             </StateMachineListenerSingle>
-            <StateMachineListenerSingle targetId="0:20261" listenerTypeValue="click" name="Click" id="0:20263">
+            <StateMachineListenerSingle targetId="0:20247" listenerTypeValue="click" name="Click" id="0:20249">
                 <ListenerViewModelChange>
                     <BindablePropertyTrigger propertyValue="1">
-                        <DataBindContext sourcePathIds="0:20031-0:20171-0:20122" propertyKey="686" direction="true"/>
+                        <DataBindContext sourcePathIds="0:20031-0:20173-0:20126" propertyKey="686" direction="true"/>
                     </BindablePropertyTrigger>
                 </ListenerViewModelChange>
             </StateMachineListenerSingle>
-            <StateMachineListenerSingle targetId="0:20289" listenerTypeValue="click" name="Click" id="0:20291">
+            <StateMachineListenerSingle targetId="0:20252" listenerTypeValue="click" name="Click" id="0:20254">
                 <ListenerViewModelChange>
                     <BindablePropertyTrigger propertyValue="1">
-                        <DataBindContext sourcePathIds="0:20031-0:20170-0:20106" propertyKey="686" direction="true"/>
+                        <DataBindContext sourcePathIds="0:20031-0:20173-0:20143" propertyKey="686" direction="true"/>
                     </BindablePropertyTrigger>
                 </ListenerViewModelChange>
             </StateMachineListenerSingle>
-            <StateMachineListenerSingle targetId="0:20294" listenerTypeValue="click" name="Click" id="0:20296">
+            <StateMachineListenerSingle targetId="0:20257" listenerTypeValue="click" name="Click" id="0:20259">
                 <ListenerViewModelChange>
                     <BindablePropertyTrigger propertyValue="1">
-                        <DataBindContext sourcePathIds="0:20031-0:20170-0:20096" propertyKey="686" direction="true"/>
+                        <DataBindContext sourcePathIds="0:20031-0:20172-0:20120" propertyKey="686" direction="true"/>
                     </BindablePropertyTrigger>
                 </ListenerViewModelChange>
             </StateMachineListenerSingle>
-            <StateMachineListenerSingle targetId="0:20301" listenerTypeValue="click" name="Click" id="0:20303">
+            <StateMachineListenerSingle targetId="0:20262" listenerTypeValue="click" name="Click" id="0:20264">
                 <ListenerViewModelChange>
                     <BindablePropertyTrigger propertyValue="1">
-                        <DataBindContext sourcePathIds="0:20031-0:20173-0:20157" propertyKey="686" direction="true"/>
+                        <DataBindContext sourcePathIds="0:20031-0:20172-0:20122" propertyKey="686" direction="true"/>
                     </BindablePropertyTrigger>
                 </ListenerViewModelChange>
             </StateMachineListenerSingle>
-            <StateMachineListenerSingle targetId="0:20309" listenerTypeValue="click" name="Click" id="0:20311">
+            <StateMachineListenerSingle targetId="0:20290" listenerTypeValue="click" name="Click" id="0:20292">
                 <ListenerViewModelChange>
                     <BindablePropertyTrigger propertyValue="1">
-                        <DataBindContext sourcePathIds="0:20031-0:20169-0:20038" propertyKey="686" direction="true"/>
+                        <DataBindContext sourcePathIds="0:20031-0:20171-0:20106" propertyKey="686" direction="true"/>
                     </BindablePropertyTrigger>
                 </ListenerViewModelChange>
             </StateMachineListenerSingle>
-            <StateMachineListenerSingle targetId="0:20339" listenerTypeValue="click" name="Click" id="0:20341">
+            <StateMachineListenerSingle targetId="0:20295" listenerTypeValue="click" name="Click" id="0:20297">
                 <ListenerViewModelChange>
                     <BindablePropertyTrigger propertyValue="1">
-                        <DataBindContext sourcePathIds="0:20031-0:20169-0:20041" propertyKey="686" direction="true"/>
+                        <DataBindContext sourcePathIds="0:20031-0:20171-0:20096" propertyKey="686" direction="true"/>
+                    </BindablePropertyTrigger>
+                </ListenerViewModelChange>
+            </StateMachineListenerSingle>
+            <StateMachineListenerSingle targetId="0:20302" listenerTypeValue="click" name="Click" id="0:20304">
+                <ListenerViewModelChange>
+                    <BindablePropertyTrigger propertyValue="1">
+                        <DataBindContext sourcePathIds="0:20031-0:20174-0:20157" propertyKey="686" direction="true"/>
+                    </BindablePropertyTrigger>
+                </ListenerViewModelChange>
+            </StateMachineListenerSingle>
+            <StateMachineListenerSingle targetId="0:20310" listenerTypeValue="click" name="Click" id="0:20312">
+                <ListenerViewModelChange>
+                    <BindablePropertyTrigger propertyValue="1">
+                        <DataBindContext sourcePathIds="0:20031-0:20170-0:20038" propertyKey="686" direction="true"/>
+                    </BindablePropertyTrigger>
+                </ListenerViewModelChange>
+            </StateMachineListenerSingle>
+            <StateMachineListenerSingle targetId="0:20340" listenerTypeValue="click" name="Click" id="0:20342">
+                <ListenerViewModelChange>
+                    <BindablePropertyTrigger propertyValue="1">
+                        <DataBindContext sourcePathIds="0:20031-0:20170-0:20041" propertyKey="686" direction="true"/>
                     </BindablePropertyTrigger>
                 </ListenerViewModelChange>
             </StateMachineListenerSingle>
         </StateMachine>
     </Artboard>
 
-    <Artboard isComponent="true" defaultStateMachineId="0:20352" viewModelId="0:20019" clip="true" x="1400" y="0" width="300" height="26" styleId="0:20351" name="ExampleRow" id="0:20350">
-        <LayoutComponentStyle layoutAlignmentType="centerLeft" name="ExampleRow Artboard Style" id="0:20351"/>
-        <LayoutComponent clip="true" width="300" height="26" styleId="0:20355" name="Row" id="0:20354">
-            <LayoutComponentStyle flexDirectionValue="row" layoutWidthScaleType="fill" layoutHeightScaleType="fill" layoutAlignmentType="centerLeft" gapHorizontal="8" gapHorizontalUnitsValue="points" paddingLeft="8" paddingLeftUnitsValue="points" paddingRight="8" paddingRightUnitsValue="points" name="Row Style" id="0:20355"/>
-            <LayoutComponent width="2" height="14" styleId="0:20345" name="Current" id="0:20344">
+    <Artboard isComponent="true" defaultStateMachineId="0:20353" viewModelId="0:20019" clip="true" x="1400" y="0" width="300" height="26" styleId="0:20352" name="ExampleRow" id="0:20351">
+        <LayoutComponentStyle layoutAlignmentType="centerLeft" name="ExampleRow Artboard Style" id="0:20352"/>
+        <LayoutComponent clip="true" width="300" height="26" styleId="0:20356" name="Row" id="0:20355">
+            <LayoutComponentStyle flexDirectionValue="row" layoutWidthScaleType="fill" layoutHeightScaleType="fill" layoutAlignmentType="centerLeft" gapHorizontal="8" gapHorizontalUnitsValue="points" paddingLeft="8" paddingLeftUnitsValue="points" paddingRight="8" paddingRightUnitsValue="points" name="Row Style" id="0:20356"/>
+            <LayoutComponent width="2" height="14" styleId="0:20346" name="Current" id="0:20345">
                 <DataBindContext sourcePathIds="0:20019-0:20082" propertyKey="18"/>
-                <LayoutComponentStyle layoutWidthScaleType="fixed" layoutHeightScaleType="fixed" name="Current Style" id="0:20345"/>
+                <LayoutComponentStyle layoutWidthScaleType="fixed" layoutHeightScaleType="fixed" name="Current Style" id="0:20346"/>
                 <Fill name="Fill"><SolidColor colorValue="FFFFFFFF" name="Color"/></Fill>
             </LayoutComponent>
-            <Text sizingValue="autoWidth" name="Title" id="0:20346">
+            <Text sizingValue="autoWidth" name="Title" id="0:20347">
                 <LayoutParticipant layoutWidthScaleType="fill" layoutHeightScaleType="hug" name="Title Layout"/>
-                <TextStylePaint fontSize="12" fontAssetId="0:92" name="Title Style" id="0:20347">
+                <TextStylePaint fontSize="12" fontAssetId="0:92" name="Title Style" id="0:20348">
                     <Fill name="Fill"><SolidColor colorValue="FFFFFFFF" name="Color"/></Fill>
                 </TextStylePaint>
-                <TextValueRun styleId="0:20347" text="Title" name="Run">
+                <TextValueRun styleId="0:20348" text="Title" name="Run">
                     <DataBindContext sourcePathIds="0:20019-0:20075" propertyKey="268"/>
                 </TextValueRun>
             </Text>
-            <Text sizingValue="autoWidth" name="Subtitle" id="0:20348">
+            <Text sizingValue="autoWidth" name="Subtitle" id="0:20349">
                 <LayoutParticipant layoutWidthScaleType="hug" layoutHeightScaleType="hug" name="Subtitle Layout"/>
-                <TextStylePaint fontSize="11" fontAssetId="0:92" name="Subtitle Style" id="0:20349">
+                <TextStylePaint fontSize="11" fontAssetId="0:92" name="Subtitle Style" id="0:20350">
                     <Fill name="Fill"><SolidColor colorValue="FF808080" name="Color"/></Fill>
                 </TextStylePaint>
-                <TextValueRun styleId="0:20349" text="genre" name="Run">
+                <TextValueRun styleId="0:20350" text="genre" name="Run">
                     <DataBindContext sourcePathIds="0:20019-0:20080" propertyKey="268"/>
                 </TextValueRun>
             </Text>
         </LayoutComponent>
-        <LayoutComponent clip="true" width="300" height="26" styleId="0:20357" name="Hover" id="0:20356">
+        <LayoutComponent clip="true" width="300" height="26" styleId="0:20358" name="Hover" id="0:20357">
             <DataBindContext sourcePathIds="0:20019-0:20081" propertyKey="18"/>
-            <LayoutComponentStyle positionTypeValue="absolute" positionLeft="0" positionLeftUnitsValue="points" positionTop="0" positionTopUnitsValue="points" layoutWidthScaleType="fill" layoutHeightScaleType="fill" cornerRadiusTL="2" name="Hover Style" id="0:20357"/>
+            <LayoutComponentStyle positionTypeValue="absolute" positionLeft="0" positionLeftUnitsValue="points" positionTop="0" positionTopUnitsValue="points" layoutWidthScaleType="fill" layoutHeightScaleType="fill" cornerRadiusTL="2" name="Hover Style" id="0:20358"/>
             <Fill name="Fill"><SolidColor colorValue="FF222222" name="Color"/></Fill>
         </LayoutComponent>
-        <StateMachine name="ExampleRow" id="0:20352">
-            <StateMachineLayer name="Layer" id="0:20353">
+        <StateMachine name="ExampleRow" id="0:20353">
+            <StateMachineLayer name="Layer" id="0:20354">
                 <AnyState x="200" y="-120"/>
                 <ExitState x="400" y="-120"/>
                 <EntryState/>
             </StateMachineLayer>
-            <StateMachineListenerSingle targetId="0:20354" listenerTypeValue="click" name="Select" id="0:20358">
+            <StateMachineListenerSingle targetId="0:20355" listenerTypeValue="click" name="Select" id="0:20359">
                 <ListenerViewModelChange>
                     <BindablePropertyTrigger propertyValue="1">
                         <DataBindContext sourcePathIds="0:20019-0:20079" propertyKey="686" direction="true"/>
                     </BindablePropertyTrigger>
                 </ListenerViewModelChange>
             </StateMachineListenerSingle>
-            <StateMachineListenerSingle targetId="0:20354" listenerTypeValue="enter" name="Hover In" id="0:20359">
+            <StateMachineListenerSingle targetId="0:20355" listenerTypeValue="enter" name="Hover In" id="0:20360">
                 <ListenerViewModelChange>
                     <BindablePropertyNumber propertyValue="1">
                         <DataBindContext sourcePathIds="0:20019-0:20081" propertyKey="636" direction="true"/>
                     </BindablePropertyNumber>
                 </ListenerViewModelChange>
             </StateMachineListenerSingle>
-            <StateMachineListenerSingle targetId="0:20354" listenerTypeValue="exit" name="Hover Out" id="0:20360">
+            <StateMachineListenerSingle targetId="0:20355" listenerTypeValue="exit" name="Hover Out" id="0:20361">
                 <ListenerViewModelChange>
                     <BindablePropertyNumber propertyValue="0">
                         <DataBindContext sourcePathIds="0:20019-0:20081" propertyKey="636" direction="true"/>
@@ -754,63 +754,63 @@
         </StateMachine>
     </Artboard>
 
-    <ComponentAsset artboardId="0:20350" name="ExampleRow"/>
-    <Artboard isComponent="true" defaultStateMachineId="0:20368" viewModelId="0:20021" clip="true" x="1800" y="0" width="560" height="24" styleId="0:20367" name="DiagnosticRow" id="0:20366">
-        <LayoutComponentStyle layoutAlignmentType="centerLeft" name="DiagnosticRow Artboard Style" id="0:20367"/>
-        <LayoutComponent clip="true" width="560" height="24" styleId="0:20371" name="Row" id="0:20370">
-            <LayoutComponentStyle flexDirectionValue="row" layoutWidthScaleType="fill" layoutHeightScaleType="fill" layoutAlignmentType="centerLeft" gapHorizontal="8" gapHorizontalUnitsValue="points" paddingLeft="8" paddingLeftUnitsValue="points" paddingRight="8" paddingRightUnitsValue="points" name="Row Style" id="0:20371"/>
-            <Shape name="Severity" id="0:20361">
+    <ComponentAsset artboardId="0:20351" name="ExampleRow"/>
+    <Artboard isComponent="true" defaultStateMachineId="0:20369" viewModelId="0:20021" clip="true" x="1800" y="0" width="560" height="24" styleId="0:20368" name="DiagnosticRow" id="0:20367">
+        <LayoutComponentStyle layoutAlignmentType="centerLeft" name="DiagnosticRow Artboard Style" id="0:20368"/>
+        <LayoutComponent clip="true" width="560" height="24" styleId="0:20372" name="Row" id="0:20371">
+            <LayoutComponentStyle flexDirectionValue="row" layoutWidthScaleType="fill" layoutHeightScaleType="fill" layoutAlignmentType="centerLeft" gapHorizontal="8" gapHorizontalUnitsValue="points" paddingLeft="8" paddingLeftUnitsValue="points" paddingRight="8" paddingRightUnitsValue="points" name="Row Style" id="0:20372"/>
+            <Shape name="Severity" id="0:20362">
                 <LayoutParticipant layoutWidthScaleType="fixed" layoutHeightScaleType="fixed" width="6" height="6" name="Severity Layout"/>
                 <Ellipse width="6" height="6" name="Path"/>
                 <Fill name="Fill"><SolidColor colorValue="FFF05A6E" name="Color">
                         <DataBindContext sourcePathIds="0:20021-0:20092" propertyKey="37"/>
                     </SolidColor></Fill>
             </Shape>
-            <Text sizingValue="autoWidth" name="Where" id="0:20362">
+            <Text sizingValue="autoWidth" name="Where" id="0:20363">
                 <LayoutParticipant layoutWidthScaleType="hug" layoutHeightScaleType="hug" name="Where Layout"/>
-                <TextStylePaint fontSize="11" fontAssetId="0:90" name="Where Style" id="0:20363">
+                <TextStylePaint fontSize="11" fontAssetId="0:90" name="Where Style" id="0:20364">
                     <Fill name="Fill"><SolidColor colorValue="FF808080" name="Color"/></Fill>
                 </TextStylePaint>
-                <TextValueRun styleId="0:20363" text="file:1:1" name="Run">
+                <TextValueRun styleId="0:20364" text="file:1:1" name="Run">
                     <DataBindContext sourcePathIds="0:20021-0:20091" propertyKey="268"/>
                 </TextValueRun>
             </Text>
-            <Text sizingValue="autoWidth" name="Message" id="0:20364">
+            <Text sizingValue="autoWidth" name="Message" id="0:20365">
                 <LayoutParticipant layoutWidthScaleType="fill" layoutHeightScaleType="hug" name="Message Layout"/>
-                <TextStylePaint fontSize="12" fontAssetId="0:92" name="Message Style" id="0:20365">
+                <TextStylePaint fontSize="12" fontAssetId="0:92" name="Message Style" id="0:20366">
                     <Fill name="Fill"><SolidColor colorValue="FFFFFFFF" name="Color"/></Fill>
                 </TextStylePaint>
-                <TextValueRun styleId="0:20365" text="message" name="Run">
+                <TextValueRun styleId="0:20366" text="message" name="Run">
                     <DataBindContext sourcePathIds="0:20021-0:20089" propertyKey="268"/>
                 </TextValueRun>
             </Text>
         </LayoutComponent>
-        <LayoutComponent clip="true" width="560" height="24" styleId="0:20373" name="Hover" id="0:20372">
+        <LayoutComponent clip="true" width="560" height="24" styleId="0:20374" name="Hover" id="0:20373">
             <DataBindContext sourcePathIds="0:20021-0:20093" propertyKey="18"/>
-            <LayoutComponentStyle positionTypeValue="absolute" positionLeft="0" positionLeftUnitsValue="points" positionTop="0" positionTopUnitsValue="points" layoutWidthScaleType="fill" layoutHeightScaleType="fill" cornerRadiusTL="2" name="Hover Style" id="0:20373"/>
+            <LayoutComponentStyle positionTypeValue="absolute" positionLeft="0" positionLeftUnitsValue="points" positionTop="0" positionTopUnitsValue="points" layoutWidthScaleType="fill" layoutHeightScaleType="fill" cornerRadiusTL="2" name="Hover Style" id="0:20374"/>
             <Fill name="Fill"><SolidColor colorValue="FF222222" name="Color"/></Fill>
         </LayoutComponent>
-        <StateMachine name="DiagnosticRow" id="0:20368">
-            <StateMachineLayer name="Layer" id="0:20369">
+        <StateMachine name="DiagnosticRow" id="0:20369">
+            <StateMachineLayer name="Layer" id="0:20370">
                 <AnyState x="200" y="-120"/>
                 <ExitState x="400" y="-120"/>
                 <EntryState/>
             </StateMachineLayer>
-            <StateMachineListenerSingle targetId="0:20370" listenerTypeValue="click" name="Select" id="0:20374">
+            <StateMachineListenerSingle targetId="0:20371" listenerTypeValue="click" name="Select" id="0:20375">
                 <ListenerViewModelChange>
                     <BindablePropertyTrigger propertyValue="1">
                         <DataBindContext sourcePathIds="0:20021-0:20090" propertyKey="686" direction="true"/>
                     </BindablePropertyTrigger>
                 </ListenerViewModelChange>
             </StateMachineListenerSingle>
-            <StateMachineListenerSingle targetId="0:20370" listenerTypeValue="enter" name="Hover In" id="0:20375">
+            <StateMachineListenerSingle targetId="0:20371" listenerTypeValue="enter" name="Hover In" id="0:20376">
                 <ListenerViewModelChange>
                     <BindablePropertyNumber propertyValue="1">
                         <DataBindContext sourcePathIds="0:20021-0:20093" propertyKey="636" direction="true"/>
                     </BindablePropertyNumber>
                 </ListenerViewModelChange>
             </StateMachineListenerSingle>
-            <StateMachineListenerSingle targetId="0:20370" listenerTypeValue="exit" name="Hover Out" id="0:20376">
+            <StateMachineListenerSingle targetId="0:20371" listenerTypeValue="exit" name="Hover Out" id="0:20377">
                 <ListenerViewModelChange>
                     <BindablePropertyNumber propertyValue="0">
                         <DataBindContext sourcePathIds="0:20021-0:20093" propertyKey="636" direction="true"/>
@@ -820,7 +820,7 @@
         </StateMachine>
     </Artboard>
 
-    <ComponentAsset artboardId="0:20366" name="DiagnosticRow"/>
+    <ComponentAsset artboardId="0:20367" name="DiagnosticRow"/>
 
     <DataEnumCustom name="TransportState" id="0:20001">
         <DataEnumValue key="stopped" value="stopped" id="0:20002"/>
@@ -1130,6 +1130,7 @@
         <ViewModelPropertyTrigger name="chunkReady" id="0:20166"/>
         <ViewModelPropertyTrigger name="ack" id="0:20167"/>
         <ViewModelPropertyString name="label" id="0:20168"/>
+        <ViewModelPropertyBoolean name="realtime" id="0:20169"/>
         <ViewModelInstance exports="true" name="Instance" id="0:20030">
             <ViewModelInstanceNumber propertyValue="48000" viewModelPropertyId="0:20151"/>
             <ViewModelInstanceEnum propertyValue="0:20006" viewModelPropertyId="0:20152"/>
@@ -1149,21 +1150,22 @@
             <ViewModelInstanceTrigger viewModelPropertyId="0:20166"/>
             <ViewModelInstanceTrigger viewModelPropertyId="0:20167"/>
             <ViewModelInstanceString propertyValue="Export WAV" viewModelPropertyId="0:20168"/>
+            <ViewModelInstanceBoolean propertyValue="false" viewModelPropertyId="0:20169"/>
         </ViewModelInstance>
     </ViewModel>
 
     <ViewModel defaultInstanceId="0:20032" name="Partition" id="0:20031">
-        <ViewModelPropertyViewModel viewModelReferenceId="0:20015" name="app" id="0:20169"/>
-        <ViewModelPropertyViewModel viewModelReferenceId="0:20023" name="song" id="0:20170"/>
-        <ViewModelPropertyViewModel viewModelReferenceId="0:20025" name="editor" id="0:20171"/>
-        <ViewModelPropertyViewModel viewModelReferenceId="0:20027" name="transport" id="0:20172"/>
-        <ViewModelPropertyViewModel viewModelReferenceId="0:20029" name="render" id="0:20173"/>
+        <ViewModelPropertyViewModel viewModelReferenceId="0:20015" name="app" id="0:20170"/>
+        <ViewModelPropertyViewModel viewModelReferenceId="0:20023" name="song" id="0:20171"/>
+        <ViewModelPropertyViewModel viewModelReferenceId="0:20025" name="editor" id="0:20172"/>
+        <ViewModelPropertyViewModel viewModelReferenceId="0:20027" name="transport" id="0:20173"/>
+        <ViewModelPropertyViewModel viewModelReferenceId="0:20029" name="render" id="0:20174"/>
         <ViewModelInstance exports="true" name="Instance" id="0:20032">
-            <ViewModelInstanceViewModel propertyValue="0:20016" viewModelPropertyId="0:20169"/>
-            <ViewModelInstanceViewModel propertyValue="0:20024" viewModelPropertyId="0:20170"/>
-            <ViewModelInstanceViewModel propertyValue="0:20026" viewModelPropertyId="0:20171"/>
-            <ViewModelInstanceViewModel propertyValue="0:20028" viewModelPropertyId="0:20172"/>
-            <ViewModelInstanceViewModel propertyValue="0:20030" viewModelPropertyId="0:20173"/>
+            <ViewModelInstanceViewModel propertyValue="0:20016" viewModelPropertyId="0:20170"/>
+            <ViewModelInstanceViewModel propertyValue="0:20024" viewModelPropertyId="0:20171"/>
+            <ViewModelInstanceViewModel propertyValue="0:20026" viewModelPropertyId="0:20172"/>
+            <ViewModelInstanceViewModel propertyValue="0:20028" viewModelPropertyId="0:20173"/>
+            <ViewModelInstanceViewModel propertyValue="0:20030" viewModelPropertyId="0:20174"/>
         </ViewModelInstance>
     </ViewModel>
 
@@ -1194,4 +1196,5 @@
     <BlobAsset file="assets/examples/example-trance.song" name="example-trance" id="0:119"/>
     <BlobAsset file="assets/examples/example-trap.song" name="example-trap" id="0:120"/>
     <BlobAsset file="assets/examples/example-waltz.song" name="example-waltz" id="0:121"/>
+    <BlobAsset file="assets/host/song.song" name="host-song" id="0:99"/>
 </Rive>

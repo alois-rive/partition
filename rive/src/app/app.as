@@ -8,7 +8,8 @@ import { Mat2D } from "rive/mat2d";
 import { KeyboardEvent, PointerEvent, ScrollEvent, TextInput } from "rive/events";
 import { ViewModel } from "rive/data";
 import { Audio } from "rive/audio";
-import { SongFile } from "../lang/bundle";
+import { parseBundle, SongFile } from "../lang/bundle";
+import { Buffer } from "rive/buffer";
 import { CONDUCTOR_PATH, SONG_YAML } from "../lang/config";
 import { Diagnostic } from "../lang/diagnostics";
 import { Song } from "../lang/song";
@@ -121,6 +122,12 @@ export class Partition extends Layout {
     editedSinceLoad: bool = false;
     diagnosticItems: Array<Diagnostic> = [];
     currentExample: string = "";
+    // Opened by the Rust shell (docs/spec.md §12): the song came from the
+    // `host-song` blob, and changes go back as PARTITION-HOST lines on the log.
+    hostBridge: bool = false;
+    hostPaths: Array<string> = [];
+    hostAt: f64 = -1;
+    hostReady: bool = false;
     exampleItems: Array<ViewModel> = [];
 
     views(): Array<EditorView> {
@@ -154,6 +161,7 @@ export class Partition extends Layout {
         this.vm = vm;
         this.ready = true;
         this.publishExamples();
+        if (this.openHostSong()) return;
         let id = DEFAULT_EXAMPLE;
         let autoplay = false;
         if (vm != null) {
@@ -163,6 +171,48 @@ export class Partition extends Layout {
         }
         this.loadExample(id);
         if (autoplay) this.playFrom(0);
+    }
+
+    // The song the shell put in the `host-song` blob, if any.
+    openHostSong(): bool {
+        let context = this.context!;
+        let bytes = context.blob("host-song");
+        if (bytes == null) return false;
+        let bundle = parseBundle("host-song", Buffer.tostring(bytes));
+        if (bundle.diagnostics.items.length > 0 || bundle.files.length == 0) return false;
+        this.hostBridge = true;
+        let vm = this.vm;
+        if (vm != null) vm.setBool(vm.app, "app", "hosted", true);
+        this.setSong(Song.fromFiles(bundle.files));
+        this.publishFiles();
+        this.currentExample = "";
+        this.markCurrentExample();
+        this.say(`opened ${this.song.config.title}`);
+        return true;
+    }
+
+    // One message to the shell: a JSON object on its own log line.
+    hostSend(json: string): void {
+        let c = this.context;
+        if (this.hostBridge && c != null) c.log("PARTITION-HOST " + json);
+    }
+
+    // A file the shell should write (or delete, when the song no longer has it).
+    hostChanged(path: string): void {
+        if (!this.hostBridge) return;
+        if (!this.hostPaths.includes(path)) this.hostPaths.push(path);
+        this.hostAt = this.clock + CHANGED_DELAY;
+    }
+
+    flushHost(): void {
+        if (this.hostAt < 0 || this.clock < this.hostAt) return;
+        this.hostAt = -1;
+        for (let i = 0; i < this.hostPaths.length; i++) {
+            let path = this.hostPaths[i];
+            if (this.song.files.has(path)) this.hostSend(`{"op":"write","path":${jsonString(path)},"text":${jsonString(this.song.text(path))}}`);
+            else this.hostSend(`{"op":"remove","path":${jsonString(path)}}`);
+        }
+        this.hostPaths = [];
     }
 
     override dispose(): void {
@@ -520,6 +570,7 @@ export class Partition extends Layout {
     }
 
     removeFileFromVm(path: string): void {
+        this.hostChanged(path);
         let vm = this.vm;
         if (vm == null) return;
         let list = vm.list(vm.song, "files");
@@ -776,6 +827,16 @@ export class Partition extends Layout {
         this.compileAt = -1;
         let options = new CompileOptions();
         options.startRow = this.startRow;
+        let realtime = this.realtimeRender;
+        let vm = this.vm;
+        if (realtime && vm != null) {
+            // A headless render through the processor (§12.1 render): the
+            // export settings, and no endless loop.
+            options.loops = max<i32>(<i32>vm.num(vm.render, "loops", 1), 0);
+            options.startRow = max<i32>(<i32>vm.num(vm.render, "fromRow", 0), 0);
+            let to = <i32>vm.num(vm.render, "toRow", 0);
+            options.endRow = to > 0 ? to : -1;
+        }
         let score = compileSong(this.song, options);
         this.score = score;
         this.tracksView.grid = score.grid;
@@ -788,10 +849,22 @@ export class Partition extends Layout {
         } else {
             let state = this.transport.state;
             this.transport.setScore(score, state != TransportState.Stopped);
-            if (!this.userLoop) this.transport.setLoop(score.loopStart, score.loopEnd);
+            if (realtime) this.transport.setLoop(-1, -1);
+            else if (!this.userLoop) this.transport.setLoop(score.loopStart, score.loopEnd);
             else this.applyUserLoop();
         }
         this.publishSong();
+        if (!this.hostReady && this.hostBridge) {
+            this.hostReady = true;
+            let errors = 0;
+            let items = new Array<string>();
+            for (let i = 0; i < score.diagnostics.length; i++) {
+                let d = score.diagnostics[i];
+                if (d.isError) errors++;
+                items.push(`{"path":${jsonString(d.path)},"line":${d.line},"col":${d.col},"severity":"${d.isError ? "error" : "warning"}","code":${jsonString(d.code)},"message":${jsonString(d.message)}}`);
+            }
+            this.hostSend(`{"op":"ready","title":${jsonString(this.song.config.title)},"duration":${score.duration},"errors":${errors},"diagnostics":[${items.join(",")}]}`);
+        }
     }
 
     // Every column's overview strip (§10.6), from the source as just checked.
@@ -848,12 +921,20 @@ export class Partition extends Layout {
 
     // --- Transport ---------------------------------------------------------------
 
+    // Render settings drive playback (set by the shell for `partition render`).
+    get realtimeRender(): bool {
+        let vm = this.vm;
+        return vm != null && vm.bool(vm.render, "realtime");
+    }
+
     playFrom(row: i32): void {
         this.endAudition();
         this.startRow = row;
         this.transport.state = TransportState.Stopped;
         this.compileNow();
         this.transport.play(0);
+        let played = this.score;
+        if (this.realtimeRender && played != null) this.hostSend(`{"op":"playing","clock":${this.clock},"duration":${played.duration}}`);
     }
 
     togglePlay(): void {
@@ -1059,6 +1140,14 @@ export class Partition extends Layout {
                 this.applyMix();
             }
         } else if (action == "save") {
+            if (this.hostBridge) {
+                this.hostAt = this.clock; // anything pending goes first
+                this.flushHost();
+                this.hostSend(`{"op":"save"}`);
+                this.editedSinceLoad = false;
+                this.say("saved");
+                return;
+            }
             let hosted = vm != null && vm.bool(vm.app, "hosted");
             if (vm != null) vm.fire(vm.editor, "saveRequested");
             if (!hosted) this.say("not saved: in the previewer, edits live in memory only (spec §13.1)");
@@ -1079,6 +1168,14 @@ export class Partition extends Layout {
         } else if (action == "song.load") {
             this.loadFromVm();
         } else if (action == "render.start") {
+            if (this.hostBridge) {
+                // The shell renders the files it has saved (§12.2).
+                this.hostAt = this.clock;
+                this.flushHost();
+                this.hostSend(`{"op":"export","title":${jsonString(this.song.config.title)}}`);
+                this.say("exporting a WAV next to the song (see the terminal)");
+                return;
+            }
             this.startExport();
         } else if (action == "render.cancel") {
             this.exporter.cancel();
@@ -1190,6 +1287,7 @@ export class Partition extends Layout {
     }
 
     writeFileToVm(path: string, text: string, dirty: bool): void {
+        if (dirty) this.hostChanged(path);
         let vm = this.vm;
         if (vm == null) return;
         let item = this.fileItem(path);
@@ -1297,6 +1395,7 @@ export class Partition extends Layout {
             }
             this.changedPaths = [];
         }
+        this.flushHost();
         this.pollFilesIn -= seconds;
         if (this.pollFilesIn <= 0) {
             this.pollFilesIn = 0.25;
@@ -1568,4 +1667,23 @@ function instrumentBefore(file: CheckedFile, name: string): string? {
         }
     }
     return null;
+}
+
+// `text` as a JSON string literal.
+export function jsonString(text: string): string {
+    let out = "\"";
+    let start = 0;
+    for (let i = 0; i < text.length; i++) {
+        let c = text.charCodeAt(i);
+        if (c >= 32 && c != 34 && c != 92) continue;
+        out += text.substring(start, i);
+        if (c == 34) out += "\\\"";
+        else if (c == 92) out += "\\\\";
+        else if (c == 10) out += "\\n";
+        else if (c == 13) out += "\\r";
+        else if (c == 9) out += "\\t";
+        else out += "\\u00" + (c < 16 ? "0" : "") + c.toString(16);
+        start = i + 1;
+    }
+    return out + text.substring(start) + "\"";
 }

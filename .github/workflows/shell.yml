@@ -1,0 +1,33 @@
+# Tests the Rust shell (shell/) on macOS: formatting, lints and tests.
+# The tests that need the Rive CLI (check, render) skip themselves here.
+name: Shell
+
+on:
+  push:
+    branches: [main]
+    paths: ["shell/**", "rive/**", ".github/workflows/shell.yml"]
+  pull_request:
+    paths: ["shell/**", "rive/**", ".github/workflows/shell.yml"]
+  workflow_dispatch:
+
+concurrency:
+  group: shell-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: macos-14
+    defaults:
+      run:
+        working-directory: shell
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: shell
+      - run: cargo fmt --check
+      - run: cargo clippy --all-targets --locked -- -D warnings
+      - run: cargo test --locked

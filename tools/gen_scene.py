@@ -85,7 +85,8 @@ VIEW_MODELS = [
                 ("number", "fromRow", "0"), ("number", "toRow", "0"), ("number", "maxTail", "8"), ("trigger", "start", ""),
                 ("trigger", "cancel", ""), ("enum:RenderState", "state", "idle"), ("number", "progress", "0"),
                 ("string", "error", ""), ("number", "totalBytes", "0"), ("blob", "chunk", ""), ("number", "chunkIndex", "0"),
-                ("number", "chunkCount", "0"), ("trigger", "chunkReady", ""), ("trigger", "ack", ""), ("string", "label", "Export WAV")]),
+                ("number", "chunkCount", "0"), ("trigger", "chunkReady", ""), ("trigger", "ack", ""), ("string", "label", "Export WAV"),
+                ("bool", "realtime", "false")]),
     ("Partition", [("vm:App", "app", ""), ("vm:Song", "song", ""), ("vm:Editor", "editor", ""), ("vm:Transport", "transport", ""),
                    ("vm:Render", "render", "")]),
 ]
@@ -587,7 +588,10 @@ def scene():
 def examples_assets():
     root = os.path.join(os.path.dirname(OUT), "assets", "examples")
     ids = sorted(f[len("example-"):-len(".song")] for f in os.listdir(root) if f.startswith("example-") and f.endswith(".song"))
-    return "\n".join(f'    <BlobAsset file="assets/examples/example-{i}.song" name="example-{i}" id="0:{100 + n}"/>' for n, i in enumerate(ids))
+    blobs = [f'    <BlobAsset file="assets/examples/example-{i}.song" name="example-{i}" id="0:{100 + n}"/>' for n, i in enumerate(ids)]
+    # The song the Rust shell opens (docs/spec.md §12.2); a placeholder otherwise.
+    blobs.append('    <BlobAsset file="assets/host/song.song" name="host-song" id="0:99"/>')
+    return "\n".join(blobs)
 
 
 if __name__ == "__main__":

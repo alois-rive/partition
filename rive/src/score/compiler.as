@@ -19,6 +19,9 @@ export const MAX_TAIL_ROWS: i32 = 100000;
 export class CompileOptions {
     loops: i32 = 1;
     startRow: i32 = 0;
+    // The last source row to play (-1: the whole song). Playback stops when it
+    // first passes this row; notes still held are released there.
+    endRow: i32 = -1;
 }
 
 export class Score {
@@ -179,6 +182,17 @@ class Compiler {
         return e;
     }
 
+    // When playback first passes `options.endRow`, or -1.
+    cutTime(): f64 {
+        let last = this.options.endRow;
+        if (last < 0) return -1;
+        let pb = this.playback;
+        for (let p = pb.firstAudible; p < pb.count; p++) {
+            if (pb.source[p] > last) return pb.rowTime(p);
+        }
+        return -1;
+    }
+
     compile(): Score {
         let song = this.song;
         let score = this.score;
@@ -218,12 +232,27 @@ class Compiler {
             let e = score.events[i];
             if (e.kind == EventKind.NoteOff && e.time > endTime) endTime = e.time;
         }
+        let cut = this.cutTime();
+        if (cut >= 0 && cut < endTime) {
+            // Cut at the end row: nothing starts after it, held notes stop there.
+            let kept = new Array<ScoreEvent>();
+            for (let i = 0; i < score.events.length; i++) {
+                let e = score.events[i];
+                if (e.time < cut) kept.push(e);
+                else if (e.kind == EventKind.NoteOff) {
+                    e.time = cut;
+                    kept.push(e);
+                }
+            }
+            score.events = kept;
+            endTime = cut;
+        }
         let end = this.emit(EventKind.End, endTime);
         end.channel = -1;
         score.duration = end.time;
-        if (pb.loopStart >= 0) {
+        if (pb.loopStart >= 0 && !(cut >= 0 && pb.rowTime(pb.loopStart) >= cut)) {
             score.loopStart = pb.rowTime(pb.loopStart);
-            score.loopEnd = pb.timeAt(<f64>pb.loopEnd);
+            score.loopEnd = Math.min(pb.timeAt(<f64>pb.loopEnd), end.time);
         }
         if (pb.firstAudible > 0) this.foldPrefix();
         sortEvents(score.events);
