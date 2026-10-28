@@ -27,6 +27,14 @@ Render a song to WAV without a window:
 rive rive --render-audio=song.wav --data=song/exampleId=techno --data=song/autoplay=true --advance=70s
 ```
 
+## Web
+
+Published on UAT at https://partition-kqeo1q.uat.rive.to (UAT pages expire). `rive.yaml` binds the page to the UAT team, so republish with:
+
+```bash
+rive rive --publish=web --uat
+```
+
 ## Layout
 
 - `rive/`: the Rive program.

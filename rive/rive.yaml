@@ -5,5 +5,5 @@ logs:
   file: build/rive.log
   problems: build/problems.log
 pages:
-  teamId: 40887
+  teamId: 43576
   name: "partition"
