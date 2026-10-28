@@ -2,6 +2,7 @@ import { Tests } from "rive/test";
 import { Doc, Pos } from "../editor/doc";
 import { Bands, ColumnMap } from "../editor/bands";
 import { highlight, Hue } from "../editor/highlight";
+import { Grid, GridRow } from "../score/timeline";
 import { Column, commandAt, EditorView, KEY_BACKSPACE, KEY_DOWN, KEY_ENTER, KEY_TAB } from "../editor/view";
 
 @editTime
@@ -166,6 +167,27 @@ export class EditorTests extends Tests {
                 // Below the end of column 1: grid line 6 is band 5, which would be line 5.
                 let r = v.posAt(1, x1, top + v.lineH * 6 + 2);
                 expect.that(r.line).is(5);
+            });
+            test("a click in the timeline picks a row; compact rows their beat", (expect) => {
+                let v = view(["a\n\tb\nc\nd\ne\nf\n", "x\n"]);
+                let g = new Grid();
+                for (let r = 0; r < 6; r++) {
+                    let row = new GridRow();
+                    row.rpb = 2;
+                    row.beat = r / 2;
+                    row.rowInBeat = r % 2;
+                    g.rows.push(row);
+                }
+                v.grid = g;
+                let top = v.gridTop();
+                // Grid line 2 is row 1: row 0 is two lines tall.
+                expect.that(v.gutterRow(top + v.lineH * 2 + 2)).is(1);
+                expect.that(v.gutterRow(top + v.lineH * 4 + 2)).is(3);
+                expect.that(v.gutterRow(top + v.lineH * 40)).is(-1); // past the song
+                v.lineH = 6;
+                expect.that(v.gutterRow(top + 6 * 4 + 2)).is(2); // row 3 is inside beat 2
+                v.grid = null;
+                expect.that(v.gutterRow(top + 2)).is(-1);
             });
             test("switching columns keeps the row", (expect) => {
                 let v = view(["a\n\tb\nc\n", "x\ny\n"]);

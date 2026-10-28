@@ -23,6 +23,7 @@ export function examples(): Array<ExampleInfo> {
         new ExampleInfo("empty", "Empty song", "A conductor and four empty channels", 120, "template"),
         new ExampleInfo("deep-house", "Late Night Deep House", "Four-on-the-floor, organ bass, minor-nine stabs with delay, a breakdown", 122, "deep house"),
         new ExampleInfo("lofi", "Rainy Lo-Fi", "Swung drums, e-piano chords strummed, vinyl noise", 84, "lo-fi hip hop"),
+        new ExampleInfo("ultimate", "Ultimate", "Everything at once: a six-minute suite in six movements, one theme through three keys, 3/4 and just intonation, eleven tracks of its own instruments and samples (stereo choir, glass wavetable, bells, taiko, rain)", 72, "cinematic"),
         new ExampleInfo("wavefront", "Wavefront", "Sound design: an evolving wavetable pad swept by voice LFOs, an expressive lead with bends and pressure vibrato, a modulation matrix, stereo width, just intonation from a Scala file", 84, "ambient electronica"),
         new ExampleInfo("generator", "Drift Machine", "Controlled randomness: Euclidean rhythms, prob, humanize, picked notes and fills; a 4-bar loop that changes on every pass, from a seed", 118, "generative"),
         new ExampleInfo("variations", "Variations", "Musical abstractions: one set of patterns in three keys, scale degrees, chord progressions, pattern arguments for density, a fill every 4th pass", 112, "nu-soul"),

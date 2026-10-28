@@ -184,6 +184,9 @@ export function docBlocks(): Array<DocBlock> {
     out.push(new DocBlock(DocKind.Heading, "Tabs"));
     out.push(new DocBlock(DocKind.Paragraph, "The rail on the left switches between Tracks (Cmd+1), Patterns (Cmd+2), Instruments (Cmd+3), Samples (Cmd+4) and Song settings (Cmd+5 or Cmd+,); hold the pointer on an icon for its name. In Patterns, Instruments and Samples, the list picks the file and Play plays only that file."));
 
+    out.push(new DocBlock(DocKind.Heading, "The timeline"));
+    out.push(new DocBlock(DocKind.Paragraph, "The gutter on the left labels bars and beats. Click a row there to move the playhead to it: while playing, the song goes on from that row; stopped or paused, the playhead waits there and Play starts from it (Stop returns to the top)."));
+
     out.push(new DocBlock(DocKind.Heading, "Keyboard"));
     out.push(new DocBlock(DocKind.Paragraph, "Cmd+Enter play / pause · Cmd+Shift+Enter play from the cursor · Alt+Enter play the cursor's row · Cmd+. stop · Cmd+L loop the selection or bar · Cmd+M mute · Cmd+Shift+S solo · Cmd+E collapse the track · Cmd+Shift+E collapse all · Cmd+= / Cmd+- zoom the collapsed view · Cmd+[ / Cmd+] previous / next track · Cmd+D duplicate row · Alt+Up / Down move row · Cmd+Z / Cmd+Shift+Z undo / redo · Cmd+1 / 2 / 3 / 4 tabs (Cmd+, settings) · F2 rename the selected pattern or instrument · Cmd+/ or F1 this panel."));
     return out;

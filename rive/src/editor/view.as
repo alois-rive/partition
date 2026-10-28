@@ -473,6 +473,19 @@ export class EditorView {
         return new Pos(line, this.chFromDisplay(text, max<i32>(col, 0)));
     }
 
+    // The row a click at `y` in the gutter picks, or -1 past the song. Rows
+    // with figures pick themselves; compact rows (beats and bars only) pick
+    // the start of their beat.
+    gutterRow(y: f64): i32 {
+        let grid = this.grid;
+        if (grid == null || grid.rows.length == 0 || this.bands.count == 0) return -1;
+        let gridLine = max<i32>(<i32>Math.floor((y - this.gridTop() + this.scrollY) / this.lineH), 0);
+        let row = this.bands.bandAt(gridLine);
+        if (row >= grid.rows.length) return -1;
+        if (this.lineH < 12) while (row > 0 && grid.rows[row].rowInBeat > 0) row--;
+        return row;
+    }
+
     columnAtX(x: f64): i32 {
         for (let i = 0; i < this.columns.length; i++) {
             let left = this.columnX(i);
@@ -1265,6 +1278,12 @@ export class EditorView {
         if (x < 0 || y < 0 || x > this.width || y > this.height) return;
         e.hit();
         if (this.docsPointerDown(x, y)) return;
+        if (x < this.gutterW && y >= this.gridTop()) {
+            // The gutter is the timeline: a click moves the playhead there.
+            let row = this.gutterRow(y);
+            if (row >= 0) this.actions.push(`seek:${row}`);
+            return;
+        }
         let ci = this.columnAtX(x);
         if (ci < 0) {
             if (this.addLabel.length > 0 && y < this.headerH && x >= this.addX() && x < this.addX() + this.addWidth) this.actions.push("newFile");

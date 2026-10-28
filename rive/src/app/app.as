@@ -131,6 +131,7 @@ export class Partition extends Layout {
     changedAt: f64 = -1;
     changedPaths: Array<string> = [];
     startRow: i32 = 0;
+    cueRow: i32 = -1; // where the head waits while stopped (a click in the timeline), or -1
     userLoop: bool = false;
     loopStartRow: i32 = 0;
     loopEndRow: i32 = 0;
@@ -1256,6 +1257,7 @@ export class Partition extends Layout {
         this.editedSinceLoad = false;
         this.song = song;
         this.startRow = 0;
+        this.cueRow = -1;
         this.userLoop = false;
         let columns = new Array<Column>();
         let conductor = new Doc(CONDUCTOR_PATH, song.text(CONDUCTOR_PATH));
@@ -1396,6 +1398,7 @@ export class Partition extends Layout {
         }
         this.endAudition();
         this.startRow = row;
+        this.cueRow = -1;
         this.transport.state = TransportState.Stopped;
         this.compileNow();
         this.transport.play(0);
@@ -1412,12 +1415,30 @@ export class Partition extends Layout {
         }
         if (t.state == TransportState.Playing) t.pause();
         else if (t.state == TransportState.Paused) t.play(-1);
-        else this.playFrom(this.userLoop ? this.loopStartRow : 0);
+        else this.playFrom(this.restRow());
+    }
+
+    // Where play starts from stopped: the cued row, the loop, or the top.
+    restRow(): i32 {
+        if (this.cueRow >= 0) return this.cueRow;
+        return this.userLoop ? this.loopStartRow : 0;
+    }
+
+    // A click in the timeline: playing goes on from that row; otherwise the
+    // head waits there for play.
+    seek(row: i32): void {
+        if (this.auditioning || this.transport.state == TransportState.Playing) {
+            this.playFrom(row);
+            return;
+        }
+        if (this.transport.state == TransportState.Paused) this.transport.stop();
+        this.cueRow = row;
     }
 
     stop(): void {
         this.transport.stop();
         this.startRow = 0;
+        this.cueRow = -1;
         if (this.auditioning) {
             this.endAudition();
             // Hand the processor the song again, stopped.
@@ -1573,12 +1594,15 @@ export class Partition extends Layout {
         } else if (action == "play" || action == "transport.toggle") this.togglePlay();
         else if (action == "transport.play") {
             if (this.transport.state == TransportState.Paused) this.transport.play(-1);
-            else if (this.transport.state == TransportState.Stopped) this.playFrom(0);
+            else if (this.transport.state == TransportState.Stopped) this.playFrom(this.restRow());
         } else if (action == "transport.pause") {
             if (this.transport.state == TransportState.Playing) this.transport.pause();
         } else if (action == "stop" || action == "transport.stop") this.stop();
         else if (action == "playFromCursor" || action == "transport.playFromCursor") this.playFrom(this.tracksView.cursorRow());
         else if (action == "audition") this.audition();
+        else if (action.startsWith("seek:")) {
+            if (this.view == this.tracksView) this.seek(<i32>parseInt(action.substring(5)));
+        }
         else if (action == "loop" || action == "transport.loopToggle") this.toggleLoop();
         else if (action == "editor.followToggle") this.view.follow = !this.view.follow;
         else if (action == "editor.collapseAll") this.view.toggleAll();
@@ -1682,7 +1706,7 @@ export class Partition extends Layout {
             return;
         }
         tracks.playing = playing;
-        tracks.playRow = idle ? -1 : <i32>st.row;
+        tracks.playRow = this.cueRow >= 0 && this.transport.state != TransportState.Playing ? this.cueRow : idle ? -1 : <i32>st.row;
         let columns = tracks.columns;
         for (let i = 1; i < columns.length && i - 1 < MAX_CHANNELS; i++) columns[i].meter = st.channelPeaks[i - 1];
     }
@@ -1923,6 +1947,24 @@ export class Partition extends Layout {
         vm.setStr(a, "app", "sampleRate", `${<i32>Math.round(Audio.sampleRate() / 1000)} kHz`);
         let row = <i32>st.row;
         let score = this.score;
+        let time = st.time;
+        // A row cued in the timeline: show where play will start.
+        let cued = this.cueRow >= 0 && this.transport.state != TransportState.Playing;
+        let cuedAt = -1;
+        if (cued) {
+            row = this.cueRow;
+            time = 0;
+            if (score != null) {
+                let pb = score.playback;
+                for (let i = 0; i < pb.count; i++) {
+                    if (pb.source[i] == row) {
+                        cuedAt = i;
+                        time = Math.max(pb.start[i] - pb.start[0], 0);
+                        break;
+                    }
+                }
+            }
+        }
         let bar = 1;
         let beat = 1;
         if (score != null && row < score.grid.rows.length) {
@@ -1932,15 +1974,15 @@ export class Partition extends Layout {
         vm.setNum(t, "transport", "row", <f64>row);
         vm.setNum(t, "transport", "bar", <f64>bar);
         vm.setNum(t, "transport", "beat", <f64>beat);
-        vm.setNum(t, "transport", "seconds", Math.round(st.time * 10) / 10);
-        // Stopped, the engine's tempo is stale: show where the song starts.
-        let bpm = st.playing > 0 || score == null || score.playback.count == 0 ? st.bpm : score.playback.bpm[0];
+        vm.setNum(t, "transport", "seconds", Math.round(time * 10) / 10);
+        // Stopped, the engine's tempo is stale: show the tempo where play starts.
+        let bpm = st.playing > 0 || score == null || score.playback.count == 0 ? st.bpm : score.playback.bpm[max<i32>(cuedAt, 0)];
         vm.setNum(t, "transport", "bpm", Math.round(bpm * 10) / 10);
         vm.setNum(t, "transport", "voices", st.voices);
         vm.setBool(t, "transport", "loopEnabled", this.userLoop);
         vm.setNum(t, "transport", "loopStartRow", <f64>this.loopStartRow);
         vm.setNum(t, "transport", "loopEndRow", <f64>this.loopEndRow);
-        let secs = Math.max(st.time, 0);
+        let secs = Math.max(time, 0);
         let minutes = <i32>Math.floor(secs / 60);
         let rest = secs - <f64>minutes * 60;
         let tenths = <i32>Math.floor(rest * 10) % 10;

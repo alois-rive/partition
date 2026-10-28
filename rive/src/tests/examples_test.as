@@ -76,7 +76,7 @@ export class ExampleSongTests extends Tests {
                     let score = compileExample(expect, info, this.blob(info.blobName));
                     if (score == null || info.id == "empty") return;
                     expect.that(score.duration).greaterThan(30);
-                    expect.that(score.duration).lessThan(300);
+                    expect.that(score.duration).lessThan(420); // up to 7 minutes (Ultimate runs 6)
                     expect.that(score.count(EventKind.NoteOn)).greaterThan(0);
                 });
                 if (info.id != "empty") {
