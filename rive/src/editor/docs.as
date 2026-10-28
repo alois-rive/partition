@@ -19,7 +19,7 @@ export class DocBlock {
 
 // An example for each command, shown under its signature.
 function example(name: string): string {
-    if (name == "note") return "note(p: C4, len: 1/8, vel: 0.9)\nnote(p: [C4, E4, G4], at: 0.5)";
+    if (name == "note") return "note(p: C4, len: 1/8, vel: 0.9)\nnote(p: [C4, E4, G4], at: 0.5)\nnote(p: A4, len: 8, bend: 2st, press: 0.8)";
     if (name == "chord") return "chord(root: A3, type: min9, inv: 1, strum: 20ms)";
     if (name == "cut") return "cut(fade: 1/16)";
     if (name == "inst") return "inst(name: organ_bass)";
@@ -61,6 +61,10 @@ function example(name: string): string {
     if (name == "voice") return "voice(mono: true, glide: 40ms)";
     if (name == "defaults") return "defaults(vol: 0.6, reverb: 0.3)";
     if (name == "sample") return "sample(file: break, root: C2, slices: 16)\nsample(file: hat_open, key: A#2, oneshot: true, choke: 1)";
+    if (name == "mod") return "mod(src: lfo1, dst: pitch, amt: 0.3, via: press)\nmod(src: env2, dst: cutoff, amt: 2)";
+    if (name == "mod_env") return "mod_env(a: 5ms, d: 250ms, s: 0, r: 100ms)";
+    if (name == "vlfo") return "vlfo(n: 1, rate: 5.5Hz, shape: sine, delay: 300ms)";
+    if (name == "tuning") return "tuning(v: just, root: D)\ntuning(v: edo, steps: 19)\ntuning(file: d_just)";
     if (name == "param") return "param(name: brightness, target: cutoff, min: 300, max: 6k)";
     return "";
 }
@@ -144,11 +148,11 @@ export function docBlocks(): Array<DocBlock> {
     out.push(new DocBlock(DocKind.Code, "base(preset: pad)\nosc(wave: saw, level: 0.5, detune: -8c, unison: 3, spread: 12c)\nosc(wave: saw, level: 0.5, detune: 8c, unison: 3, spread: 12c)\nosc(wave: sine, oct: -1, level: 0.3)\nenv(a: 400ms, d: 1s, s: 0.7, r: 2s)\nfilter(type: lowpass, cutoff: 1.4k, res: 0.2, env: 0.3, keytrack: 0.5)\nfilter_env(a: 600ms, d: 2s, s: 0.4, r: 2s)\nvoice(poly: 8)\ndefaults(vol: 0.6, reverb: 0.4)\nparam(name: brightness, target: cutoff, min: 300, max: 6k)"));
     out.push(new DocBlock(DocKind.Paragraph, "The voice: up to four oscillators (osc), each adding to the sound; if the file declares any, they replace the preset's. FM uses the previous oscillator as modulator (fm: index, ratio: its frequency ratio). env shapes the volume (attack, decay, sustain, release; burst: repeats the first hit, for claps). pitch_env drops the pitch at the start (kicks, toms). filter and filter_env shape the tone; keytrack opens the filter for higher notes. drive adds saturation."));
     out.push(new DocBlock(DocKind.Paragraph, "voice sets how notes share voices: poly (how many at once), mono with glide (legato slides), and fixed: a pitch every note plays at (drums). defaults gives the track vol, pan and send values the first time the instrument is selected."));
-    out.push(new DocBlock(DocKind.Paragraph, "param adds a knob of your own: set(brightness: 0.5) or ramp(brightness: 1, over: 4bar) on a track moves its target between min and max. Tracks can also set the instrument's own parameters directly: cutoff, res, env, keytrack, drive, glide, attack, decay, sustain, release, pw, detune, and oscN.level, oscN.detune, oscN.pw, oscN.fm for oscillator N."));
+    out.push(new DocBlock(DocKind.Paragraph, "param adds a knob of your own: set(brightness: 0.5) or ramp(brightness: 1, over: 4bar) on a track moves its target between min and max. Tracks can also set the instrument's own parameters directly: cutoff, res, env, keytrack, drive, glide, attack, decay, sustain, release, pw, detune, pos, stereo, and oscN.level, oscN.detune, oscN.pw, oscN.fm, oscN.pos for oscillator N."));
     commands(out, "Instrument commands", "", ["base", "osc", "sample", "env", "pitch_env", "filter", "filter_env", "drive", "voice", "defaults", "param"]);
 
     out.push(new DocBlock(DocKind.Heading, "Samples", "samples"));
-    out.push(new DocBlock(DocKind.Paragraph, "A sample is a WAV file in samples/, named by its file name: samples/kick.wav is 'kick'. Any rate, 8 to 32-bit PCM or float; stereo files are mixed to mono. An instrument plays samples with sample(file: …), and the rest of the instrument (env, filter, drive, voice) shapes them like oscillators. Without an env, a sample plays as recorded."));
+    out.push(new DocBlock(DocKind.Paragraph, "A sample is a WAV file in samples/, named by its file name: samples/kick.wav is 'kick'. Any rate, 8 to 32-bit PCM or float; stereo files play in stereo (more channels are mixed to mono). An instrument plays samples with sample(file: …), and the rest of the instrument (env, filter, drive, voice) shapes them like oscillators. Without an env, a sample plays as recorded."));
     out.push(new DocBlock(DocKind.Paragraph, "Zones: each sample(…) covers the notes from lo to hi and plays at its own pitch on root, higher or lower for other notes. Several zones build a multi-sampled instrument or a drum kit; key: C2 is short for root, lo and hi on one note, for a drum hit."));
     out.push(new DocBlock(DocKind.Code, "sample(file: keys_c3, root: C3, hi: B3)\nsample(file: keys_c4, root: C4, lo: C4)\nenv(a: 2ms, d: 1.5s, s: 0.6, r: 450ms)"));
     out.push(new DocBlock(DocKind.Paragraph, "Slices: slices: 16 cuts the sample into 16 equal parts, one per note from root up, each at its own pitch: the way to play a drum break by steps, or rearrange it. start and end trim the file; tune shifts it (7st, -20c)."));
@@ -159,6 +163,14 @@ export function docBlocks(): Array<DocBlock> {
     out.push(new DocBlock(DocKind.Paragraph, "The Samples tab (Cmd+4) lists them. Select one to see its waveform; drag across it to select part of it, then Play it, Trim to it or Cut it (Delete), Normalize, Reverse, Fade in or out, or change its gain by 3 dB, with Undo (Cmd+Z). Use it shows the line an instrument needs, Copy puts it on the clipboard, New instrument makes one that plays it, and Used by lists the instruments that do."));
     out.push(new DocBlock(DocKind.Paragraph, "The + of the list adds samples: Import files (with the partition app, which converts AIFF, MP3 and M4A to WAV) or Record an instrument, which renders a note of any instrument into a new sample. Renaming a sample updates every sample(file: ...) that plays it."));
     out.push(new DocBlock(DocKind.Paragraph, "Samples load in the background when a song opens; play waits for them. The Chopped example uses all of this."));
+
+    out.push(new DocBlock(DocKind.Heading, "Sound design", "sound"));
+    out.push(new DocBlock(DocKind.Paragraph, "Wavetables: osc(wave: table, table: formant, pos: 0.3) plays a table of single cycles, and pos (0 to 1) moves through it, blending between its frames. The built-in tables: basic (sine, triangle, saw, square in turn), harmonic (more partials as pos rises), formant (a vowel-like peak climbing) and pwm (a pulse narrowing). A sample's name works too: the sample is read as cycles of 2048 frames, the usual wavetable WAV layout. Tracks move pos like any parameter: set(pos: 0.2) or ramp(pos: 0.8, over: 8bar) shifts every table oscillator, osc2.pos one of them."));
+    out.push(new DocBlock(DocKind.Paragraph, "The modulation matrix: mod(src: …, dst: …, amt: …) adds a source to a destination, up to 8 routes per instrument, each voice on its own. Sources: env (the volume envelope), env2 (mod_env, a second envelope), lfo1 and lfo2 (vlfo, LFOs that start with each note, after delay:), vel, key (octaves from C4), random (a value per note, -1 to 1), press and bend (the note's own). Destinations and what amt means: pitch (semitones), cutoff (octaves), res, level, pan, pw, pos, drive, fm and width. via: scales a route by a second source: mod(src: lfo1, dst: pitch, amt: 0.4, via: press) is a vibrato that pressure brings in."));
+    out.push(new DocBlock(DocKind.Code, "osc(wave: table, table: formant, unison: 5, spread: 12c)\nvoice(poly: 8, width: 0.9)\nvlfo(n: 1, rate: 0.1Hz, shape: tri)\nmod(src: lfo1, dst: pos, amt: 0.4)\nmod(src: random, dst: pan, amt: 0.3)\nmod_env(a: 2ms, d: 300ms, s: 0)\nmod(src: env2, dst: cutoff, amt: 2)"));
+    out.push(new DocBlock(DocKind.Paragraph, "Stereo: voice(width: 0.8) spreads each oscillator's unison voices from left to right (set(stereo: …) moves it from a track), and stereo samples keep their two sides. Expression: note(…, bend: 2st) slides the note's pitch by that interval over its length (a negative bend falls), and press: 0 to 1 is its pressure; both reach the instrument through mod as the sources bend and press."));
+    out.push(new DocBlock(DocKind.Paragraph, "Tunings: tuning(v: just) in conductor.ch tunes the whole song from that row, in a track only that track. just and pythagorean are pure-interval tunings, meantone is quarter-comma, and edo with steps: 19 divides the octave into 19 equal steps, one per key, so C5 is no longer an octave above C4. root: is the key that sounds as written (C by default; use the song's key). tuning(file: name) reads tunings/name.scl, a Scala file: a description line, the number of notes, then each in cents (with a '.') or as a ratio, the last being the period. tuning(v: equal) goes back. The Wavefront example uses all of this."));
+    commands(out, "Sound design commands", "", ["mod", "mod_env", "vlfo", "tuning"]);
 
     out.push(new DocBlock(DocKind.Heading, "The overview strip"));
     out.push(new DocBlock(DocKind.Paragraph, "The strip at the left of each track draws every command on the same time grid: notes as lines placed by pitch, patterns as a bar on the left edge, ramps as wedges, LFOs as waves. Collapse a track to keep only its strip; collapse all to see the whole song at once."));

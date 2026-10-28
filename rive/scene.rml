@@ -1221,5 +1221,6 @@
     <BlobAsset file="assets/examples/example-trap.song" name="example-trap" id="0:123"/>
     <BlobAsset file="assets/examples/example-variations.song" name="example-variations" id="0:124"/>
     <BlobAsset file="assets/examples/example-waltz.song" name="example-waltz" id="0:125"/>
+    <BlobAsset file="assets/examples/example-wavefront.song" name="example-wavefront" id="0:126"/>
     <BlobAsset file="assets/host/song.song" name="host-song" id="0:99"/>
 </Rive>

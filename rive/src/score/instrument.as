@@ -6,6 +6,8 @@ import { Diagnostics } from "../lang/diagnostics";
 import { MAX_OSCS, ParamInfo, paramByName, ParamScope } from "../lang/params";
 import { Song } from "../lang/song";
 import { presetSource } from "./presets";
+import { LFO_SHAPES } from "../lang/commands";
+import { MAX_MODS, MOD_DESTS, MOD_SOURCES, TABLES } from "../lang/sound";
 
 export const DEFAULT_INSTRUMENT: string = "sine";
 
@@ -30,6 +32,10 @@ export class OscDef {
     fm: f64 = 0;
     ratio: f64 = 1;
     phase: f64 = -1; // -1: random
+    table: string = ""; // wave: table: a built-in table or a sample (§7.6)
+    tableId: i32 = 0; // the built-in table, or -1
+    tableSample: i32 = -1; // the sample whose frames make the table, or -1
+    pos: f64 = 0; // where in the table, 0..1
 
     clone(): OscDef {
         let o = new OscDef();
@@ -44,6 +50,10 @@ export class OscDef {
         o.fm = this.fm;
         o.ratio = this.ratio;
         o.phase = this.phase;
+        o.table = this.table;
+        o.tableId = this.tableId;
+        o.tableSample = this.tableSample;
+        o.pos = this.pos;
         return o;
     }
 }
@@ -113,6 +123,36 @@ export class ZoneDef {
 
 export const MAX_ZONES: i32 = 16;
 
+// env2 starts as a decay to nothing: a pluck shape for cutoff or pitch.
+function modEnvDefault(): EnvDef {
+    let e = new EnvDef();
+    e.a = 0.005;
+    e.d = 0.4;
+    e.s = 0;
+    e.r = 0.3;
+    return e;
+}
+
+// One route of the modulation matrix (§7.6): `amt` × source (× `via`) onto `dst`.
+export class ModDef {
+    constructor(public src: i32, public dst: i32, public amt: f64, public via: i32) {}
+}
+
+// A per-voice LFO, a modulation source.
+export class VoiceLfo {
+    rate: f64 = 5; // Hz
+    shape: i32 = 0; // LFO_SHAPES
+    delay: f64 = 0; // seconds before it fades in
+
+    clone(): VoiceLfo {
+        let l = new VoiceLfo();
+        l.rate = this.rate;
+        l.shape = this.shape;
+        l.delay = this.delay;
+        return l;
+    }
+}
+
 // A macro parameter: `set(<name>: v)` moves `target` to min + v × (max − min).
 export class Macro {
     constructor(public name: string, public target: ParamInfo, public min: f64, public max: f64) {}
@@ -149,6 +189,10 @@ export class InstrumentDef {
     defaultReverb: f64 = NaN;
     macros: Array<Macro> = [];
     zones: Array<ZoneDef> = [];
+    mods: Array<ModDef> = [];
+    modEnv: EnvDef = modEnvDefault();
+    lfos: Array<VoiceLfo> = [new VoiceLfo(), new VoiceLfo()];
+    width: f64 = 0; // stereo spread of the unison voices (§7.6)
 
     clone(): InstrumentDef {
         let d = new InstrumentDef();
@@ -176,6 +220,10 @@ export class InstrumentDef {
         d.defaultReverb = this.defaultReverb;
         for (let i = 0; i < this.macros.length; i++) d.macros.push(this.macros[i]);
         for (let i = 0; i < this.zones.length; i++) d.zones.push(this.zones[i].clone());
+        for (let i = 0; i < this.mods.length; i++) d.mods.push(this.mods[i]);
+        d.modEnv = this.modEnv.clone();
+        d.lfos = [this.lfos[0].clone(), this.lfos[1].clone()];
+        d.width = this.width;
         return d;
     }
 
@@ -247,6 +295,22 @@ export function buildInstrument(name: string, file: CheckedFile, library: Instru
             o.fm = c.num("fm", o.fm);
             o.ratio = c.num("ratio", o.ratio);
             o.phase = c.num("phase", o.phase);
+            o.pos = c.num("pos", 0);
+            if (o.wave == "table") {
+                o.table = c.str("table", "basic");
+                o.tableId = TABLES.indexOf(o.table);
+                if (o.tableId < 0) {
+                    let names = library != null ? library.sampleNames : new Array<string>();
+                    o.tableSample = names.indexOf(o.table);
+                    if (o.tableSample < 0) {
+                        let v = c.get("table");
+                        diagnostics.error(c.line, v.col, v.endCol, "unknown-table", `'${o.table}' is not a table (${TABLES.join(", ")}) or a sample`);
+                        continue;
+                    }
+                }
+            } else if (c.has("table") || c.has("pos")) {
+                diagnostics.warning(c.line, c.node.col, c.node.endCol, "range", "table and pos only change wave: table");
+            }
             ownOscs.push(o);
         } else if (n == "env") {
             applyEnv(def.amp, c);
@@ -304,6 +368,20 @@ export function buildInstrument(name: string, file: CheckedFile, library: Instru
             def.slope = <i32>c.num("slope", <f64>def.slope);
         } else if (n == "filter_env") {
             applyEnv(def.filterEnv, c);
+        } else if (n == "mod") {
+            if (def.mods.length >= MAX_MODS) {
+                diagnostics.error(c.line, c.node.col, c.node.endCol, "range", `an instrument has at most ${MAX_MODS} mod routes`);
+                continue;
+            }
+            let via = c.has("via") ? MOD_SOURCES.indexOf(c.str("via", "")) : -1;
+            def.mods.push(new ModDef(MOD_SOURCES.indexOf(c.str("src", "")), MOD_DESTS.indexOf(c.str("dst", "")), c.num("amt", 0), via));
+        } else if (n == "mod_env") {
+            applyEnv(def.modEnv, c);
+        } else if (n == "vlfo") {
+            let l = def.lfos[<i32>c.num("n", 1) - 1];
+            l.rate = c.num("rate", l.rate);
+            l.shape = max<i32>(LFO_SHAPES.indexOf(c.str("shape", LFO_SHAPES[l.shape])), 0);
+            l.delay = c.num("delay", l.delay);
         } else if (n == "drive") {
             def.drive = c.num("v", 0);
         } else if (n == "voice") {
@@ -311,6 +389,7 @@ export function buildInstrument(name: string, file: CheckedFile, library: Instru
             def.mono = c.bool("mono", def.mono);
             def.glide = c.num("glide", def.glide);
             def.retrigger = c.bool("retrigger", def.retrigger);
+            def.width = c.num("width", def.width);
             if (c.has("fixed")) {
                 let f = c.get("fixed");
                 def.fixedPitch = f.hasOctave ? f.num : 60 + f.num;

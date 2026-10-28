@@ -25,8 +25,9 @@ In the window:
 - **Mixer:** `fx(type: eq|comp|dist|chorus|phaser|filter, …)` builds an effect chain on a track, a bus (`buses:` in song.yaml, shown after the tracks) or the master (in `conductor.ch`). Compressors take a `sidechain: kick`, tracks play into a group bus with `bus:` or send to one with `set(send.space: 0.3)`, every effect parameter can be set, ramped or modulated (`ramp(filter.cutoff: 8k, over: 4bar)`), and the footer shows the loudness in LUFS (spec §7.5). Try the **Pump** example.
 - **Keys and variations:** `key(root: A, mode: minor)` (song-wide in the conductor, or per track) lets notes be written as scale degrees (`note(d: [1, 3, 5])`, `chord(d: 2)`) and chords as progressions (`prog(chords: "ii V7 I", every: 1bar)`). Patterns take arguments (`pattern(name: riff, root: F3, busy: true)`, used inside as `$root`, defaults with `args(...)`), and any command can play on some passes only (`on: 4/4`, `except: 4/4`, `if: $busy`) for fills and variations (spec §5.6, §8.1, §8.2). Try the **Variations** example.
 - **Randomness:** `prob:` on any command, `humanize(time: 8ms, vel: 0.1)`, Euclidean rhythms (`euclid(hits: 5, steps: 16, p: C4)`), random picks of notes (`note(d: [1, 3, 5], pick: 1)`) and of patterns (`pick(from: [fill_a, fill_b])`). It all follows `song.yaml`'s `seed:` (Settings has a Shuffle button), so the same seed always renders the same song, and every pass of a loop is different (spec §6.5). Try the **Drift Machine** example.
+- **Sound design:** wavetable oscillators (`osc(wave: table, table: formant, pos: 0.4)`, or a sample's cycles), a modulation matrix per voice (`mod(src: lfo1, dst: pos, amt: 0.3)` from envelopes, voice LFOs, velocity, key, random, pressure and bend), stereo voices (`voice(width: 0.8)`, stereo samples), per-note expression (`note(p: A4, bend: 2st, press: 0.8)`) and tunings (`tuning(v: just)`, `edo` with any number of steps, or Scala `.scl` files in `tunings/`) (spec §7.6). Try the **Wavefront** example.
 - **Mute and solo:** Cmd+M mutes the current channel and Cmd+Shift+S solos it. The M and S buttons in each column header do the same.
-- **Toolbar:** **Examples ▾** opens a dropdown of the 26 bundled songs, **New** starts an empty one, and **Export WAV** renders the song. Saving to disk needs the shell (below); in the plain previewer, edits stay in memory.
+- **Toolbar:** **Examples ▾** opens a dropdown of the 27 bundled songs, **New** starts an empty one, and **Export WAV** renders the song. Saving to disk needs the shell (below); in the plain previewer, edits stay in memory.
 
 Render a song to WAV without a window:
 
@@ -69,7 +70,7 @@ rive rive --publish=web --uat
   - `src/editor`: the channel grid (M5).
   - `src/app`: the app, transport, export and view-model bindings (M4/M6).
   - `scene.rml`: the chrome and the view-model contract (M6).
-  - `assets/examples`: the 26 bundled songs (`chopped`, `pump`, `variations` and `generator` are made by the scripts in `tools/`).
+  - `assets/examples`: the 27 bundled songs (`chopped`, `pump`, `variations`, `generator` and `wavefront` are made by the scripts in `tools/`).
   - `src/tests`: the test suites.
 - `shell/`: the `partition` shell (M7), with `.github/workflows` for CI and macOS releases.
 - `spikes/m0/`: the platform spike, with results in [docs/m0-findings.md](docs/m0-findings.md).

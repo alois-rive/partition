@@ -5,7 +5,7 @@ import { InstrumentDef } from "../score/instrument";
 
 export const MAX_INSTRUMENTS: i32 = 96;
 export const MAX_OSC: i32 = 4;
-export const OSC_STRIDE: i32 = 11;
+export const OSC_STRIDE: i32 = 14;
 
 // Field offsets within one instrument's record.
 export const I_OSC_COUNT: i32 = 0;
@@ -21,6 +21,9 @@ export const O_SPREAD: i32 = 7;
 export const O_FM: i32 = 8;
 export const O_RATIO: i32 = 9;
 export const O_PHASE: i32 = 10;
+export const O_TABLE: i32 = 11; // built-in wavetable id, or -1 (§7.6)
+export const O_TSAMPLE: i32 = 12; // the sample a wavetable is made of, or -1
+export const O_POS: i32 = 13;
 export const I_AMP: i32 = I_OSC + MAX_OSC * OSC_STRIDE; // a d s r curve burst burstGap
 export const I_PITCH_AMOUNT: i32 = I_AMP + 7;
 export const I_PITCH_DECAY: i32 = I_PITCH_AMOUNT + 1;
@@ -56,7 +59,15 @@ export const Z_ONESHOT: i32 = 12;
 export const Z_REVERSE: i32 = 13;
 export const Z_CHOKE: i32 = 14;
 export const ZONE_STRIDE: i32 = 15;
-export const INST_STRIDE: i32 = I_ZONE + MAX_ZONE * ZONE_STRIDE;
+// Sound design (§7.6): width, the mod matrix, env2, the voice LFOs.
+export const I_WIDTH: i32 = I_ZONE + MAX_ZONE * ZONE_STRIDE;
+export const I_MOD_COUNT: i32 = I_WIDTH + 1;
+export const I_MOD: i32 = I_MOD_COUNT + 1; // MAX_MOD records of MOD_STRIDE: src, dst, amt, via
+export const MAX_MOD: i32 = 8;
+export const MOD_STRIDE: i32 = 4;
+export const I_MENV: i32 = I_MOD + MAX_MOD * MOD_STRIDE; // a d s r
+export const I_VLFO: i32 = I_MENV + 4; // 2 × rate shape delay
+export const INST_STRIDE: i32 = I_VLFO + 6;
 
 export const WAVE_SINE: i32 = 0;
 export const WAVE_TRI: i32 = 1;
@@ -64,6 +75,7 @@ export const WAVE_SAW: i32 = 2;
 export const WAVE_SQUARE: i32 = 3;
 export const WAVE_PULSE: i32 = 4;
 export const WAVE_NOISE: i32 = 5;
+export const WAVE_TABLE: i32 = 6;
 
 export const FILTER_OFF: i32 = -1;
 
@@ -73,6 +85,7 @@ export function waveId(name: string): i32 {
     if (name == "square") return WAVE_SQUARE;
     if (name == "pulse") return WAVE_PULSE;
     if (name == "noise") return WAVE_NOISE;
+    if (name == "table") return WAVE_TABLE;
     return WAVE_SINE;
 }
 
@@ -106,6 +119,9 @@ export function packInstruments(defs: Array<InstrumentDef>): Float64Array {
             out[ob + O_FM] = osc.fm;
             out[ob + O_RATIO] = osc.ratio;
             out[ob + O_PHASE] = osc.phase;
+            out[ob + O_TABLE] = osc.wave == "table" ? <f64>osc.tableId : -1;
+            out[ob + O_TSAMPLE] = <f64>osc.tableSample;
+            out[ob + O_POS] = osc.pos;
         }
         let a = d.amp;
         out[b + I_AMP] = a.a;
@@ -134,6 +150,25 @@ export function packInstruments(defs: Array<InstrumentDef>): Float64Array {
         out[b + I_GLIDE] = d.glide;
         out[b + I_RETRIGGER] = d.retrigger ? 1 : 0;
         out[b + I_FIXED] = d.fixedPitch;
+        out[b + I_WIDTH] = d.width;
+        let mods = min<i32>(d.mods.length, MAX_MOD);
+        out[b + I_MOD_COUNT] = <f64>mods;
+        for (let m = 0; m < mods; m++) {
+            let mb = b + I_MOD + m * MOD_STRIDE;
+            out[mb] = <f64>d.mods[m].src;
+            out[mb + 1] = <f64>d.mods[m].dst;
+            out[mb + 2] = d.mods[m].amt;
+            out[mb + 3] = <f64>d.mods[m].via;
+        }
+        out[b + I_MENV] = d.modEnv.a;
+        out[b + I_MENV + 1] = d.modEnv.d;
+        out[b + I_MENV + 2] = d.modEnv.s;
+        out[b + I_MENV + 3] = d.modEnv.r;
+        for (let l = 0; l < 2; l++) {
+            out[b + I_VLFO + l * 3] = d.lfos[l].rate;
+            out[b + I_VLFO + l * 3 + 1] = <f64>d.lfos[l].shape;
+            out[b + I_VLFO + l * 3 + 2] = d.lfos[l].delay;
+        }
         let zones = min<i32>(d.zones.length, MAX_ZONE);
         out[b + I_ZONE_COUNT] = <f64>zones;
         for (let z = 0; z < zones; z++) {

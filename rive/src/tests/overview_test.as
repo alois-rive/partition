@@ -121,7 +121,8 @@ export class OverviewTests extends Tests {
                 expect.that(names.includes("fx")).is(true);
                 expect.that(names.includes("prog")).is(true);
                 expect.that(names.includes("euclid")).is(true);
-                expect.that(names.length).is(43);
+                expect.that(names.includes("mod") && names.includes("tuning")).is(true);
+                expect.that(names.length).is(47);
             });
             test("breadcrumb summaries", (expect) => {
                 expect.that(summaryAt("chord(root: F3, type: maj7, inv: 0)", 3)).is("F3 maj7");

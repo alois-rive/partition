@@ -574,7 +574,21 @@ export class Partition extends Layout {
         if (data == null || data.error.length > 0 || data.frames == 0) return;
         let a = <i32>panel.selA;
         let b = <i32>panel.selB;
-        let frames = editFrames(data.data, op, a, b);
+        let frames = editFrames(data.channels == 2 ? data.left : data.data, op, a, b);
+        let channels = 1;
+        if (data.channels == 2) {
+            // Both sides take the same edit, interleaved back into one stereo file.
+            let right = editFrames(data.right, op, a, b);
+            let both = new Float32Array(frames.length * 2);
+            for (let i = 0; i < frames.length; i++) {
+                both[i * 2] = frames[i];
+                both[i * 2 + 1] = i < right.length ? right[i] : 0;
+            }
+            if (frames.length >= 2) {
+                frames = both;
+                channels = 2;
+            }
+        }
         if (frames.length < 2) {
             this.say("that would leave the sample empty");
             return;
@@ -585,7 +599,7 @@ export class Partition extends Layout {
         if (undo.length > 30) undo.shift();
         this.sampleUndo.set(path, undo);
         let format = data.float || data.bits > 16 ? FORMAT_FLOAT32 : FORMAT_PCM16;
-        let text = encodeBase64(encodeWav(frames, frames.length, 1, <i32>data.rate, format, "", ""));
+        let text = encodeBase64(encodeWav(frames, frames.length / channels, channels, <i32>data.rate, format, "", ""));
         this.fileEdited(path, text);
         if (op == "trim" || op == "cut") {
             panel.selA = op == "cut" ? panel.selA : 0;

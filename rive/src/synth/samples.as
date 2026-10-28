@@ -3,19 +3,21 @@
 //
 // Bank layout, all f32: [0] the number of samples, then one record of
 // BANK_RECORD values per sample (its first frame in the PCM area, its frame
-// count, its sample rate, its peak), then the PCM area from BANK_HEADER on.
+// count, its sample rate, its peak, its channels), then the PCM area from
+// BANK_HEADER on. A stereo sample keeps its left frames, then its right.
 // Frame offsets stay exact in f32 up to 2^24, which caps the bank at
 // MAX_BANK_FRAMES.
 
 import { Blob } from "rive/shared";
 
 export const MAX_SAMPLES: i32 = 64;
-export const BANK_RECORD: i32 = 4;
+export const BANK_RECORD: i32 = 5;
 export const BANK_HEADER: i32 = 1 + MAX_SAMPLES * BANK_RECORD;
 export const B_OFFSET: i32 = 0;
 export const B_FRAMES: i32 = 1;
 export const B_RATE: i32 = 2;
 export const B_PEAK: i32 = 3;
+export const B_CHANNELS: i32 = 4;
 export const MAX_BANK_FRAMES: i32 = 1 << 24;
 
 // --- Base64 -------------------------------------------------------------------
@@ -84,7 +86,10 @@ export class SampleData {
     frames: i32 = 0;
     bits: i32 = 16; // the file's sample size (edits keep 16 bit files 16 bit)
     float: bool = false;
-    data: Float32Array = new Float32Array(0); // mono
+    data: Float32Array = new Float32Array(0); // mono (both sides mixed)
+    channels: i32 = 1; // 2 for a stereo sample, which also has:
+    left: Float32Array = new Float32Array(0);
+    right: Float32Array = new Float32Array(0);
     error: string = "";
 }
 
@@ -103,7 +108,8 @@ function failed(message: string): SampleData {
 }
 
 // Reads a WAV file: PCM 8, 16, 24 or 32 bit, or float 32 or 64 bit, any rate
-// and channel count. Channels are summed to mono (stereo voices are M13).
+// and channel count. Stereo files keep their sides (and a mono mix); more
+// channels are summed to mono.
 export function decodeWav(b: Uint8Array): SampleData {
     let n = b.length;
     if (n < 12 || b[0] != 82 || b[1] != 73 || b[2] != 70 || b[3] != 70 || b[8] != 87 || b[9] != 65 || b[10] != 86 || b[11] != 69) {
@@ -143,6 +149,9 @@ export function decodeWav(b: Uint8Array): SampleData {
             s.bits = bits;
             s.float = float;
             let data = new Float32Array(frames);
+            let stereo = channels == 2;
+            let left = new Float32Array(stereo ? frames : 0);
+            let right = new Float32Array(stereo ? frames : 0);
             let scale = 1.0 / <f64>channels;
             let p = body;
             for (let f = 0; f < frames; f++) {
@@ -163,12 +172,21 @@ export function decodeWav(b: Uint8Array): SampleData {
                         v = <f64>u32(b, p) / 2147483648;
                     }
                     if (!isFinite(v)) v = 0;
+                    if (stereo) {
+                        if (c == 0) left[f] = <f32>v;
+                        else right[f] = <f32>v;
+                    }
                     sum += v;
                     p += width;
                 }
                 data[f] = <f32>(sum * scale);
             }
             s.data = data;
+            if (stereo) {
+                s.channels = 2;
+                s.left = left;
+                s.right = right;
+            }
             return s;
         }
         i = body + size + (size & 1);
@@ -194,7 +212,7 @@ export class BankResult {
         let bytes = decodeBase64(texts[i]);
         let s = bytes == null ? failed("not base64 text") : decodeWav(bytes);
         if (s.error.length == 0 && total + s.frames > MAX_BANK_FRAMES) s = failed("the samples are too long together (about 5 minutes at 48 kHz at most)");
-        if (s.error.length == 0) total += s.frames;
+        if (s.error.length == 0) total += s.frames * s.channels;
         decoded.push(s);
         result.errors.push(s.error);
     }
@@ -205,16 +223,21 @@ export class BankResult {
         let s = decoded[i];
         let r = 1 + i * BANK_RECORD;
         let peak = 0.0;
-        for (let f = 0; f < s.frames; f++) {
-            let v = <f64>s.data[f];
-            bank[BANK_HEADER + offset + f] = <f32>v;
-            peak = Math.max(peak, Math.abs(v));
+        for (let c = 0; c < s.channels; c++) {
+            let src = s.channels == 2 ? (c == 0 ? s.left : s.right) : s.data;
+            let at = BANK_HEADER + offset + c * s.frames;
+            for (let f = 0; f < s.frames; f++) {
+                let v = <f64>src[f];
+                bank[at + f] = <f32>v;
+                peak = Math.max(peak, Math.abs(v));
+            }
         }
         bank[r + B_OFFSET] = <f32>offset;
         bank[r + B_FRAMES] = <f32>s.frames;
         bank[r + B_RATE] = <f32>s.rate;
         bank[r + B_PEAK] = <f32>peak;
-        offset += s.frames;
+        bank[r + B_CHANNELS] = <f32>s.channels;
+        offset += s.frames * s.channels;
     }
     result.bank = Blob.fromArray(bank);
     return result;

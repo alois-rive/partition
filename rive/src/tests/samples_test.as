@@ -5,7 +5,7 @@ import { compileSong, CompileOptions, Score } from "../score/compiler";
 import { packScore } from "../audio/pack";
 import { encodeWav, FORMAT_FLOAT32, FORMAT_PCM16 } from "../audio/wav";
 import { Engine } from "../synth/engine";
-import { BANK_HEADER, buildBank, decodeBase64, decodeWav, encodeBase64 } from "../synth/samples";
+import { BANK_HEADER, BANK_RECORD, buildBank, decodeBase64, decodeWav, encodeBase64 } from "../synth/samples";
 
 const SR: f64 = 48000;
 
@@ -127,8 +127,8 @@ export class SampleTests extends Tests {
                 let bank = new Float32Array(<i32>(r.bank!.byteLength / 4));
                 r.bank!.readInto(0, bank);
                 expect.that(<i32>bank[0]).is(3);
-                expect.that(<i32>bank[1 + 2 * 4]).is(480); // the third starts after the first (and the empty second)
-                expect.that(<i32>bank[1 + 2 * 4 + 1]).is(40);
+                expect.that(<i32>bank[1 + 2 * BANK_RECORD]).is(480); // the third starts after the first (and the empty second)
+                expect.that(<i32>bank[1 + 2 * BANK_RECORD + 1]).is(40);
                 expect.that(bank.length).is(BANK_HEADER + 520);
             });
         });

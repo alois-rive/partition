@@ -246,7 +246,7 @@ export class CompilerTests extends Tests {
             test("macros may target oscillator parameters", (expect) => {
                 let s = build("inst(name: m)\nset(sparkle: 1)\n", [new SongFile("instruments/m.inst", "osc(wave: sine)\nosc(wave: sine, fm: 0.5)\nparam(name: sparkle, target: osc2.fm, min: 0, max: 4)\n")]);
                 expect.that(codes(s)).is("");
-                expect.that(params(s, 32 + 4 + 3)[0].value).is(4);
+                expect.that(params(s, 32 + 5 + 3)[0].value).is(4);
             });
             test("stop ends running patterns", (expect) => {
                 let s = build("pattern(name: hats, times: 4, id: h)\n\n\n\n\nstop(id: h)\n", [HATS]);

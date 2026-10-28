@@ -14,7 +14,7 @@ import { DurUnit, Typed } from "../lang/types";
 import { Curve, curveFromName, curveValue } from "./curves";
 import { EventKind, ScoreEvent, sortEvents } from "./events";
 import { DEFAULT_INSTRUMENT, diagnosticsFor, InstrumentDef, InstrumentLibrary } from "./instrument";
-import { buildGrid, buildPlayback, Grid, Playback, PlaybackOptions, songRows } from "./timeline";
+import { buildGrid, buildPlayback, Grid, makeTuning, Playback, PlaybackOptions, songRows } from "./timeline";
 
 export const MAX_PATTERN_DEPTH: i32 = 8;
 // Rows patterns may keep playing past the end of the song.
@@ -99,6 +99,7 @@ class ChannelState {
     keyMode: i32 = 0;
     humanizeTime: Typed? = null; // humanize (§6.5): the most a note moves, and its velocity
     humanizeVel: f64 = 0;
+    tuning: i32 = -1; // the track's own tuning (an index into the playback's), or -1 for the song's
     // Keyed by (instrument + 1) × 256 + param: channel-strip params use instrument -1.
     params: Map<i32, ParamTrack> = new Map<i32, ParamTrack>();
 
@@ -113,6 +114,7 @@ class ChannelState {
         s.keyMode = this.keyMode;
         s.humanizeTime = this.humanizeTime;
         s.humanizeVel = this.humanizeVel;
+        s.tuning = this.tuning;
         let keys = this.params.keys();
         for (let i = 0; i < keys.length; i++) s.params.set(keys[i], this.params.get(keys[i]).clone());
         return s;
@@ -566,6 +568,12 @@ class Compiler {
             // Defaults, read when the pattern starts.
         } else if (n == "prog") {
             this.progression(c, p, state, owner);
+        } else if (n == "tuning") {
+            let made = makeTuning(c, this.song, diagnosticsFor(this.diagnostics, path));
+            if (made != null) {
+                this.playback.tunings.push(made);
+                state.tuning = this.playback.tunings.length - 1;
+            }
         } else if (n == "humanize") {
             let time = c.has("time") ? c.get("time") : null;
             state.humanizeTime = time != null && time.num > 0 ? time : null;
@@ -629,7 +637,7 @@ class Compiler {
             }
         } else if (n == "glide") {
             let e = this.emit(EventKind.Glide, t);
-            e.pitch = this.pitchOf(c.get("to"), state);
+            e.pitch = this.tuned(this.pitchOf(c.get("to"), state), state, p);
             e.seconds = pb.secondsOf(c.get("over"), <f64>p);
         } else if (n == "lfo" || n == "lfo_off") {
             let target = this.resolveParam(c.params[0], state, c, path);
@@ -691,6 +699,14 @@ class Compiler {
         }
     }
 
+    // The sounding pitch of written `pitch` in the tuning at row `p` (§7.6).
+    tuned(pitch: f64, state: ChannelState, p: i32): f64 {
+        let pb = this.playback;
+        let index = state.tuning >= 0 ? state.tuning : pb.count > 0 ? pb.tuningAt[min<i32>(max<i32>(p, 0), pb.count - 1)] : 0;
+        if (index <= 0 || index >= pb.tunings.length) return pitch;
+        return pb.tunings[index].tune(pitch);
+    }
+
     // The key at played row `p`: the track's own, or the song's.
     keyRootAt(state: ChannelState, p: i32): i32 {
         if (state.keyRoot >= 0) return state.keyRoot;
@@ -750,7 +766,7 @@ class Compiler {
             let on = this.emit(EventKind.NoteOn, at);
             on.owner = owner;
             on.note = note;
-            on.pitch = pitches[i];
+            on.pitch = this.tuned(pitches[i], state, p);
             on.vel = moved[1];
             on.inst = instIndex;
             on.seconds = seconds;
@@ -760,7 +776,7 @@ class Compiler {
             let off = this.emit(EventKind.NoteOff, at + seconds);
             off.owner = owner;
             off.note = note;
-            this.lastPitch = pitches[i];
+            this.lastPitch = on.pitch;
         }
     }
 
@@ -808,8 +824,10 @@ class Compiler {
             let on = this.emit(EventKind.NoteOn, start);
             on.owner = owner;
             on.note = note;
-            on.pitch = pitches[i];
+            on.pitch = this.tuned(pitches[i], state, p);
             on.vel = moved[1];
+            on.bend = c.num("bend", 0);
+            on.press = c.num("press", 0);
             on.inst = instIndex;
             on.seconds = seconds;
             on.from = glide > 0 ? this.lastPitch : NaN;
@@ -818,7 +836,7 @@ class Compiler {
             let off = this.emit(EventKind.NoteOff, start + seconds);
             off.owner = owner;
             off.note = note;
-            this.lastPitch = pitches[i];
+            this.lastPitch = on.pitch;
         }
     }
 
@@ -868,6 +886,8 @@ class Compiler {
         if (param == ParamId.Release) return def.amp.r;
         if (param == ParamId.Pw) return def.oscs[0].pw;
         if (param == ParamId.Detune) return def.oscs[0].detune;
+        if (param == ParamId.Pos) return 0;
+        if (param == ParamId.Width) return def.width;
         if (param >= ParamId.Osc && param < ParamId.Count) {
             let o = (param - ParamId.Osc) / OSC_FIELDS.length;
             if (o >= def.oscs.length) return NaN;
@@ -876,7 +896,8 @@ class Compiler {
             if (field == 0) return osc.level;
             if (field == 1) return osc.detune;
             if (field == 2) return osc.pw;
-            return osc.fm;
+            if (field == 3) return osc.fm;
+            return osc.pos;
         }
         return NaN;
     }

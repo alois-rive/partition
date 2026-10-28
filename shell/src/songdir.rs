@@ -10,7 +10,12 @@ use crate::bundle::{self, SongFile, path_problem};
 
 /// Whether a path inside a song folder is one of the song's files.
 pub fn is_song_file(rel: &str) -> bool {
-    rel == "song.yaml" || rel.ends_with(".ch") || rel.ends_with(".pat") || rel.ends_with(".inst") || is_binary(rel)
+    rel == "song.yaml"
+        || rel.ends_with(".ch")
+        || rel.ends_with(".pat")
+        || rel.ends_with(".inst")
+        || rel.ends_with(".scl") // tunings (docs/spec.md §7.6)
+        || is_binary(rel)
 }
 
 /// Song files that are binary on disk (samples, docs/spec.md §7.4). In a
@@ -216,9 +221,13 @@ mod tests {
         fs::write(d.join(".hidden.ch"), "ignored").unwrap();
         fs::create_dir_all(d.join("samples")).unwrap();
         fs::write(d.join("samples/k.wav"), [0u8, 255, 7]).unwrap();
+        write_file(d, "tunings/t.scl", "t\n1\n2/1\n").unwrap();
         let files = read_dir(d).unwrap();
         let paths: Vec<&str> = files.iter().map(|f| f.path.as_str()).collect();
-        assert_eq!(paths, ["song.yaml", "conductor.ch", "channels/a.ch", "channels/b.ch", "patterns/p.pat", "samples/k.wav"]);
+        assert_eq!(
+            paths,
+            ["song.yaml", "conductor.ch", "channels/a.ch", "channels/b.ch", "patterns/p.pat", "samples/k.wav", "tunings/t.scl"]
+        );
         // Samples travel as base64, and land as bytes again.
         assert_eq!(files[5].text, "AP8H\n");
         let out = tempfile::tempdir().unwrap();

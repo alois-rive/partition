@@ -7,6 +7,7 @@ import { Diagnostics } from "../lang/diagnostics";
 import { ParamId } from "../lang/params";
 import { FILTER_MODES, FX_BASE, fxParams, fxTypeId } from "../lang/fx";
 import { MODES } from "../lang/commands";
+import { builtinTuning, parseScala, Tuning } from "../lang/tuning";
 import { Song } from "../lang/song";
 import { DurUnit, Typed } from "../lang/types";
 import { curveFromName, curveValue, Curve } from "./curves";
@@ -161,6 +162,9 @@ export class Playback {
     // The song's key at each played row (§5.6): its root (0..11) and mode (lang/scales.as).
     keyRoot: Array<i32> = [];
     keyMode: Array<i32> = [];
+    // Tunings (§7.6): the list (0 is equal temperament) and the song's at each played row.
+    tunings: Array<Tuning> = [builtinTuning("equal", 12, 60)];
+    tuningAt: Array<i32> = [];
     firstAudible: i32 = 0; // played rows before it only set state
     loopStart: i32 = -1; // the endless loop's last pass, as played rows [start, end)
     loopEnd: i32 = -1;
@@ -291,6 +295,32 @@ function eventFor(kind: EventKind, seq: i32): ScoreEvent {
     return e;
 }
 
+// The tuning `tuning(…)` asks for: a built-in one, or tunings/<file>.scl.
+// The root is the key that sounds as written (C by default).
+export function makeTuning(c: CheckedCommand, song: Song, d: Diagnostics): Tuning? {
+    let root = 60;
+    if (c.has("root")) {
+        let r = c.get("root");
+        root = r.hasOctave ? <i32>r.num : 60 + <i32>r.num;
+    }
+    if (c.has("file")) {
+        let name = c.str("file", "");
+        let path = `tunings/${name}.scl`;
+        let v = c.get("file");
+        if (!song.files.has(path)) {
+            d.error(c.line, v.col, v.endCol, "missing-file", `there is no ${path}`);
+            return null;
+        }
+        let t = parseScala(song.text(path), root);
+        if (t.error.length > 0) {
+            d.error(c.line, v.col, v.endCol, "tuning", `${path}: ${t.error}`);
+            return null;
+        }
+        return t;
+    }
+    return builtinTuning(c.str("v", "equal"), <i32>c.num("steps", 12), root);
+}
+
 // A parameter event of the master (its volume or its effects).
 function masterParam(seq: i32, param: i32, value: f64, curve: i32, row: i32, played: i32): ScoreEvent {
     let e = eventFor(EventKind.Param, seq);
@@ -315,6 +345,7 @@ export function buildPlayback(song: Song, grid: Grid, options: PlaybackOptions, 
     let swing = config.swing;
     let keyRoot = 0; // C major until the conductor says otherwise
     let keyMode = 0;
+    let tuning = 0;
     let ramp: TempoRamp? = null;
     let pending = new Array<PendingRamp>();
     let counters = new Map<i32, i32>();
@@ -368,6 +399,12 @@ export function buildPlayback(song: Song, grid: Grid, options: PlaybackOptions, 
                     e.row = r;
                     e.played = p;
                     pb.events.push(e);
+                }
+            } else if (n == "tuning") {
+                let made = makeTuning(c, song, d);
+                if (made != null) {
+                    pb.tunings.push(made);
+                    tuning = pb.tunings.length - 1;
                 }
             } else if (n == "key") {
                 let root = c.get("root");
@@ -450,6 +487,7 @@ export function buildPlayback(song: Song, grid: Grid, options: PlaybackOptions, 
         pb.sigNum.push(sigNum);
         pb.sigDen.push(sigDen);
         pb.keyRoot.push(keyRoot);
+        pb.tuningAt.push(tuning);
         pb.keyMode.push(keyMode);
         lastVisit.set(r, p);
         t += dur;

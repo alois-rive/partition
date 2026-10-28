@@ -382,8 +382,8 @@ prefix (`pitch` → `p`).
 
 | Command | Arguments | Effect |
 |---|---|---|
-| `note` | `p: pitch \| list<pitch>` or `d: degree \| list<degree>` (§5.6), `len?: duration`, `vel?: gain`, `inst?: ident`, `glide?: duration`, `at?: duration` | Plays one note, or several at once from a list. `at:` delays the start inside the row (micro-timing after swing, such as `at: 0.5` meaning half a row)¹. |
-| `chord` | `root: pitch` or `d: degree` (with `size?: 3..5` when it has no `type`, §5.6), `type?: ident`, `inv?: number [0]`, `spread?: number [0]`, `len?`, `vel?`, `strum?: duration [0]`, `at?: duration` | Plays a chord. Types: `maj min dim aug sus2 sus4 maj7 min7 dom7 m7b5 dim7 maj9 min9 dom9 min11 add9 maj6 m6`. `inv` rotates the notes upward, `spread` moves alternate notes up an octave, and `strum` staggers the note starts. |
+| `note` | `p: pitch \| list<pitch>` or `d: degree \| list<degree>` (§5.6), `len?: duration`, `vel?: gain`, `inst?: ident`, `glide?: duration`, `at?: duration`, `bend?: interval`, `press?: number 0..1` | Plays one note, or several at once from a list. `at:` delays the start inside the row (micro-timing after swing, such as `at: 0.5` meaning half a row)¹. `bend` and `press` are the note's expression (§7.6). |
+| `chord` | `root: pitch` or `d: degree` (with `size?: 3..5` when it has no `type`, §5.6), `type?: ident`, `inv?: number [0]`, `spread?: number [0]`, `len?`, `vel?`, `strum?: duration [0]`, `at?: duration`, `bend?`, `press?` | Plays a chord. Types: `maj min dim aug sus2 sus4 maj7 min7 dom7 m7b5 dim7 maj9 min9 dom9 min11 add9 maj6 m6`. `inv` rotates the notes upward, `spread` moves alternate notes up an octave, and `strum` staggers the note starts. |
 | `cut` | `fade?: duration [5ms]` | Releases every sounding note on the channel. |
 
 ¹ `at:` accepts a fraction of a row (`at: 0.5`) or any duration. It cannot
@@ -618,21 +618,23 @@ defaults(vol: 0.6, reverb: 0.4)
 | Command | Arguments |
 |---|---|
 | `base` | `preset: ident`. Copies a preset, which later commands then override. If the file declares any `osc`, its oscillators replace the preset's instead of adding to them. |
-| `osc` | `wave: sine\|tri\|saw\|square\|pulse\|noise`, `level: gain [1]`, `oct: number [0]`, `semi: interval [0]`, `detune: interval [0]`, `pw: number [0.5]`, `unison: number [1]` (max 7), `spread: interval [0]`, `fm: number [0]` (modulation index from the previous osc), `ratio: number [1]`, `phase: number \| random [random]`. At most 4 per instrument. Each `osc` adds one. |
+| `osc` | `wave: sine\|tri\|saw\|square\|pulse\|noise\|table` (with `table: ident [basic]` and `pos: number 0..1 [0]`, §7.6), `level: gain [1]`, `oct: number [0]`, `semi: interval [0]`, `detune: interval [0]`, `pw: number [0.5]`, `unison: number [1]` (max 7), `spread: interval [0]`, `fm: number [0]` (modulation index from the previous osc), `ratio: number [1]`, `phase: number \| random [random]`. At most 4 per instrument. Each `osc` adds one. |
 | `env` | Amplitude ADSR: `a d s r` (durations, with `s` as a gain), `curve?: number`, `burst?: number [1]`, `burst_gap?: duration` (multi-hit claps). |
 | `pitch_env` | `amount: interval`, `decay: duration`. A pitch drop for kicks and toms. |
 | `filter` | `type: lowpass\|highpass\|bandpass\|notch\|off`, `cutoff: freq`, `res: number 0..1`, `env: number −1..1`, `keytrack: number 0..1`, `slope: 12\|24`. |
 | `filter_env` | ADSR for the filter envelope. |
 | `drive` | `v: number 0..1`. Soft saturation after the filter. |
-| `voice` | `poly: number [8]`, `mono: bool`, `glide: duration [0]`, `retrigger: bool [true]`, `fixed?: pitch`. With `fixed`, every note plays at that pitch (drums). |
+| `voice` | `poly: number [8]`, `mono: bool`, `glide: duration [0]`, `retrigger: bool [true]`, `fixed?: pitch`, `width: number 0..1 [0]`. With `fixed`, every note plays at that pitch (drums). `width` spreads the unison voices in stereo (§7.6). |
 | `defaults` | Initial channel values applied when the instrument is selected for the first time: `vol pan delay reverb`. |
 | `param` | `name: ident`, `target: ident`, `min?`, `max?`. Defines a macro parameter for `set`/`ramp` that maps to an internal target such as `osc2.level`. |
+| `mod`, `mod_env`, `vlfo` | The modulation matrix and its sources (§7.6). |
 
 ### 7.2 Parameter names for `set`, `ramp` and `lfo`
 
 `vol pan delay reverb` (channel); `cutoff res env keytrack drive glide`;
-`attack decay sustain release`; `pw detune` (all oscillators);
-`oscN.level oscN.detune oscN.pw oscN.fm` (N = 1..4); any macro from `param`.
+`attack decay sustain release`; `pw detune pos` (all oscillators); `stereo`
+(the voice's width, §7.6); `oscN.level oscN.detune oscN.pw oscN.fm oscN.pos`
+(N = 1..4); any macro from `param`.
 
 ### 7.3 Built-in presets
 
@@ -658,7 +660,8 @@ written pitch: `note(p: C1)` on `kick` plays the kick.
 A sample is a WAV file in `samples/`. It is named by its file name, so
 `samples/break.wav` is `break`; names use lowercase letters, digits and `_`.
 The decoder reads any rate, PCM at 8, 16, 24 or 32 bits, and float at 32 or
-64 bits. Channels are mixed to mono (stereo voices are M13).
+64 bits. Stereo files keep both sides and play in stereo (§7.6); files with
+more channels are mixed to mono.
 
 ```
 sample(file: name, root?: pitch, lo?: pitch, hi?: pitch, key?: pitch,
@@ -700,8 +703,9 @@ sample(file: name, root?: pitch, lo?: pitch, hi?: pitch, key?: pitch,
   - A sample that stops without a loop fades over its last 64 frames.
 - **Decoding.**
   - When the song's samples change, a job decodes them into one sample bank: a
-    blob of f32 values holding a header (offset, frames, rate and peak per
-    sample) and the PCM data, at most 2^24 frames and 64 samples.
+    blob of f32 values holding a header (offset, frames, rate, peak and
+    channels per sample) and the PCM data (a stereo sample's left side, then
+    its right), at most 2^24 frames and 64 samples.
   - The audio processor receives the bank when it starts, so a new bank
     restarts it, keeping the playback position. Offline renders take the bank
     as a job argument. Each engine copies the bank once, before it plays.
@@ -807,6 +811,82 @@ fx(type: filter, mode?: lowpass|highpass|bandpass, cutoff?: freq, res?: 0..1)
 - the bass's distortion ramps up, the chords' filter opens over the break,
   and the lead's phaser speeds up;
 - the master filter opens over the intro and closes over the outro.
+
+
+### 7.6 Sound design (M13)
+
+- **Wavetables.**
+  - `osc(wave: table, table: name, pos: 0..1)` reads a table of single
+    cycles. `pos` moves through its frames, blending the two nearest.
+  - The built-in tables (`rive/src/synth/wavetable.as`) have 8 frames each:
+    - `basic`: sine, triangle, saw, square in turn;
+    - `harmonic`: more partials as `pos` rises;
+    - `formant`: a vowel-like peak climbing the harmonics;
+    - `pwm`: a pulse narrowing from square to a spike.
+  - They are additive, built once per lane at 4 harmonic limits (128, 40, 12
+    and 4 partials). A note reads the richest one that stays under Nyquist.
+  - `table:` may name a sample instead. It is read as cycles of 2048 frames
+    (the common wavetable WAV layout), and `pos` moves across the cycles.
+  - The `pos` parameter (−1..1) shifts every table oscillator of the voice,
+    `oscN.pos` one of them. Both move with `set`, `ramp` and `lfo`.
+- **The modulation matrix.**
+  - `mod(src:, dst:, amt:, via?:)` adds a source, times `amt`, to a
+    destination of each voice. An instrument has at most 8 routes. `via:`
+    multiplies the route by a second source.
+  - Sources:
+    - `env` (the volume envelope) and `env2` (`mod_env(a d s r)`, by default
+      a decay of 0.4 s);
+    - `lfo1` and `lfo2` (`vlfo(n:, rate:, shape:, delay:)`), which start with
+      each note and fade in over 0.3 s after `delay`;
+    - `vel`, and `key` (octaves from C4);
+    - `random`: −1..1, drawn per note from the note's id, so renders repeat;
+    - `press` and `bend` (how far through its bend the note is, 0..1).
+  - Destinations and the unit of `amt`:
+    - `pitch` (semitones) and `cutoff` (octaves);
+    - `res`, `level` (a factor added to 1), `pan`, `pw`, `pos`, `drive`, `fm`
+      and `width`.
+  - The matrix runs at control rate: once per 32-frame block of each voice.
+- **Stereo voices.**
+  - `voice(width: 0..1)` places each oscillator's unison voices from left to
+    right across the width. `stereo` is the parameter tracks move.
+  - A stereo voice has a filter for each side.
+  - A stereo sample plays its two sides through the voice. A mono sample in a
+    stereo voice plays the same on both.
+  - A voice with no width and no stereo sample stays mono, at the cost it had
+    before.
+- **Expression.**
+  - `note(…, bend: interval, press: 0..1)`, and the same on `chord`.
+  - `bend` slides the pitch linearly to that interval over the note's length
+    (a negative interval falls). `press` is a constant pressure.
+  - Both are carried in the score's NoteOn events and reach the sound only
+    through `mod` routes.
+- **Tunings.**
+  - `tuning(v: equal|just|pythagorean|meantone|edo, steps?: 5..72,
+    file?: name, root?: pitch)` sets a tuning. In conductor.ch it applies to
+    the whole song from that row, in a track to that track; a track's own
+    tuning wins.
+  - A tuning lays its steps on the keys from `root` (C by default; the root
+    sounds as written).
+    - `just`: 5-limit ratios.
+    - `pythagorean`: pure fifths.
+    - `meantone`: quarter-comma.
+    - `edo`: `steps` equal steps per octave, one per key, so 19-EDO needs 19
+      keys for an octave.
+  - `file:` reads `tunings/<name>.scl`, a Scala file:
+    - `!` lines are comments;
+    - then a description line and the number of notes;
+    - then one pitch per line, in cents (with a `.`) or as a ratio. The last
+      is the period.
+  - The compiler retunes each NoteOn's pitch (fractional MIDI), so playback
+    and renders need nothing more. Glides use the tuned pitch.
+  - The shell treats `.scl` files as song files.
+- **Example.** `wavefront`, "Wavefront" (`tools/gen_wavefront.py`):
+  - an evolving formant/harmonic pad, swept by voice LFOs and `ramp(pos:)`,
+    wide, each voice panned at random;
+  - a lead whose notes bend and whose pressure opens the filter and brings in
+    a delayed vibrato (`via: press`);
+  - a plucked table bass driven by `env2`;
+  - the whole song in 5-limit just intonation on D, from a Scala file.
 
 ---
 
@@ -1707,6 +1787,7 @@ conductor with marks, and uses at least one pattern and one automation.
 | `generator` | Drift Machine | 118 | controlled randomness (§6.5): Euclidean rhythms, `prob`, `humanize`, picked notes and fills over a 16-pass loop. Generated by `tools/gen_generator.py` |
 | `variations` | Variations | 112 | keys and degrees (§5.6), progressions, pattern variables (§8.1), a fill every fourth pass (§8.2). Generated by `tools/gen_variations.py` |
 | `pump` | Pump | 124 | the mixer (§7.5): sidechained bass and chords, a drums group bus, a space send bus, automated distortion, filter and phaser, a master filter sweep. Generated by `tools/gen_pump.py` |
+| `wavefront` | Wavefront | 84 | sound design (§7.6): an evolving wavetable pad swept by voice LFOs, an expressive lead with bends and pressure vibrato, a table bass, stereo width, just intonation from a Scala file. Generated by `tools/gen_wavefront.py` |
 | `chopped` | Chopped | 90 | samples (§7.4): a sliced break with reversed slices, a kit with choked hats, a looped vocal melody with vibrato, two-zone keys, a vinyl loop, a reversed crash. Generated by `tools/gen_chopped.py` |
 
 The toolbar's **Examples ▾** button opens a dropdown listing every example in
@@ -1807,7 +1888,7 @@ The full songs are written during milestone M6.
 | M6 ✅ | RML chrome, view-model contract, examples (`rive/scene.rml`, `rive/src/app`, `rive/assets/examples`) | Contract tests, all six examples |
 | M7 ✅ | Rust shell: window, wiring, watch, CLI, headless render, macOS releases (`shell/`, `.github/workflows`) | Shell unit and integration tests (`cargo test`), real renders and checks through the Rive CLI |
 | M8 | Bound engine: replace the `rive` CLI in the shell with the Rive runtime linked in (§17.1), once its Rust bindings run AnimaScript (scripts, jobs, processors) and the audio engine | The M7 tests unchanged, plus the §17.1 checks |
-| M9 ✅ … M13 | Samples, mixer, musical abstractions, controlled randomness, sound design (§17.2) | Per milestone, in §17.2 |
+| M9 ✅ … M13 ✅ | Samples, mixer, musical abstractions, controlled randomness, sound design (§17.2) | Per milestone, in §17.2 |
 
 ### 17.1 M8: the bound engine
 
@@ -1870,7 +1951,7 @@ but M9 comes first because samples matter in the most genres. Each one ships:
 | M10 ✅ | **Mixer** (§7.5) | Per-track insert effects (EQ, compressor, distortion, chorus/phaser, filter), with `fx(type: comp, sidechain: kick)` for sidechain compression. Group buses (`bus:` in `song.yaml`) and named send buses with their own effects. Master chain with metering (peak, LUFS). Every effect parameter can be automated | A pumping sidechain example; per-track effects are automatable; CPU stays within budget at 16 tracks |
 | M11 ✅ | **Musical abstractions** (§5.6, §8.1, §8.2) | Keys and scale degrees (`key(v: D dorian)`, `note(d: 5)`); chord progressions by function (`prog(v: "ii V I")`); patterns with arguments (`pattern(name: riff, root: F)`, used inside as `$root`); variation by pass (`every(n: 4) { … }`, or an `on:` argument) | One pattern reused in several keys and densities; a fill on every 4th pass |
 | M12 ✅ | **Controlled randomness** (§6.5) | `prob:` on notes, `humanize(time:, vel:)`, `euclid(hits:, steps:, rot:)`, seeded choices (`pick(from: [...])`). A song-level `seed:` keeps playback, render and export repeatable | Same seed, same render bit for bit; a generative example that varies over a long loop |
-| M13 | **Sound design** | A modulation matrix (`mod(src: lfo2, dst: cutoff, amt:)` with envelopes, LFOs, velocity, key and random sources); wavetable oscillators (`osc(wave: table, file:, pos:)`); stereo voices (stereo samples, per-voice width); per-note expression (`bend:`, `press:`); other tunings (`tuning(v: just)` or Scala files) | An evolving wavetable pad and an expressive lead example |
+| M13 ✅ | **Sound design** (§7.6) | A modulation matrix (`mod(src: lfo2, dst: cutoff, amt:)` with envelopes, LFOs, velocity, key and random sources); wavetable oscillators (`osc(wave: table, table:, pos:)`); stereo voices (stereo samples, per-voice width); per-note expression (`bend:`, `press:`); other tunings (`tuning(v: just)` or Scala files) | An evolving wavetable pad and an expressive lead example |
 
 ---
 

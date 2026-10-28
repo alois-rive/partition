@@ -19,10 +19,16 @@ import {
     I_KEYTRACK, I_MONO, I_OSC, I_OSC_COUNT, I_PITCH_AMOUNT, I_PITCH_DECAY, I_POLY, I_RES,
     I_RETRIGGER, I_SLOPE, INST_STRIDE, MAX_INSTRUMENTS, MAX_OSC, O_DETUNE, O_FM, O_LEVEL, O_OCT,
     O_PHASE, O_PW, O_RATIO, O_SEMI, O_SPREAD, O_UNISON, O_WAVE, OSC_STRIDE, WAVE_NOISE, WAVE_PULSE,
-    WAVE_SAW, WAVE_SINE, WAVE_SQUARE, WAVE_TRI, I_ZONE, I_ZONE_COUNT, ZONE_STRIDE, Z_CHOKE, Z_END, Z_GAIN,
+    WAVE_SAW, WAVE_SINE, WAVE_SQUARE, WAVE_TABLE, WAVE_TRI, I_ZONE, I_ZONE_COUNT, I_WIDTH, I_MOD_COUNT, I_MOD, MOD_STRIDE,
+    I_MENV, I_VLFO, O_TABLE, O_TSAMPLE, O_POS, ZONE_STRIDE, Z_CHOKE, Z_END, Z_GAIN,
     Z_HI, Z_LO, Z_LOOP, Z_LOOP_END, Z_LOOP_START, Z_ONESHOT, Z_REVERSE, Z_ROOT, Z_SAMPLE, Z_SLICES, Z_START, Z_TUNE,
 } from "./insttable";
-import { BANK_HEADER, BANK_RECORD, B_FRAMES, B_OFFSET, B_RATE, MAX_SAMPLES } from "./samples";
+import { BANK_HEADER, BANK_RECORD, B_CHANNELS, B_FRAMES, B_OFFSET, B_RATE, MAX_SAMPLES } from "./samples";
+import { SAMPLE_CYCLE, TABLE_FRAMES, wavetables, Wavetables } from "./wavetable";
+import {
+    DST_CUTOFF, DST_DRIVE, DST_FM, DST_LEVEL, DST_PAN, DST_PITCH, DST_POS, DST_PW, DST_RES, DST_WIDTH, SRC_BEND, SRC_ENV,
+    SRC_ENV2, SRC_KEY, SRC_LFO1, SRC_LFO2, SRC_PRESS, SRC_RANDOM, SRC_VEL,
+} from "../lang/sound";
 import { FxState, Loudness } from "./mixer";
 import { ParamKind } from "../lang/paramkind";
 import {
@@ -311,14 +317,31 @@ class Voice {
     sTune: f64 = 0;
     sGain: f64 = 1;
     sDone: bool = false;
+    sRight: f64 = 0; // a stereo sample's right channel, this many bank frames after its left
+    // Sound design (§7.6): the note's expression, a random value of its own,
+    // the second envelope, the right side's filters.
+    bend: f64 = 0;
+    press: f64 = 0;
+    rand: f64 = 0;
+    modEnv: Env = new Env();
+    svf3: Svf = new Svf();
+    svf4: Svf = new Svf();
 
-    // The pitch the voice plays at song time `t`, glide included.
+    // How far through its bend the note is at `t`, 0..1.
+    bendAt(t: f64): f64 {
+        let len = this.end - this.start;
+        if (len <= 0) return 1;
+        return Math.min(Math.max((t - this.start) / len, 0), 1);
+    }
+
+    // The pitch the voice plays at song time `t`, glide and bend included.
     pitchAt(t: f64): f64 {
-        if (this.glideSeconds <= 0) return this.pitch;
+        let bent = this.bend != 0 ? this.bend * this.bendAt(t) : 0;
+        if (this.glideSeconds <= 0) return this.pitch + bent;
         let u = (t - this.glideStart) / this.glideSeconds;
-        if (u >= 1) return this.pitch;
-        if (u <= 0) return this.glideFrom;
-        return this.glideFrom + (this.pitch - this.glideFrom) * u;
+        if (u >= 1) return this.pitch + bent;
+        if (u <= 0) return this.glideFrom + bent;
+        return this.glideFrom + (this.pitch - this.glideFrom) * u + bent;
     }
 }
 
@@ -479,6 +502,12 @@ export class Engine {
     bankOffset: Float64Array = new Float64Array(MAX_SAMPLES); // first frame, in `bank`
     bankFrames: Float64Array = new Float64Array(MAX_SAMPLES);
     bankRate: Float64Array = new Float64Array(MAX_SAMPLES);
+    bankChannels: Int32Array = new Int32Array(MAX_SAMPLES);
+    tables: Wavetables;
+    bufR: Float64Array = new Float64Array(BLOCK); // a voice's right side (stereo voices)
+    rawL: Float64Array = new Float64Array(BLOCK);
+    rawR: Float64Array = new Float64Array(BLOCK);
+    modOut: Float64Array = new Float64Array(10); // the mod matrix's sum per destination (lang/sound.as)
 
     constructor(sampleRate: f64, outChannels: i32) {
         this.sampleRate = sampleRate;
@@ -489,6 +518,7 @@ export class Engine {
         this.reverb = new Reverb(sampleRate);
         this.limiter = new Limiter(sampleRate);
         this.loudness = new Loudness(sampleRate);
+        this.tables = wavetables();
         let fx = fxParams();
         for (let i = 0; i < FX_PARAM_COUNT; i++) {
             this.fxDefaults[i] = fx[i].defaultValue;
@@ -521,6 +551,7 @@ export class Engine {
             this.bankOffset[i] = <f64>BANK_HEADER + <f64>data[r + B_OFFSET];
             this.bankFrames[i] = <f64>data[r + B_FRAMES];
             this.bankRate[i] = <f64>data[r + B_RATE];
+            this.bankChannels[i] = max<i32>(<i32>data[r + B_CHANNELS], 1);
         }
         this.bank = data;
         this.bankCount = count;
@@ -582,6 +613,7 @@ export class Engine {
         v.sTune = table[zb + Z_TUNE];
         v.sGain = table[zb + Z_GAIN];
         v.sDone = false;
+        v.sRight = this.bankChannels[sample] == 2 ? frames : 0;
     }
 
     // The bank frame at `i`, kept inside the voice's range.
@@ -591,9 +623,17 @@ export class Engine {
         return <f64>unchecked(this.bank[<i32>j]);
     }
 
-    // Adds `n` frames of the voice's sample to `buf`, its pitch moving from
-    // `semis0` to `semis1` semitones off the file's own.
-    renderSample(v: Voice, buf: Float64Array, n: i32, semis0: f64, semis1: f64): void {
+    // The same frame on a stereo sample's right side.
+    @inline
+    frameRight(v: Voice, i: f64): f64 {
+        let j = i < v.sStart ? v.sStart : i >= v.sEnd ? v.sEnd - 1 : i;
+        return <f64>unchecked(this.bank[<i32>(j + v.sRight)]);
+    }
+
+    // Adds `n` frames of the voice's sample to `buf` (and a stereo sample's
+    // right side to `bufR`), its pitch moving from `semis0` to `semis1`
+    // semitones off the file's own.
+    renderSample(v: Voice, buf: Float64Array, bufR: Float64Array?, n: i32, semis0: f64, semis1: f64): void {
         let sr = this.sampleRate;
         let r0 = Math.min(v.sRate / sr * Math.pow(2, semis0 / 12), MAX_SAMPLE_STEP);
         let r1 = Math.min(v.sRate / sr * Math.pow(2, semis1 / 12), MAX_SAMPLE_STEP);
@@ -619,11 +659,23 @@ export class Engine {
             let c2 = xm1 - 2.5 * x0 + 2 * x1 - 0.5 * x2;
             let c3 = 0.5 * (x2 - xm1) + 1.5 * (x0 - x1);
             let y = ((c3 * f + c2) * f + c1) * f + x0;
+            let yr = y;
+            if (v.sRight > 0) {
+                let qm1 = this.frameRight(v, ip - 1);
+                let q0 = this.frameRight(v, ip);
+                let q1 = this.frameRight(v, ip + 1);
+                let q2 = this.frameRight(v, ip + 2);
+                yr = (((0.5 * (q2 - qm1) + 1.5 * (q0 - q1)) * f + (qm1 - 2.5 * q0 + 2 * q1 - 0.5 * q2)) * f + 0.5 * (q1 - qm1)) * f + q0;
+            }
             if (!v.sLoop) {
                 let left = dir > 0 ? v.sEnd - pos : pos - v.sStart + 1;
-                if (left < SAMPLE_FADE) y *= left / SAMPLE_FADE;
+                if (left < SAMPLE_FADE) {
+                    y *= left / SAMPLE_FADE;
+                    yr *= left / SAMPLE_FADE;
+                }
             }
             buf[i] += y * gain;
+            if (bufR != null) bufR[i] += yr * gain;
             pos += dir * rate;
             rate += step;
             if (v.sLoop) {
@@ -1051,6 +1103,7 @@ export class Engine {
         if (fast) v.amp.releaseCoef = Math.exp(-6.907755 / (0.004 * this.sampleRate));
         v.amp.release();
         v.fenv.release();
+        v.modEnv.release();
     }
 
     // A voice for a new note: a free one, else the oldest releasing one, else the oldest.
@@ -1114,6 +1167,9 @@ export class Engine {
                     v.note = note;
                     v.vel = w[o + 9];
                     v.end = t + seconds;
+                    v.start = t;
+                    v.bend = w[o + 16];
+                    v.press = w[o + 17];
                     if (table[base + I_RETRIGGER] > 0) {
                         v.amp.stage = 1;
                         v.fenv.stage = 1;
@@ -1190,6 +1246,15 @@ export class Engine {
         v.choke = 0;
         v.sOneshot = false;
         v.sDone = false;
+        v.sRight = 0;
+        v.bend = w[o + 16];
+        v.press = w[o + 17];
+        v.rand = <f64>(hash32(<u32>note * 2654435761 + <u32>channel) & 0xffffff) / 16777216.0;
+        v.modEnv.configure(table[base + I_MENV], table[base + I_MENV + 1], table[base + I_MENV + 2], table[base + I_MENV + 3], sr);
+        v.modEnv.level = 0;
+        v.modEnv.trigger(1, 1, sr);
+        v.svf3.reset();
+        v.svf4.reset();
         if (zone >= 0) this.startSample(v, base, zone, Math.round(pitch));
     }
 
@@ -1340,11 +1405,90 @@ export class Engine {
         this.publishStatus();
     }
 
+    // A modulation source of voice `v` at `t` (lang/sound.as).
+    modSource(v: Voice, base: i32, src: i32, t: f64): f64 {
+        if (src == SRC_ENV) return v.amp.level;
+        if (src == SRC_ENV2) return v.modEnv.level;
+        if (src == SRC_LFO1 || src == SRC_LFO2) {
+            let lb = base + I_VLFO + (src - SRC_LFO1) * 3;
+            let table = this.instruments;
+            let rate = table[lb];
+            let shape = <i32>table[lb + 1];
+            let delay = table[lb + 2];
+            let age = t - v.start - delay;
+            if (age < 0) return 0;
+            let fade = delay > 0 ? Math.min(age / 0.3, 1) : 1;
+            let x = age * rate;
+            let ph = wrap01(x);
+            let value = 0.0;
+            if (shape == 1) value = 1 - 4 * Math.abs(ph - 0.5);
+            else if (shape == 2) value = 2 * ph - 1;
+            else if (shape == 3) value = ph < 0.5 ? 1 : -1;
+            else if (shape == 4) value = <f64>(hash32(<u32>(<i64>Math.floor(x) & 0x7fffffff) * 2246822519 + <u32>(v.rand * 1e6)) & 0xffff) / 32767.5 - 1;
+            else value = sinTurn(ph);
+            return value * fade;
+        }
+        if (src == SRC_VEL) return v.vel;
+        if (src == SRC_KEY) return (v.pitch - 60) / 12;
+        if (src == SRC_RANDOM) return v.rand * 2 - 1;
+        if (src == SRC_PRESS) return v.press;
+        if (src == SRC_BEND) return v.bendAt(t);
+        return 0;
+    }
+
+    // The mod matrix of voice `v` at `t`, summed per destination into modOut.
+    modMatrix(v: Voice, base: i32, t: f64): void {
+        let out = this.modOut;
+        out.fill(0);
+        let table = this.instruments;
+        let count = <i32>table[base + I_MOD_COUNT];
+        for (let m = 0; m < count; m++) {
+            let mb = base + I_MOD + m * MOD_STRIDE;
+            let dst = <i32>table[mb + 1];
+            if (dst < 0 || dst >= out.length) continue;
+            let value = table[mb + 2] * this.modSource(v, base, <i32>table[mb], t);
+            let via = <i32>table[mb + 3];
+            if (via >= 0) value *= this.modSource(v, base, via, t);
+            out[dst] += value;
+        }
+    }
+
+    // One oscillator sample of a wavetable: built-in table `id`, or the
+    // cycles of sample `sample`, at `phase`, between frames by `pos`.
+    @inline
+    tableSample(id: i32, sample: i32, pos: f64, phase: f64, mip: i32): f64 {
+        if (id >= 0) {
+            let fp = pos * <f64>(TABLE_FRAMES - 1);
+            let fa = min<i32>(<i32>fp, TABLE_FRAMES - 1);
+            let fb = min<i32>(fa + 1, TABLE_FRAMES - 1);
+            return this.tables.read(id, fa, fb, fp - <f64>fa, mip, phase);
+        }
+        if (sample < 0 || sample >= this.bankCount) return 0;
+        let cycles = max<i32>(<i32>(this.bankFrames[sample] / <f64>SAMPLE_CYCLE), 1);
+        let fp = pos * <f64>(cycles - 1);
+        let fa = min<i32>(<i32>fp, cycles - 1);
+        let fb = min<i32>(fa + 1, cycles - 1);
+        let w = fp - <f64>fa;
+        let first = this.bankOffset[sample];
+        let x = phase * <f64>SAMPLE_CYCLE;
+        let i = <i32>x;
+        let fr = x - <f64>i;
+        let j = (i + 1) % SAMPLE_CYCLE;
+        let last = <i32>(first + this.bankFrames[sample]) - 1;
+        let a = <i32>first + fa * SAMPLE_CYCLE;
+        let b = <i32>first + fb * SAMPLE_CYCLE;
+        let bank = this.bank;
+        let va = <f64>bank[min<i32>(a + i, last)] + (<f64>bank[min<i32>(a + j, last)] - <f64>bank[min<i32>(a + i, last)]) * fr;
+        let vb = <f64>bank[min<i32>(b + i, last)] + (<f64>bank[min<i32>(b + j, last)] - <f64>bank[min<i32>(b + i, last)]) * fr;
+        return va + (vb - va) * w;
+    }
+
     renderVoices(from: i32, to: i32, t: f64): void {
         let n = to - from;
         let sr = this.sampleRate;
         let table = this.instruments;
         let tEnd = t + <f64>n / sr;
+        let mods = this.modOut;
         for (let vi = 0; vi < MAX_VOICES; vi++) {
             let v = this.voices[vi];
             if (!v.active) continue;
@@ -1352,16 +1496,26 @@ export class Engine {
             let base = v.base;
             let slot = this.slots[v.slot];
 
-            // Control rate: pitch, filter and gains for this segment.
-            let pitch0 = v.pitchAt(t) + this.pitchEnv(v, t);
-            let pitch1 = v.pitchAt(tEnd) + this.pitchEnv(v, tEnd);
+            // Control rate: the mod matrix, pitch, filter and gains for this segment.
+            let modded = <i32>table[base + I_MOD_COUNT] > 0;
+            if (modded) this.modMatrix(v, base, t);
+            else mods.fill(0);
+            let pitch0 = v.pitchAt(t) + this.pitchEnv(v, t) + mods[DST_PITCH];
+            let pitch1 = v.pitchAt(tEnd) + this.pitchEnv(v, tEnd) + mods[DST_PITCH];
             let detuneAll = this.instParam(v, ParamId.Detune, 0, t);
             let pwAll = this.instParam(v, ParamId.Pw, NaN, t);
+            let posAll = this.instParam(v, ParamId.Pos, 0, t) + mods[DST_POS];
+            let width = Math.min(Math.max(this.instParam(v, ParamId.Width, table[base + I_WIDTH], t) + mods[DST_WIDTH], 0), 1);
+            let stereo = width > 0 || (v.zone >= 0 && v.sRight > 0);
             let oscCount = <i32>table[base + I_OSC_COUNT];
             let buf = this.voiceBuf;
+            let bufR = this.bufR;
             for (let i = 0; i < n; i++) buf[i] = 0;
+            if (stereo) for (let i = 0; i < n; i++) bufR[i] = 0;
             let prev = this.oscBuf; // the previous oscillator's raw output, for FM
             let raw = this.rawBuf;
+            let rawL = this.rawL;
+            let rawR = this.rawR;
             for (let i = 0; i < n; i++) prev[i] = 0;
             for (let k = 0; k < oscCount; k++) {
                 let ob = base + I_OSC + k * OSC_STRIDE;
@@ -1369,21 +1523,36 @@ export class Engine {
                 let wave = <i32>table[ob + O_WAVE];
                 let level = this.instParam(v, pField, table[ob + O_LEVEL], t);
                 let detune = this.instParam(v, pField + 1, table[ob + O_DETUNE], t) + detuneAll;
-                let pw = this.instParam(v, pField + 2, isNaN(pwAll) ? table[ob + O_PW] : pwAll, t);
-                let fm = this.instParam(v, pField + 3, table[ob + O_FM], t) / TWO_PI;
+                let pw = this.instParam(v, pField + 2, isNaN(pwAll) ? table[ob + O_PW] : pwAll, t) + mods[DST_PW];
+                let fm = (this.instParam(v, pField + 3, table[ob + O_FM], t) + mods[DST_FM]) / TWO_PI;
+                let pos = Math.min(Math.max(this.instParam(v, pField + 4, table[ob + O_POS], t) + posAll, 0), 1);
+                let tableId = <i32>table[ob + O_TABLE];
+                let tableSample = <i32>table[ob + O_TSAMPLE];
                 let ratio = table[ob + O_RATIO];
                 let unison = min<i32>(max<i32>(<i32>table[ob + O_UNISON], 1), MAX_UNISON);
                 let spread = table[ob + O_SPREAD];
                 let offset = table[ob + O_OCT] * 12 + table[ob + O_SEMI] + detune;
                 let norm = 1 / Math.sqrt(<f64>unison);
                 for (let i = 0; i < n; i++) raw[i] = 0;
+                if (stereo) {
+                    for (let i = 0; i < n; i++) {
+                        rawL[i] = 0;
+                        rawR[i] = 0;
+                    }
+                }
                 pw = Math.min(Math.max(pw, 0.01), 0.99);
                 for (let u = 0; u < unison; u++) {
                     let spreadOffset = unison > 1 ? spread * (<f64>u / <f64>(unison - 1) * 2 - 1) : 0;
+                    // Stereo: the unison voices fan out across the width.
+                    let place = stereo && unison > 1 ? width * (<f64>u / <f64>(unison - 1) * 2 - 1) : 0;
+                    let angle = (place + 1) * Math.PI * 0.25;
+                    let gl = Math.cos(angle) * 1.4142135623730951;
+                    let gr = Math.sin(angle) * 1.4142135623730951;
                     let f0 = midiToHz(pitch0 + offset + spreadOffset) * ratio;
                     let f1 = f0 * Math.pow(2, (pitch1 - pitch0) / 12);
                     let inc = Math.min(f0 / sr, 0.45);
                     let step = n > 0 ? (Math.min(f1 / sr, 0.45) - inc) / <f64>n : 0;
+                    let mip = wave == WAVE_TABLE && tableId >= 0 ? this.tables.mipFor(inc) : 0;
                     let pi = k * MAX_UNISON + u;
                     let phase = v.phases[pi];
                     for (let i = 0; i < n; i++) {
@@ -1393,14 +1562,21 @@ export class Engine {
                         } else if (wave == WAVE_SAW) {
                             s = 2 * phase - 1 - polyBlep(phase, inc);
                         } else if (wave == WAVE_SQUARE || wave == WAVE_PULSE) {
-                            let width = wave == WAVE_SQUARE ? 0.5 : pw;
-                            s = (phase < width ? 1.0 : -1.0) + polyBlep(phase, inc) - polyBlep(wrap01(phase - width + 1), inc);
+                            let w = wave == WAVE_SQUARE ? 0.5 : pw;
+                            s = (phase < w ? 1.0 : -1.0) + polyBlep(phase, inc) - polyBlep(wrap01(phase - w + 1), inc);
                         } else if (wave == WAVE_TRI) {
                             s = 1 - 4 * Math.abs(wrap01(phase + 0.25) - 0.5);
                         } else if (wave == WAVE_NOISE) {
                             s = v.noise.next();
+                        } else if (wave == WAVE_TABLE) {
+                            s = this.tableSample(tableId, tableSample, pos, wrap01(phase + fm * prev[i]), mip);
                         }
-                        raw[i] += s * norm;
+                        let m = s * norm;
+                        raw[i] += m;
+                        if (stereo) {
+                            rawL[i] += m * gl;
+                            rawR[i] += m * gr;
+                        }
                         phase += inc;
                         if (phase >= 1) phase -= 1;
                         inc += step;
@@ -1408,36 +1584,57 @@ export class Engine {
                     v.phases[pi] = phase;
                 }
                 for (let i = 0; i < n; i++) {
-                    buf[i] += raw[i] * level;
+                    if (stereo) {
+                        buf[i] += rawL[i] * level;
+                        bufR[i] += rawR[i] * level;
+                    } else {
+                        buf[i] += raw[i] * level;
+                    }
                     prev[i] = raw[i];
                 }
             }
             if (v.zone >= 0 && !v.sDone) {
                 // Slices (no root) keep their pitch; the rest follow the note.
-                let semis0 = (isNaN(v.sRoot) ? this.pitchEnv(v, t) : pitch0 - v.sRoot) + v.sTune + detuneAll;
-                let semis1 = (isNaN(v.sRoot) ? this.pitchEnv(v, tEnd) : pitch1 - v.sRoot) + v.sTune + detuneAll;
-                this.renderSample(v, buf, n, semis0, semis1);
+                let semis0 = (isNaN(v.sRoot) ? this.pitchEnv(v, t) + mods[DST_PITCH] : pitch0 - v.sRoot) + v.sTune + detuneAll;
+                let semis1 = (isNaN(v.sRoot) ? this.pitchEnv(v, tEnd) + mods[DST_PITCH] : pitch1 - v.sRoot) + v.sTune + detuneAll;
+                if (stereo && v.sRight == 0) {
+                    // A mono sample in a stereo voice: the same on both sides.
+                    for (let i = 0; i < n; i++) raw[i] = 0;
+                    this.renderSample(v, raw, null, n, semis0, semis1);
+                    for (let i = 0; i < n; i++) {
+                        buf[i] += raw[i];
+                        bufR[i] += raw[i];
+                    }
+                } else {
+                    this.renderSample(v, buf, stereo ? bufR : null, n, semis0, semis1);
+                }
             }
 
             // Filter
             let ftype = <i32>table[base + I_FILTER_TYPE];
             let fenvAmount = this.instParam(v, ParamId.Env, table[base + I_FENV_AMOUNT], t);
             let cutoff = this.instParam(v, ParamId.Cutoff, table[base + I_CUTOFF], t);
-            let res = Math.min(Math.max(this.instParam(v, ParamId.Res, table[base + I_RES], t), 0), 1);
+            let res = Math.min(Math.max(this.instParam(v, ParamId.Res, table[base + I_RES], t) + mods[DST_RES], 0), 1);
             let keytrack = this.instParam(v, ParamId.Keytrack, table[base + I_KEYTRACK], t);
             let slope = <i32>table[base + I_SLOPE];
-            let drive = Math.min(Math.max(this.instParam(v, ParamId.Drive, table[base + I_DRIVE], t), 0), 1);
+            let drive = Math.min(Math.max(this.instParam(v, ParamId.Drive, table[base + I_DRIVE], t) + mods[DST_DRIVE], 0), 1);
             if (ftype != FILTER_OFF) {
-                let fc = cutoff * Math.pow(2, keytrack * (pitch0 - 60) / 12 + fenvAmount * v.fenv.level * 6);
+                let fc = cutoff * Math.pow(2, keytrack * (pitch0 - 60) / 12 + fenvAmount * v.fenv.level * 6 + mods[DST_CUTOFF]);
                 v.svf1.mode = ftype;
                 v.svf2.mode = ftype;
                 v.svf1.set(fc, slope == 24 ? res * 0.6 : res, sr);
                 if (slope == 24) v.svf2.set(fc, res * 0.6, sr);
+                if (stereo) {
+                    v.svf3.mode = ftype;
+                    v.svf4.mode = ftype;
+                    v.svf3.set(fc, slope == 24 ? res * 0.6 : res, sr);
+                    if (slope == 24) v.svf4.set(fc, res * 0.6, sr);
+                }
             }
 
             // Gains: owner volume and constant-power pan, smoothed over the segment.
-            let vol = Math.max(this.stripParam(slot, ParamId.Vol, 0.8, t), 0);
-            let pan = Math.min(Math.max(this.stripParam(slot, ParamId.Pan, 0, t), -1), 1);
+            let vol = Math.max(this.stripParam(slot, ParamId.Vol, 0.8, t), 0) * Math.max(1 + mods[DST_LEVEL], 0);
+            let pan = Math.min(Math.max(this.stripParam(slot, ParamId.Pan, 0, t) + mods[DST_PAN], -1), 1);
             let angle = (pan + 1) * Math.PI * 0.25;
             let targetL = vol * Math.cos(angle) * 1.4142135623730951;
             let targetR = vol * Math.sin(angle) * 1.4142135623730951;
@@ -1452,19 +1649,29 @@ export class Engine {
             let vel = v.vel;
             for (let i = 0; i < n; i++) {
                 let x = buf[i];
+                let xr = stereo ? bufR[i] : 0;
                 if (ftype != FILTER_OFF) {
                     x = v.svf1.process(x);
                     if (slope == 24) x = v.svf2.process(x);
+                    if (stereo) {
+                        xr = v.svf3.process(xr);
+                        if (slope == 24) xr = v.svf4.process(xr);
+                    }
                 }
-                if (drive > 0) x = softClip(x * driveIn) * driveOut;
+                if (drive > 0) {
+                    x = softClip(x * driveIn) * driveOut;
+                    if (stereo) xr = softClip(xr * driveIn) * driveOut;
+                }
                 let env = v.amp.next();
                 v.fenv.next();
+                if (modded) v.modEnv.next();
                 x = sane(x * env * vel);
+                xr = stereo ? sane(xr * env * vel) : x;
                 v.gainL += dl;
                 v.gainR += dr;
                 if (muted) continue;
                 let l = x * v.gainL;
-                let r = x * v.gainR;
+                let r = xr * v.gainR;
                 let j = from + i;
                 this.chL[chOff + j] += l;
                 this.chR[chOff + j] += r;
@@ -1630,4 +1837,14 @@ export class Engine {
         for (let i = 0; i < MAX_VOICES; i++) if (this.voices[i].active) n++;
         st.voices = <f64>n;
     }
+}
+
+function hash32(x: u32): u32 {
+    let h = x;
+    h ^= h >> 16;
+    h *= 0x7feb352d;
+    h ^= h >> 15;
+    h *= 0x846ca68b;
+    h ^= h >> 16;
+    return h;
 }

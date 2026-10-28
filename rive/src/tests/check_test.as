@@ -154,7 +154,7 @@ export class CheckTests extends Tests {
             });
             test("every spec has a signature", (expect) => {
                 let reg = registry();
-                expect.that(reg.get("note")!.signature()).is("note(p?, d?, len?, vel?, inst?, glide?, at?, pick?)");
+                expect.that(reg.get("note")!.signature()).is("note(p?, d?, len?, vel?, inst?, glide?, at?, pick?, bend?, press?)");
                 expect.that(reg.get("set")!.signature()).is("set(<param>: value, …)");
             });
         });

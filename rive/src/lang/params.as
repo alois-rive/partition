@@ -30,12 +30,14 @@ export enum ParamId {
     Detune,
     Bpm,
     Master,
-    // oscN.level, oscN.detune, oscN.pw, oscN.fm for N = 1..4 follow, 4 per oscillator
+    Pos, // wavetable position, added to every table oscillator's (§7.6)
+    Width, // stereo width of the voice's unison (§7.6)
+    // oscN.level, oscN.detune, oscN.pw, oscN.fm, oscN.pos for N = 1..4 follow, 5 per oscillator
     Osc = 32,
-    Count = 48,
+    Count = 52,
 }
 
-export const OSC_FIELDS: Array<string> = ["level", "detune", "pw", "fm"];
+export const OSC_FIELDS: Array<string> = ["level", "detune", "pw", "fm", "pos"];
 export const MAX_OSCS: i32 = 4;
 
 export class ParamInfo {
@@ -87,6 +89,8 @@ function table(): ParamTable {
     made.add(ParamId.Release, "release", ParamKind.Time, I, 0, 30, NaN);
     made.add(ParamId.Pw, "pw", ParamKind.Number, I, 0.01, 0.99, NaN);
     made.add(ParamId.Detune, "detune", ParamKind.Interval, I, -24, 24, NaN);
+    made.add(ParamId.Pos, "pos", ParamKind.Number, I, -1, 1, NaN);
+    made.add(ParamId.Width, "stereo", ParamKind.Number, I, 0, 1, NaN);
     made.add(ParamId.Bpm, "bpm", ParamKind.Number, ParamScope.Conductor, 20, 999, 120);
     made.add(ParamId.Master, "master", ParamKind.Gain, ParamScope.Conductor, 0, 4, 1);
     for (let o = 0; o < MAX_OSCS; o++) {
@@ -96,6 +100,7 @@ function table(): ParamTable {
         made.add(base + 1, prefix + "detune", ParamKind.Interval, I, -24, 24, NaN);
         made.add(base + 2, prefix + "pw", ParamKind.Number, I, 0.01, 0.99, NaN);
         made.add(base + 3, prefix + "fm", ParamKind.Number, I, 0, 20, NaN);
+        made.add(base + 4, prefix + "pos", ParamKind.Number, I, 0, 1, NaN);
     }
     let fx = fxParams();
     for (let i = 0; i < fx.length; i++) {

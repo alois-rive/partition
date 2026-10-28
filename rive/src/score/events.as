@@ -46,6 +46,8 @@ export class ScoreEvent {
     curve: i32 = 0; // Param curve, Lfo shape
     row: i32 = 0; // RowMark: the source row; NoteOn: the source line
     played: i32 = 0; // RowMark: the played row index
+    bend: f64 = 0; // NoteOn: semitones the note bends by over its length (§7.6)
+    press: f64 = 0; // NoteOn: its pressure, a modulation source
 
     describe(): string {
         let t = Math.round(this.time * 10000) / 10000;
@@ -75,7 +77,7 @@ export function sortEvents(events: Array<ScoreEvent>): void {
 }
 
 // Flat form for crossing lanes (one block, §9.1 step 4): FIELDS numbers per event.
-export const FIELDS: i32 = 16;
+export const FIELDS: i32 = 18;
 
 export function packEvents(events: Array<ScoreEvent>): Float64Array {
     let out = new Float64Array(events.length * FIELDS);
@@ -98,6 +100,8 @@ export function packEvents(events: Array<ScoreEvent>): Float64Array {
         out[o + 13] = e.rate;
         out[o + 14] = <f64>e.curve;
         out[o + 15] = <f64>e.row;
+        out[o + 16] = e.bend;
+        out[o + 17] = e.press;
     }
     return out;
 }
@@ -122,5 +126,7 @@ export function unpackEvent(data: Float64Array, index: i32): ScoreEvent {
     e.rate = data[o + 13];
     e.curve = <i32>data[o + 14];
     e.row = <i32>data[o + 15];
+    e.bend = data[o + 16];
+    e.press = data[o + 17];
     return e;
 }

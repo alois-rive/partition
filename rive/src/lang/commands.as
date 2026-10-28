@@ -4,6 +4,7 @@
 import { ArgType } from "./types";
 import { FILTER_MODES, FX_TYPES, fxParams } from "./fx";
 import { ParamKind } from "./paramkind";
+import { MOD_DESTS, MOD_SOURCES, TUNINGS } from "./sound";
 
 export const SCOPE_CHANNEL: i32 = 1; // channels/*.ch and patterns/*.pat
 export const SCOPE_CONDUCTOR: i32 = 2; // conductor.ch
@@ -11,7 +12,7 @@ export const SCOPE_INSTRUMENT: i32 = 4; // instruments/*.inst
 
 export const CURVES: Array<string> = ["linear", "exp", "log", "smooth"];
 export const LFO_SHAPES: Array<string> = ["sine", "tri", "saw", "square", "random"];
-export const WAVES: Array<string> = ["sine", "tri", "saw", "square", "pulse", "noise"];
+export const WAVES: Array<string> = ["sine", "tri", "saw", "square", "pulse", "noise", "table"];
 export const FILTER_TYPES: Array<string> = ["lowpass", "highpass", "bandpass", "notch", "off"];
 // Keys (§5.6), in the order lang/scales.as gives their intervals.
 export const MODES: Array<string> = [
@@ -182,13 +183,13 @@ export function registry(): Registry {
     b.cmd("note", CH, "play one note, or several from a list, by pitch (p) or scale degree (d)")
         .opt("p", ArgType.Pitches).opt("d", ArgType.Degrees).opt("len", ArgType.Duration).opt("vel", ArgType.Gain, 0, 1)
         .opt("inst", ArgType.Name).opt("glide", ArgType.Duration).opt("at", ArgType.Duration)
-        .opt("pick", T, 1, 32).int();
+        .opt("pick", T, 1, 32).int().opt("bend", ArgType.Interval, -24, 24).opt("press", T, 0, 1);
     b.cmd("chord", CH, "play a chord on a root, or on a scale degree (d)")
         .opt("root", ArgType.Pitch).opt("d", ArgType.Number, -28, 28).int().opt("size", ArgType.Number, 3, 5).int()
         .opt("type", ArgType.Ident).oneOf(CHORD_TYPES)
         .opt("inv", T, 0, 8).int().opt("spread", T, 0, 3).int()
         .opt("len", ArgType.Duration).opt("vel", ArgType.Gain, 0, 1).opt("strum", ArgType.Duration)
-        .opt("at", ArgType.Duration);
+        .opt("at", ArgType.Duration).opt("bend", ArgType.Interval, -24, 24).opt("press", T, 0, 1);
     b.cmd("cut", CH, "release every sounding note").opt("fade", ArgType.Duration);
     b.cmd("prog", CH, "play a chord progression in the key, one chord per step")
         .req("chords", ArgType.Text).opt("every", ArgType.Duration).opt("len", ArgType.Duration)
@@ -203,6 +204,10 @@ export function registry(): Registry {
         .opt("len", ArgType.Duration).opt("vel", ArgType.Gain, 0, 1).opt("inst", ArgType.Name);
     b.cmd("pick", CH, "play one of several patterns, chosen at random on each pass")
         .req("from", ArgType.Names).opt("times", T, 1, 100000).int().variables();
+
+    // Tunings (§7.6): the song's (in the conductor) or the track's.
+    b.cmd("tuning", CH | CO, "tune the notes: a temperament, n equal steps, or a Scala file")
+        .opt("v", ArgType.Ident).oneOf(TUNINGS).opt("steps", T, 5, 72).int().opt("file", ArgType.Name).opt("root", ArgType.Pitch);
 
     // Keys (§5.6): the track's, or (in the conductor) the song's.
     b.cmd("key", CH | CO, "set the key that scale degrees and progressions use")
@@ -264,7 +269,16 @@ export function registry(): Registry {
         .opt("oct", T, -4, 4).int().opt("semi", ArgType.Interval, -24, 24)
         .opt("detune", ArgType.Interval, -24, 24).opt("pw", T, 0.01, 0.99)
         .opt("unison", T, 1, 7).int().opt("spread", ArgType.Interval, 0, 12)
-        .opt("fm", T, 0, 20).opt("ratio", T, 0.01, 32).opt("phase", ArgType.Phase, -1, 1);
+        .opt("fm", T, 0, 20).opt("ratio", T, 0.01, 32).opt("phase", ArgType.Phase, -1, 1)
+        .opt("table", ArgType.Name).opt("pos", T, 0, 1);
+    b.cmd("mod", IN, "route a modulation source to a destination (the modulation matrix)")
+        .req("src", ArgType.Ident).oneOf(MOD_SOURCES).req("dst", ArgType.Ident).oneOf(MOD_DESTS)
+        .req("amt", T, -48, 48).opt("via", ArgType.Ident).oneOf(MOD_SOURCES);
+    b.cmd("mod_env", IN, "the second envelope, a modulation source (env2)")
+        .opt("a", ArgType.Time, 0, 30).opt("d", ArgType.Time, 0, 30).opt("s", ArgType.Gain, 0, 1).opt("r", ArgType.Time, 0, 30);
+    b.cmd("vlfo", IN, "a per-voice LFO, a modulation source (lfo1, lfo2)")
+        .req("n", T, 1, 2).int().opt("rate", ArgType.Freq, 0.01, 40).opt("shape", ArgType.Ident).oneOf(LFO_SHAPES)
+        .opt("delay", ArgType.Time, 0, 10);
     b.cmd("env", IN, "amplitude envelope")
         .opt("a", ArgType.Time, 0, 30).opt("d", ArgType.Time, 0, 30).opt("s", ArgType.Gain, 0, 1)
         .opt("r", ArgType.Time, 0, 30).opt("curve", T, -10, 10)
@@ -280,7 +294,7 @@ export function registry(): Registry {
     b.cmd("drive", IN, "soft saturation").req("v", T, 0, 1);
     b.cmd("voice", IN, "voicing")
         .opt("poly", T, 1, 32).int().opt("mono", ArgType.Bool).opt("glide", ArgType.Time, 0, 10)
-        .opt("retrigger", ArgType.Bool).opt("fixed", ArgType.Pitch);
+        .opt("retrigger", ArgType.Bool).opt("fixed", ArgType.Pitch).opt("width", T, 0, 1);
     b.cmd("defaults", IN, "channel values applied when first selected")
         .opt("vol", ArgType.Gain, 0, 4).opt("pan", T, -1, 1)
         .opt("delay", ArgType.Gain, 0, 1).opt("reverb", ArgType.Gain, 0, 1);
