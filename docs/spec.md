@@ -855,7 +855,8 @@ On macOS `Mod` is Cmd (`meta`). Elsewhere it is Ctrl.
 | `Mod+E` / `Mod+Shift+E` | Collapse or expand the current column / all columns |
 | `Mod+=` / `Mod+-` | Zoom the overview in or out while every column is collapsed |
 | `Mod+/` or `F1` | The documentation panel (Escape closes it) |
-| `Mod+1` / `Mod+2` / `Mod+3` | Tracks / Patterns / Instruments tab (§10.9) |
+| `Mod+1` / `Mod+2` / `Mod+3` / `Mod+4` | Tracks / Patterns / Instruments / Settings tab (§10.9, §10.10) |
+| `Mod+,` | Settings tab |
 | `F2` | Rename the selected pattern or instrument (Patterns and Instruments tabs) |
 | Arrows, Home/End, PgUp/PgDn, `Mod+↑/↓` | Navigation (`Mod+↑/↓` goes to the file start/end) |
 
@@ -928,7 +929,8 @@ panel opens at those sections when the cursor is not on a command.
 ### 10.9 Tabs: tracks, patterns, instruments
 
 A 44 px **rail** on the left of the editor area holds one icon per tab:
-Tracks (`Mod+1`), Patterns (`Mod+2`) and Instruments (`Mod+3`). The selected
+Tracks (`Mod+1`), Patterns (`Mod+2`) and Instruments (`Mod+3`), and, pinned
+to the bottom, a cog for Song settings (`Mod+4` or `Mod+,`, §10.10). The selected
 icon is highlighted with a white edge. Hovering an icon for 0.6 s shows a hint
 with the tab's name and shortcut. The title bar, transport and footer are the
 same in every tab.
@@ -970,6 +972,40 @@ same in every tab.
   another file while playing (including a newly added one) plays that file
   from its start. Stop, or playing in the Tracks tab, ends the audition.
 
+
+### 10.10 Song settings
+
+The Settings tab is a form over `song.yaml`, drawn by
+`rive/src/editor/settings.as` to the right of the rail. It scrolls, and
+leaves room for the documentation panel, which opens at *Song settings*.
+
+| Section | Field | Control |
+|---|---|---|
+| Song | Title, Author | Text fields |
+| Time | Tempo | − / value / + (1 BPM steps), typed values checked as `bpm` |
+| | Signature | − / beats / + (1–32), then the beat value: 2, 4, 8 or 16 |
+| | Rows per beat | − / value / + (1–16 with the buttons; up to 64 typed), with the note value one row is |
+| | Swing | A slider, 0–0.75 |
+| Mix | Master volume | A slider, 0–2, read out as a gain and in dB |
+| Tracks | One row per channel | Name and width (`auto` or 8–200) fields, M and S toggles, move up and down, remove (a second click within 3 s confirms) |
+| | Add track | Adds `track_N` with a new empty `channels/track_N.ch` |
+
+- A typed value is committed on Enter, Tab or a click elsewhere, and Escape
+  cancels it. It is checked by the `song.yaml` reader itself, so units and
+  ranges match the file (`-3dB` works for a gain). A refused value keeps the
+  field open, with a red edge and the reason.
+- Every change rewrites `song.yaml` as a whole, in canonical order (comments
+  and unknown keys are not kept). The rewrite goes through the same path as an
+  edit, so the song recompiles and plays on without stopping, the host is told
+  (§11.6), and the title bar follows.
+- The track columns follow the list: kept tracks keep their column (text,
+  undo history, live mute and solo); added tracks get one; removed tracks lose
+  theirs and their file. M and S here set how the song starts, and also apply
+  to the live mix. The header buttons change only the live mix.
+- When `song.yaml` changes elsewhere (a host, another tab), the form reloads,
+  unless a field is being typed in.
+- Hit areas come from a layout pass that does not paint. Input is therefore
+  right before the first frame is drawn, and the form can be tested headless.
 ## 11. View-model contract
 
 The contract is the program's public API. The RML chrome, the Rust shell and

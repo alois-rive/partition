@@ -9,7 +9,7 @@ import { KeyboardEvent, PointerEvent, ScrollEvent, TextInput } from "rive/events
 import { ViewModel } from "rive/data";
 import { Audio } from "rive/audio";
 import { SongFile } from "../lang/bundle";
-import { CONDUCTOR_PATH } from "../lang/config";
+import { CONDUCTOR_PATH, SONG_YAML } from "../lang/config";
 import { Diagnostic } from "../lang/diagnostics";
 import { Song } from "../lang/song";
 import { CheckedFile } from "../lang/check";
@@ -17,6 +17,7 @@ import { compileSong, CompileOptions, Score } from "../score/compiler";
 import { Grid, GridRow } from "../score/timeline";
 import { Rail, RAIL_WIDTH } from "../editor/rail";
 import { FileList, LIST_WIDTH } from "../editor/filelist";
+import { SettingsPanel } from "../editor/settings";
 import { isName } from "../lang/types";
 import { renameReferences } from "../lang/rename";
 import { INSTRUMENTS_DIR, PATTERNS_DIR } from "../lang/song";
@@ -75,11 +76,14 @@ export class Partition extends Layout {
     vm: Bindings? = null;
     ready: bool = false;
     framesWithoutVm: i32 = 0;
-    // One editor per tab (§10.9): tracks, patterns, instruments. `view` is the
-    // one on screen.
+    // One editor per tab (§10.9): tracks, patterns, instruments, and an empty
+    // one for the settings tab (its keys and documentation panel). `view` is
+    // the one on screen.
     tracksView: EditorView = new EditorView();
     patternsView: EditorView = new EditorView();
     instrumentsView: EditorView = new EditorView();
+    settingsView: EditorView = new EditorView();
+    settings: SettingsPanel = new SettingsPanel();
     view: EditorView = new EditorView();
     tab: i32 = 0;
     auditioning: bool = false;
@@ -120,7 +124,7 @@ export class Partition extends Layout {
     exampleItems: Array<ViewModel> = [];
 
     views(): Array<EditorView> {
-        return [this.tracksView, this.patternsView, this.instrumentsView];
+        return [this.tracksView, this.patternsView, this.instrumentsView, this.settingsView];
     }
 
     override init(context: Context): bool {
@@ -129,6 +133,8 @@ export class Partition extends Layout {
         this.patternsView.docsTopic = "patterns";
         this.instrumentsView.docsTopic = "instruments";
         this.instrumentsView.strip = 0;
+        this.settingsView.docsTopic = "settings";
+        this.settingsView.strip = 0;
         let views = this.views();
         for (let i = 0; i < views.length; i++) {
             views[i].setFonts(context.font("mono"), context.font("mono-bold"), context.font("ui"), context.font("ui-bold"));
@@ -168,10 +174,11 @@ export class Partition extends Layout {
         this.narrow = width < NARROW_WIDTH;
         this.layoutW = width;
         this.layoutH = height;
+        this.rail.height = height;
         let views = this.views();
         for (let i = 0; i < views.length; i++) {
-            // Tracks sit right of the rail; files right of the rail and the list.
-            let left = i == 0 ? RAIL_WIDTH : RAIL_WIDTH + LIST_WIDTH;
+            // Tracks and settings sit right of the rail; files right of the rail and the list.
+            let left = i == 1 || i == 2 ? RAIL_WIDTH + LIST_WIDTH : RAIL_WIDTH;
             views[i].originX = left;
             views[i].width = Math.max(width - left, 120);
             views[i].height = height;
@@ -187,7 +194,7 @@ export class Partition extends Layout {
     // --- Tabs (§10.9) --------------------------------------------------------------
 
     setTab(tab: i32): void {
-        if (tab < 0 || tab > 2 || tab == this.tab) return;
+        if (tab < 0 || tab > 3 || tab == this.tab) return;
         let docs = this.view.docsOpen;
         this.closePopovers();
         this.tab = tab;
@@ -195,8 +202,93 @@ export class Partition extends Layout {
         this.view = this.views()[tab];
         if (docs && !this.view.docsOpen) this.view.openDocs();
         else if (!docs) this.view.docsOpen = false;
+        if (tab == 3) {
+            this.settings.cancelEdit();
+            this.settings.load(this.song.text(SONG_YAML));
+        }
         this.view.fit();
         this.view.relayout();
+    }
+
+    // The patterns and instruments tabs: a file list and one file.
+    get fileTab(): bool {
+        return this.tab == 1 || this.tab == 2;
+    }
+
+    // --- Settings (§10.10) ---------------------------------------------------------
+
+    // What the settings form changed: track files to add or remove, the live
+    // mix, and song.yaml itself.
+    applySettings(): void {
+        let actions = this.settings.takeActions();
+        let removed = new Array<string>();
+        for (let i = 0; i < actions.length; i++) {
+            let a = actions[i];
+            if (a.startsWith("trackAdd:")) {
+                let path = a.substring(9);
+                if (!this.song.files.has(path)) {
+                    this.song.setFile(path, "");
+                    this.writeFileToVm(path, "", true);
+                }
+            } else if (a.startsWith("trackDelete:")) {
+                removed.push(a.substring(12));
+            } else if (a.startsWith("trackMix:")) {
+                let parts = a.split(":");
+                let columns = this.tracksView.columns;
+                for (let c = 1; c < columns.length; c++) {
+                    if (columns[c].doc.path != parts[1]) continue;
+                    columns[c].mute = parts[2] == "1";
+                    columns[c].solo = parts[3] == "1";
+                }
+                this.applyMix();
+            }
+        }
+        let yaml = this.settings.takeYaml();
+        if (yaml.length == 0) return;
+        this.fileEdited(SONG_YAML, yaml);
+        for (let i = 0; i < removed.length; i++) {
+            let path = removed[i];
+            let used = false;
+            for (let c = 0; c < this.song.channels.length; c++) if (this.song.channels[c].config.file == path) used = true;
+            if (used || !this.song.files.has(path)) continue;
+            this.song.removeFile(path);
+            this.removeFileFromVm(path);
+        }
+        this.syncTracks();
+    }
+
+    // The track columns after song.yaml changed: kept columns keep their text,
+    // undo history and live mix; new tracks get a column, removed ones lose it.
+    syncTracks(): void {
+        let old = this.tracksView.columns;
+        let byPath = new Map<string, Column>();
+        for (let i = 1; i < old.length; i++) byPath.set(old[i].doc.path, old[i]);
+        let focused = this.tracksView.focused;
+        let focusPath = focused != null ? focused.doc.path : "";
+        let columns = new Array<Column>();
+        if (old.length > 0) columns.push(old[0]);
+        else {
+            let conductor = new Doc(CONDUCTOR_PATH, this.song.text(CONDUCTOR_PATH));
+            columns.push(new Column(conductor, "conductor", autoWidth(conductor, 22), true, false, false));
+        }
+        let channels = this.song.channels;
+        for (let i = 0; i < channels.length; i++) {
+            let ch = channels[i];
+            let path = ch.config.file;
+            let c: Column;
+            if (byPath.has(path)) {
+                c = byPath.get(path);
+                c.name = ch.name;
+            } else {
+                c = new Column(new Doc(path, this.song.text(path)), ch.name, 26, false, ch.config.mute, ch.config.solo);
+            }
+            c.widthChars = ch.config.widthSet ? ch.config.width : autoWidth(c.doc, 26);
+            columns.push(c);
+        }
+        this.tracksView.setColumns(columns);
+        for (let i = 0; i < columns.length; i++) if (columns[i].doc.path == focusPath) this.tracksView.focus = i;
+        this.applyMix();
+        this.compileAt = this.clock + COMPILE_DELAY;
     }
 
     // The tab and view that edit `path`.
@@ -325,7 +417,7 @@ export class Partition extends Layout {
     }
 
     handleListActions(): void {
-        if (this.tab == 0) return;
+        if (!this.fileTab) return;
         let list = this.listFor(this.tab);
         let actions = list.takeActions();
         for (let i = 0; i < actions.length; i++) {
@@ -447,7 +539,7 @@ export class Partition extends Layout {
     // instrument, without the rest of the song.
     auditionFile(keep: bool): void {
         let c = this.view.focused;
-        if (c == null || this.tab == 0) return;
+        if (c == null || !this.fileTab) return;
         let path = c.doc.path;
         let name = c.name;
         let config = this.song.config;
@@ -788,7 +880,7 @@ export class Partition extends Layout {
     }
 
     audition(): void {
-        if (this.tab != 0) {
+        if (this.fileTab) {
             this.auditionFile(false);
             return;
         }
@@ -882,6 +974,9 @@ export class Partition extends Layout {
         this.rail.advance(seconds);
         this.patternList.advance(seconds);
         this.instrumentList.advance(seconds);
+        this.settings.advance(seconds);
+        this.applySettings();
+        if (this.tab == 3) this.settings.load(this.song.text(SONG_YAML));
         let views = this.views();
         for (let v = 0; v < views.length; v++) {
             let changed = views[v].takeChanged();
@@ -918,7 +1013,7 @@ export class Partition extends Layout {
         if (action.startsWith("tab:")) this.setTab(<i32>parseInt(action.substring(4)));
         else if (action == "newFile") this.newFile();
         // In the pattern and instrument tabs, the play keys audition the file.
-        else if ((action == "play" || action == "playFromCursor" || action == "transport.toggle" || action == "transport.play") && this.tab != 0) {
+        else if ((action == "play" || action == "playFromCursor" || action == "transport.toggle" || action == "transport.play") && this.fileTab) {
             if (this.auditioning && this.transport.state == TransportState.Playing) this.stop();
             else this.auditionFile(false);
         } else if (action == "play" || action == "transport.toggle") this.togglePlay();
@@ -1353,9 +1448,15 @@ export class Partition extends Layout {
             if (tab >= 0) this.setTab(tab);
             return;
         }
-        if (this.tab != 0 && x < RAIL_WIDTH + LIST_WIDTH) {
+        if (this.fileTab && x < RAIL_WIDTH + LIST_WIDTH) {
             event.hit();
             this.listFor(this.tab).pointerDown(x - RAIL_WIDTH, y);
+            return;
+        }
+        if (this.tab == 3 && !this.onSettingsDocs(x)) {
+            event.hit();
+            this.layoutSettings();
+            this.settings.pointerDown(x - RAIL_WIDTH, y);
             return;
         }
         this.view.pointerDown(event);
@@ -1365,26 +1466,49 @@ export class Partition extends Layout {
         let x = <f64>event.position.x;
         let y = <f64>event.position.y;
         this.rail.pointerMove(x, y >= 0 && y <= this.layoutH ? y : -1000);
-        if (this.tab != 0) this.listFor(this.tab).pointerMove(x - RAIL_WIDTH, y);
+        if (this.fileTab) this.listFor(this.tab).pointerMove(x - RAIL_WIDTH, y);
         if (this.popoverOpen) return;
+        if (this.tab == 3) {
+            this.layoutSettings();
+            this.settings.pointerMove(x - RAIL_WIDTH, this.onSettingsDocs(x) && this.settings.dragging.length == 0 ? -1000 : y);
+            if (this.settings.dragging.length > 0) event.hit();
+            return;
+        }
         this.view.pointerMove(event);
     }
 
     override pointerUp(event: PointerEvent): void {
+        this.settings.pointerUp();
         if (this.popoverOpen) return;
         this.view.pointerUp(event);
+    }
+
+    layoutSettings(): void {
+        this.settings.layout(this.settingsView, this.settingsView.layoutWidth(), this.layoutH);
+    }
+
+    // In the settings tab, whether a point is on the documentation panel.
+    onSettingsDocs(x: f64): bool {
+        let v = this.settingsView;
+        return v.docsOpen && x - RAIL_WIDTH >= v.docsLeft();
     }
 
     override pointerExit(event: PointerEvent): void {
         this.rail.pointerExit();
         this.patternList.hover = -1;
         this.instrumentList.hover = -1;
+        this.settings.hover = "";
     }
 
     override pointerScroll(event: ScrollEvent): void {
         let x = <f64>event.position.x;
         if (this.popoverOpen && this.onPopover(x, <f64>event.position.y)) return;
-        if (x < RAIL_WIDTH || (this.tab != 0 && x < RAIL_WIDTH + LIST_WIDTH)) return;
+        if (x < RAIL_WIDTH || (this.fileTab && x < RAIL_WIDTH + LIST_WIDTH)) return;
+        if (this.tab == 3 && !this.onSettingsDocs(x)) {
+            event.hit();
+            this.settings.scroll(-<f64>event.delta.y);
+            return;
+        }
         this.view.pointerScroll(event);
     }
 
@@ -1395,14 +1519,19 @@ export class Partition extends Layout {
             return true;
         }
         // A file being renamed takes the keys; F2 starts renaming.
-        if (this.tab != 0 && event.phase != "up" && !event.meta && !event.control) {
+        if (this.fileTab && event.phase != "up" && !event.meta && !event.control) {
             if (this.listFor(this.tab).key(key)) return true;
+        }
+        // A settings field being typed in takes the keys.
+        if (this.tab == 3 && event.phase != "up" && !event.meta && !event.control) {
+            if (this.settings.key(key)) return true;
         }
         return this.view.keyboard(event);
     }
 
     override textEvent(event: TextInput): bool {
-        if (this.tab != 0 && this.listFor(this.tab).typeText(event.text)) return true;
+        if (this.fileTab && this.listFor(this.tab).typeText(event.text)) return true;
+        if (this.tab == 3) return this.settings.typeText(event.text);
         return this.view.textInput(event);
     }
 
@@ -1410,9 +1539,16 @@ export class Partition extends Layout {
         // The editor, offset to the right of the rail (and the file list).
         renderer.save();
         renderer.transform(Mat2D.withTranslation(<f32>this.view.originX, 0));
-        this.view.draw(renderer);
+        if (this.tab == 3) {
+            // The settings form, then the documentation over it when open.
+            let v = this.settingsView;
+            this.settings.draw(renderer, v, v.layoutWidth(), this.layoutH);
+            if (v.docsOpen) v.drawDocs(renderer);
+        } else {
+            this.view.draw(renderer);
+        }
         renderer.restore();
-        if (this.tab != 0) this.listFor(this.tab).draw(renderer, this.view, RAIL_WIDTH, this.layoutH);
+        if (this.fileTab) this.listFor(this.tab).draw(renderer, this.view, RAIL_WIDTH, this.layoutH);
         this.rail.draw(renderer, this.view, this.layoutH);
         this.rail.drawHint(renderer, this.view);
     }

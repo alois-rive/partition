@@ -110,10 +110,16 @@ export function docBlocks(): Array<DocBlock> {
     out.push(new DocBlock(DocKind.Heading, "The overview strip"));
     out.push(new DocBlock(DocKind.Paragraph, "The strip at the left of each track draws every command on the same time grid: notes as lines placed by pitch, patterns as a bar on the left edge, ramps as wedges, LFOs as waves. Collapse a track to keep only its strip; collapse all to see the whole song at once."));
 
+    out.push(new DocBlock(DocKind.Heading, "Song settings", "settings"));
+    out.push(new DocBlock(DocKind.Paragraph, "song.yaml holds what is true of the whole song: its title and author, the tempo, signature, rows per beat and swing it starts with, the master volume, and the list of tracks. The Settings tab (Cmd+, or the cog at the bottom of the rail) edits it as a form; every change is checked, then written back to song.yaml at once, so the song plays with it while you edit."));
+    out.push(new DocBlock(DocKind.Code, "title: Late Night\nauthor: Me\nbpm: 122\nsignature: 4/4\nrows_per_beat: 4\nswing: 0.1\nmaster_volume: 0.9\nchannels:\n  - name: kick\n    file: channels/kick.ch\n  - name: bass\n    file: channels/bass.ch\n    width: 40\n    mute: true"));
+    out.push(new DocBlock(DocKind.Paragraph, "bpm is 20 to 999; signature is 1 to 32 beats over 1, 2, 4, 8, 16 or 32; rows_per_beat is 1 to 64 (with 4 in 4/4, each line is a 1/16 note); swing is 0 to 0.75; master_volume is a gain from 0 to 4 (or in dB, as -3dB). These are where the song starts: bpm(), sig(), rpb(), swing() and master() in the conductor change them as it plays."));
+    out.push(new DocBlock(DocKind.Paragraph, "Each track has a file in channels/ and a name shown in its header; width sets its column in characters (sized to the text when left out), and mute and solo set how it starts. In the Settings tab, tracks can be renamed, reordered, added (with a new empty file) and removed (with their file, after a second click)."));
+
     out.push(new DocBlock(DocKind.Heading, "Tabs"));
-    out.push(new DocBlock(DocKind.Paragraph, "The rail on the left switches between Tracks (Cmd+1), Patterns (Cmd+2) and Instruments (Cmd+3); hold the pointer on an icon for its name. In Patterns and Instruments, the list picks the file to edit and Play plays only that file."));
+    out.push(new DocBlock(DocKind.Paragraph, "The rail on the left switches between Tracks (Cmd+1), Patterns (Cmd+2), Instruments (Cmd+3) and Song settings (Cmd+4 or Cmd+,); hold the pointer on an icon for its name. In Patterns and Instruments, the list picks the file to edit and Play plays only that file."));
 
     out.push(new DocBlock(DocKind.Heading, "Keyboard"));
-    out.push(new DocBlock(DocKind.Paragraph, "Cmd+Enter play / pause · Cmd+Shift+Enter play from the cursor · Alt+Enter play the cursor's row · Cmd+. stop · Cmd+L loop the selection or bar · Cmd+M mute · Cmd+Shift+S solo · Cmd+E collapse the track · Cmd+Shift+E collapse all · Cmd+= / Cmd+- zoom the collapsed view · Cmd+[ / Cmd+] previous / next track · Cmd+D duplicate row · Alt+Up / Down move row · Cmd+Z / Cmd+Shift+Z undo / redo · Cmd+1 / 2 / 3 tabs · F2 rename the selected pattern or instrument · Cmd+/ or F1 this panel."));
+    out.push(new DocBlock(DocKind.Paragraph, "Cmd+Enter play / pause · Cmd+Shift+Enter play from the cursor · Alt+Enter play the cursor's row · Cmd+. stop · Cmd+L loop the selection or bar · Cmd+M mute · Cmd+Shift+S solo · Cmd+E collapse the track · Cmd+Shift+E collapse all · Cmd+= / Cmd+- zoom the collapsed view · Cmd+[ / Cmd+] previous / next track · Cmd+D duplicate row · Alt+Up / Down move row · Cmd+Z / Cmd+Shift+Z undo / redo · Cmd+1 / 2 / 3 / 4 tabs (Cmd+, settings) · F2 rename the selected pattern or instrument · Cmd+/ or F1 this panel."));
     return out;
 }

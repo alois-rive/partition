@@ -1,0 +1,1 @@
+--pointer wants kind@x,y, drag@x1,y1>x2,y2[:steps], wheel@x,y:dx,dy[:notches] or trackpad@x,y:dx,dy[:steps], with a scroll's dx,dy not both 0, got "drag@276,504"

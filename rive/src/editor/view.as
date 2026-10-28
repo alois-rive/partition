@@ -179,6 +179,9 @@ export class EditorView {
     titleStyle: TextRunStyle? = null;
     headingStyle: TextRunStyle? = null;
     paraStyle: TextRunStyle? = null;
+    hintStyle: TextRunStyle? = null; // settings: field descriptions
+    errorStyle: TextRunStyle? = null; // settings: a refused value
+    valueStyle: TextRunStyle? = null; // settings: values in fields
 
     // Pointer state
     dragging: bool = false;
@@ -218,6 +221,9 @@ export class EditorView {
         this.titleStyle = this.style(labelBold, this.colors.white, 18);
         this.headingStyle = this.style(labelBold, this.colors.white, 14);
         this.paraStyle = this.style(label, this.colors.secondary, 13);
+        this.hintStyle = this.style(label, this.colors.subdued, 12);
+        this.errorStyle = this.style(label, this.colors.error, 12);
+        this.valueStyle = this.style(regular, this.colors.white, 13);
         this.docsLaidOutFor = -1;
         this.lineH = this.textLineH;
         this.ascent = <f64>regular.ascent * <f64>this.fontSize;
@@ -624,7 +630,10 @@ export class EditorView {
     draw(renderer: Renderer): void {
         let k = this.colors;
         this.rect(renderer, 0, 0, this.width, this.height, k.background);
-        if (this.columns.length == 0) return;
+        if (this.columns.length == 0) {
+            if (this.docsOpen) this.drawDocs(renderer);
+            return;
+        }
         let top = this.gridTop();
         let firstLine = max<i32>(<i32>Math.floor(this.scrollY / this.lineH), 0);
         let lastLine = <i32>Math.ceil((this.scrollY + this.height - top) / this.lineH);
@@ -1362,13 +1371,15 @@ export class EditorView {
     key(key: i32, shift: bool, control: bool, alt: bool, meta: bool, phase: string = "down"): bool {
         if (phase == "up") return false;
         let mod = meta || control;
-        let c = this.focused;
-        if (c == null) return false;
-        let doc = c.doc;
         let pageLines = max<i32>(<i32>((this.height - this.headerH) / this.lineH) - 2, 1);
 
-        if (mod && key >= 49 && key <= 51) { // 1, 2, 3: tracks, patterns, instruments
+        // App-wide keys first: they work in a tab with nothing to edit too.
+        if (mod && key >= 49 && key <= 52) { // 1–4: tracks, patterns, instruments, settings
             this.actions.push(`tab:${key - 49}`);
+            return true;
+        }
+        if (mod && key == 44) { // Cmd+,: settings
+            this.actions.push("tab:3");
             return true;
         }
         if (key == 290 || (mod && key == 47)) { // F1, Cmd+/: the documentation
@@ -1392,12 +1403,8 @@ export class EditorView {
             this.actions.push("stop");
             return true;
         }
-        if (mod && key == 83) { // S
-            this.actions.push(shift ? `solo:${this.focus}` : "save");
-            return true;
-        }
-        if (mod && key == 77) { // M
-            this.actions.push(`mute:${this.focus}`);
+        if (mod && key == 83 && !shift) { // S
+            this.actions.push("save");
             return true;
         }
         if (mod && key == 76) { // L
@@ -1406,6 +1413,19 @@ export class EditorView {
         }
         if (mod && key == 70) { // F
             this.follow = !this.follow;
+            return true;
+        }
+
+        // The rest needs a column.
+        let c = this.focused;
+        if (c == null) return false;
+        let doc = c.doc;
+        if (mod && key == 83) { // Shift+S
+            this.actions.push(`solo:${this.focus}`);
+            return true;
+        }
+        if (mod && key == 77) { // M
+            this.actions.push(`mute:${this.focus}`);
             return true;
         }
         if (mod && key == 91) { // [
