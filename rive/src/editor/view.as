@@ -1374,12 +1374,12 @@ export class EditorView {
         let pageLines = max<i32>(<i32>((this.height - this.headerH) / this.lineH) - 2, 1);
 
         // App-wide keys first: they work in a tab with nothing to edit too.
-        if (mod && key >= 49 && key <= 52) { // 1–4: tracks, patterns, instruments, settings
+        if (mod && key >= 49 && key <= 53) { // 1–5: tracks, patterns, instruments, samples, settings
             this.actions.push(`tab:${key - 49}`);
             return true;
         }
         if (mod && key == 44) { // Cmd+,: settings
-            this.actions.push("tab:3");
+            this.actions.push("tab:4");
             return true;
         }
         if (key == 290 || (mod && key == 47)) { // F1, Cmd+/: the documentation

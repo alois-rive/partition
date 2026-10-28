@@ -5,7 +5,13 @@
 
 import { lexLine, Tok } from "./lexer";
 
-export function renameReferences(text: string, from: string, to: string, pattern: bool): string {
+export const REF_PATTERN: i32 = 0;
+export const REF_INSTRUMENT: i32 = 1;
+export const REF_SAMPLE: i32 = 2;
+
+// `kind` is what is renamed: REF_PATTERN (`pattern(name: …)`), REF_INSTRUMENT
+// (`inst(name: …)` and `inst:` overrides) or REF_SAMPLE (`sample(file: …)`).
+export function renameReferences(text: string, from: string, to: string, kind: i32): string {
     let lines = text.split("\n");
     let changed = false;
     for (let l = 0; l < lines.length; l++) {
@@ -27,7 +33,11 @@ export function renameReferences(text: string, from: string, to: string, pattern
             let value = tokens[i + 2];
             if (value.kind != Tok.Word || value.text != from) continue;
             let arg = t.text;
-            let matches = pattern ? command == "pattern" && arg == "name" : (command == "inst" && arg == "name") || arg == "inst";
+            let matches = kind == REF_PATTERN
+                ? command == "pattern" && arg == "name"
+                : kind == REF_SAMPLE
+                    ? command == "sample" && arg == "file"
+                    : (command == "inst" && arg == "name") || arg == "inst";
             if (matches) {
                 starts.push(value.col - 1);
                 ends.push(value.endCol - 1);

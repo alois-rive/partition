@@ -1,5 +1,5 @@
 // The tab rail (docs/spec.md §10.9): a narrow column of icons on the left
-// edge, one per tab (tracks, patterns, instruments, and settings at the
+// edge, one per tab (tracks, patterns, instruments, samples, and settings at the
 // bottom). Hovering an icon for a moment shows its name and shortcut.
 
 import { Renderer } from "rive/renderer";
@@ -11,15 +11,19 @@ export const HINT_DELAY: f64 = 0.6; // seconds of hovering before the hint shows
 const ITEM: f64 = 32;
 const TOP: f64 = 8;
 const GAP: f64 = 8;
-export const SETTINGS_TAB: i32 = 3;
+export const TAB_TRACKS: i32 = 0;
+export const TAB_PATTERNS: i32 = 1;
+export const TAB_INSTRUMENTS: i32 = 2;
+export const TAB_SAMPLES: i32 = 3;
+export const SETTINGS_TAB: i32 = 4;
 
 export class Rail {
     tab: i32 = 0;
     hover: i32 = -1;
     hoverSince: f64 = 0;
     clock: f64 = 0;
-    names: Array<string> = ["Tracks", "Patterns", "Instruments", "Song settings"];
-    keys: Array<string> = ["Cmd+1", "Cmd+2", "Cmd+3", "Cmd+,"];
+    names: Array<string> = ["Tracks", "Patterns", "Instruments", "Samples", "Song settings"];
+    keys: Array<string> = ["Cmd+1", "Cmd+2", "Cmd+3", "Cmd+4", "Cmd+,"];
     height: f64 = 600; // the rail's height, for the item pinned to the bottom
 
     itemY(i: i32): f64 {
@@ -110,6 +114,13 @@ export class Rail {
             ui.rect(renderer, cx + 1, cy + 1, 6, 6, ink);
             ui.rect(renderer, cx - 6, cy - 6, 4, 4, 0xFF0A0A0A);
             ui.rect(renderer, cx + 2, cy + 2, 4, 4, 0xFF0A0A0A);
+        } else if (i == TAB_SAMPLES) {
+            // Samples: a waveform's bars.
+            let heights: StaticArray<f64> = [3, 7, 5, 8, 4, 6, 2];
+            for (let b = 0; b < heights.length; b++) {
+                let bx = cx - 7.5 + <f64>b * 2.5;
+                ui.line(renderer, bx, cy - heights[b], bx, cy + heights[b], 1.4, ink);
+            }
         } else if (i == 2) {
             // Instruments: one cycle of a wave inside a box.
             ui.line(renderer, cx - 8, cy, cx - 4, cy - 5, 1.4, ink);

@@ -26,6 +26,12 @@ impl Audio {
         self.frames() as f64 / self.rate as f64
     }
 
+    /// Drops the first `frames` frames.
+    pub fn skip(&mut self, frames: usize) {
+        let n = (frames * self.channels as usize).min(self.samples.len());
+        self.samples.drain(..n);
+    }
+
     /// Keeps the first `frames` frames.
     pub fn truncate(&mut self, frames: usize) {
         let n = frames.min(self.frames()) * self.channels as usize;
@@ -140,6 +146,11 @@ mod tests {
         let audio = Audio { rate: 10, channels: 1, samples: vec![0.0, 0.3, 0.0, 0.0, 0.0] };
         assert_eq!(audio.end_of_sound(0, 1e-4), 2);
         assert_eq!(audio.end_of_sound(4, 1e-4), 4);
+        let mut skipped = audio.clone();
+        skipped.skip(1);
+        assert_eq!(skipped.samples, [0.3, 0.0, 0.0, 0.0]);
+        skipped.skip(10);
+        assert!(skipped.samples.is_empty());
         assert!(read(b"nope").is_err());
     }
 }

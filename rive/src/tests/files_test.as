@@ -1,5 +1,5 @@
 import { Tests } from "rive/test";
-import { renameReferences } from "../lang/rename";
+import { REF_INSTRUMENT, REF_PATTERN, REF_SAMPLE, renameReferences } from "../lang/rename";
 import { FileList, LIST_HEADER, LIST_ROW, LIST_WIDTH } from "../editor/filelist";
 import { Rail, RAIL_WIDTH, HINT_DELAY } from "../editor/rail";
 import { KEY_ENTER, KEY_ESCAPE, KEY_BACKSPACE } from "../editor/view";
@@ -23,15 +23,19 @@ export class FilesTests extends Tests {
         group("rename references", () => {
             test("a pattern's calls change, nothing else does", (expect) => {
                 let text = "pattern(name: four, times: 4); inst(name: four)\n\tpattern(name: fourth)\nnote(p: C4)\n";
-                expect.that(renameReferences(text, "four", "kick", true)).is("pattern(name: kick, times: 4); inst(name: four)\n\tpattern(name: fourth)\nnote(p: C4)\n");
+                expect.that(renameReferences(text, "four", "kick", REF_PATTERN)).is("pattern(name: kick, times: 4); inst(name: four)\n\tpattern(name: fourth)\nnote(p: C4)\n");
             });
             test("an instrument's selections and overrides change", (expect) => {
                 let text = "inst(name: pad); note(p: C4, inst: pad)\npattern(name: pad)\n";
-                expect.that(renameReferences(text, "pad", "warm_pad", false)).is("inst(name: warm_pad); note(p: C4, inst: warm_pad)\npattern(name: pad)\n");
+                expect.that(renameReferences(text, "pad", "warm_pad", REF_INSTRUMENT)).is("inst(name: warm_pad); note(p: C4, inst: warm_pad)\npattern(name: pad)\n");
             });
             test("text without references is returned as is", (expect) => {
                 let text = "note(p: C4)\n\n";
-                expect.that(renameReferences(text, "x", "y", true)).is(text);
+                expect.that(renameReferences(text, "x", "y", REF_PATTERN)).is(text);
+            });
+            test("a sample's references change in instruments", (expect) => {
+                let text = "sample(file: kick, key: C2)\nbase(preset: kick)\nsample(file: kick_2)\n";
+                expect.that(renameReferences(text, "kick", "bd", REF_SAMPLE)).is("sample(file: bd, key: C2)\nbase(preset: kick)\nsample(file: kick_2)\n");
             });
         });
 

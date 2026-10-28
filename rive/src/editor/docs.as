@@ -53,6 +53,7 @@ function example(name: string): string {
     if (name == "drive") return "drive(v: 0.4)";
     if (name == "voice") return "voice(mono: true, glide: 40ms)";
     if (name == "defaults") return "defaults(vol: 0.6, reverb: 0.3)";
+    if (name == "sample") return "sample(file: break, root: C2, slices: 16)\nsample(file: hat_open, key: A#2, oneshot: true, choke: 1)";
     if (name == "param") return "param(name: brightness, target: cutoff, min: 300, max: 6k)";
     return "";
 }
@@ -105,7 +106,20 @@ export function docBlocks(): Array<DocBlock> {
     out.push(new DocBlock(DocKind.Paragraph, "The voice: up to four oscillators (osc), each adding to the sound; if the file declares any, they replace the preset's. FM uses the previous oscillator as modulator (fm: index, ratio: its frequency ratio). env shapes the volume (attack, decay, sustain, release; burst: repeats the first hit, for claps). pitch_env drops the pitch at the start (kicks, toms). filter and filter_env shape the tone; keytrack opens the filter for higher notes. drive adds saturation."));
     out.push(new DocBlock(DocKind.Paragraph, "voice sets how notes share voices: poly (how many at once), mono with glide (legato slides), and fixed: a pitch every note plays at (drums). defaults gives the track vol, pan and send values the first time the instrument is selected."));
     out.push(new DocBlock(DocKind.Paragraph, "param adds a knob of your own: set(brightness: 0.5) or ramp(brightness: 1, over: 4bar) on a track moves its target between min and max. Tracks can also set the instrument's own parameters directly: cutoff, res, env, keytrack, drive, glide, attack, decay, sustain, release, pw, detune, and oscN.level, oscN.detune, oscN.pw, oscN.fm for oscillator N."));
-    commands(out, "Instrument commands", "", ["base", "osc", "env", "pitch_env", "filter", "filter_env", "drive", "voice", "defaults", "param"]);
+    commands(out, "Instrument commands", "", ["base", "osc", "sample", "env", "pitch_env", "filter", "filter_env", "drive", "voice", "defaults", "param"]);
+
+    out.push(new DocBlock(DocKind.Heading, "Samples", "samples"));
+    out.push(new DocBlock(DocKind.Paragraph, "A sample is a WAV file in samples/, named by its file name: samples/kick.wav is 'kick'. Any rate, 8 to 32-bit PCM or float; stereo files are mixed to mono. An instrument plays samples with sample(file: …), and the rest of the instrument (env, filter, drive, voice) shapes them like oscillators. Without an env, a sample plays as recorded."));
+    out.push(new DocBlock(DocKind.Paragraph, "Zones: each sample(…) covers the notes from lo to hi and plays at its own pitch on root, higher or lower for other notes. Several zones build a multi-sampled instrument or a drum kit; key: C2 is short for root, lo and hi on one note, for a drum hit."));
+    out.push(new DocBlock(DocKind.Code, "sample(file: keys_c3, root: C3, hi: B3)\nsample(file: keys_c4, root: C4, lo: C4)\nenv(a: 2ms, d: 1.5s, s: 0.6, r: 450ms)"));
+    out.push(new DocBlock(DocKind.Paragraph, "Slices: slices: 16 cuts the sample into 16 equal parts, one per note from root up, each at its own pitch: the way to play a drum break by steps, or rearrange it. start and end trim the file; tune shifts it (7st, -20c)."));
+    out.push(new DocBlock(DocKind.Code, "sample(file: break, root: C2, slices: 16)"));
+    out.push(new DocBlock(DocKind.Paragraph, "With that instrument, note(p: C2) plays the break's first step and note(p: D2) its third."));
+    out.push(new DocBlock(DocKind.Paragraph, "loop: true repeats from loop_start to loop_end while the note is held, then releases. oneshot: true plays to the end whatever the note's length (drums). reverse: true plays it backwards. choke: 1 puts zones in a group where a new note cuts the others on the track: an open hi-hat stopped by a closed one."));
+    out.push(new DocBlock(DocKind.Code, "sample(file: vox, root: C4, loop: true, loop_start: 300ms, loop_end: 600ms)\nsample(file: cymbal, reverse: true, oneshot: true)"));
+    out.push(new DocBlock(DocKind.Paragraph, "The Samples tab (Cmd+4) lists them. Select one to see its waveform; drag across it to select part of it, then Play it, Trim to it or Cut it (Delete), Normalize, Reverse, Fade in or out, or change its gain by 3 dB, with Undo (Cmd+Z). Use it shows the line an instrument needs, Copy puts it on the clipboard, New instrument makes one that plays it, and Used by lists the instruments that do."));
+    out.push(new DocBlock(DocKind.Paragraph, "The + of the list adds samples: Import files (with the partition app, which converts AIFF, MP3 and M4A to WAV) or Record an instrument, which renders a note of any instrument into a new sample. Renaming a sample updates every sample(file: ...) that plays it."));
+    out.push(new DocBlock(DocKind.Paragraph, "Samples load in the background when a song opens; play waits for them. The Chopped example uses all of this."));
 
     out.push(new DocBlock(DocKind.Heading, "The overview strip"));
     out.push(new DocBlock(DocKind.Paragraph, "The strip at the left of each track draws every command on the same time grid: notes as lines placed by pitch, patterns as a bar on the left edge, ramps as wedges, LFOs as waves. Collapse a track to keep only its strip; collapse all to see the whole song at once."));
@@ -117,7 +131,7 @@ export function docBlocks(): Array<DocBlock> {
     out.push(new DocBlock(DocKind.Paragraph, "Each track has a file in channels/ and a name shown in its header; width sets its column in characters (sized to the text when left out), and mute and solo set how it starts. In the Settings tab, tracks can be renamed, reordered, added (with a new empty file) and removed (with their file, after a second click)."));
 
     out.push(new DocBlock(DocKind.Heading, "Tabs"));
-    out.push(new DocBlock(DocKind.Paragraph, "The rail on the left switches between Tracks (Cmd+1), Patterns (Cmd+2), Instruments (Cmd+3) and Song settings (Cmd+4 or Cmd+,); hold the pointer on an icon for its name. In Patterns and Instruments, the list picks the file to edit and Play plays only that file."));
+    out.push(new DocBlock(DocKind.Paragraph, "The rail on the left switches between Tracks (Cmd+1), Patterns (Cmd+2), Instruments (Cmd+3), Samples (Cmd+4) and Song settings (Cmd+5 or Cmd+,); hold the pointer on an icon for its name. In Patterns, Instruments and Samples, the list picks the file and Play plays only that file."));
 
     out.push(new DocBlock(DocKind.Heading, "Keyboard"));
     out.push(new DocBlock(DocKind.Paragraph, "Cmd+Enter play / pause · Cmd+Shift+Enter play from the cursor · Alt+Enter play the cursor's row · Cmd+. stop · Cmd+L loop the selection or bar · Cmd+M mute · Cmd+Shift+S solo · Cmd+E collapse the track · Cmd+Shift+E collapse all · Cmd+= / Cmd+- zoom the collapsed view · Cmd+[ / Cmd+] previous / next track · Cmd+D duplicate row · Alt+Up / Down move row · Cmd+Z / Cmd+Shift+Z undo / redo · Cmd+1 / 2 / 3 / 4 tabs (Cmd+, settings) · F2 rename the selected pattern or instrument · Cmd+/ or F1 this panel."));

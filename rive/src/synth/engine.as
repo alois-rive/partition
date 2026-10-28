@@ -19,8 +19,15 @@ import {
     I_KEYTRACK, I_MONO, I_OSC, I_OSC_COUNT, I_PITCH_AMOUNT, I_PITCH_DECAY, I_POLY, I_RES,
     I_RETRIGGER, I_SLOPE, INST_STRIDE, MAX_INSTRUMENTS, MAX_OSC, O_DETUNE, O_FM, O_LEVEL, O_OCT,
     O_PHASE, O_PW, O_RATIO, O_SEMI, O_SPREAD, O_UNISON, O_WAVE, OSC_STRIDE, WAVE_NOISE, WAVE_PULSE,
-    WAVE_SAW, WAVE_SINE, WAVE_SQUARE, WAVE_TRI,
+    WAVE_SAW, WAVE_SINE, WAVE_SQUARE, WAVE_TRI, I_ZONE, I_ZONE_COUNT, ZONE_STRIDE, Z_CHOKE, Z_END, Z_GAIN,
+    Z_HI, Z_LO, Z_LOOP, Z_LOOP_END, Z_LOOP_START, Z_ONESHOT, Z_REVERSE, Z_ROOT, Z_SAMPLE, Z_SLICES, Z_START, Z_TUNE,
 } from "./insttable";
+import { BANK_HEADER, BANK_RECORD, B_FRAMES, B_OFFSET, B_RATE, MAX_SAMPLES } from "./samples";
+
+// Frames a sample fades over where it stops without a loop, so it never clicks.
+const SAMPLE_FADE: f64 = 64;
+// The fastest a sample is read: 16 frames of the file per output frame.
+const MAX_SAMPLE_STEP: f64 = 16;
 
 export const BLOCK: i32 = 32;
 export const MAX_VOICES: i32 = 64;
@@ -277,6 +284,22 @@ class Voice {
     gainL: f64 = 0;
     gainR: f64 = 0;
     fastRelease: bool = false;
+    // Sample playback (§7.4): the zone it plays, or -1.
+    zone: i32 = -1;
+    choke: i32 = 0;
+    sPos: f64 = 0; // read position in bank frames
+    sStart: f64 = 0; // the playable range in bank frames [sStart, sEnd)
+    sEnd: f64 = 0;
+    sLoop: bool = false;
+    sLoopStart: f64 = 0;
+    sLoopEnd: f64 = 0;
+    sReverse: bool = false;
+    sOneshot: bool = false;
+    sRate: f64 = 48000; // the file's sample rate
+    sRoot: f64 = 60; // NaN for slices, which keep their pitch
+    sTune: f64 = 0;
+    sGain: f64 = 1;
+    sDone: bool = false;
 
     // The pitch the voice plays at song time `t`, glide included.
     pitchAt(t: f64): f64 {
@@ -396,6 +419,12 @@ export class Engine {
     status: EngineStatus = new EngineStatus();
     peakDecay: f64;
     chaseBuf: Float64Array = new Float64Array(MAX_CHASE * FIELDS);
+    // The sample bank (synth/samples.as), copied into this lane once.
+    bank: Float32Array = new Float32Array(0);
+    bankCount: i32 = 0;
+    bankOffset: Float64Array = new Float64Array(MAX_SAMPLES); // first frame, in `bank`
+    bankFrames: Float64Array = new Float64Array(MAX_SAMPLES);
+    bankRate: Float64Array = new Float64Array(MAX_SAMPLES);
 
     constructor(sampleRate: f64, outChannels: i32) {
         this.sampleRate = sampleRate;
@@ -408,6 +437,134 @@ export class Engine {
         this.peakDecay = Math.exp(-1 / (0.3 * sampleRate / <f64>BLOCK));
         this.master.assign(0, 1, NaN, 0, 0);
         this.clearSlotMap();
+    }
+
+    // --- Samples ----------------------------------------------------------
+
+    // Takes the song's sample bank. It allocates, so it runs before playback
+    // (a processor's init, a render's start), never in `render`.
+    attachSamples(blob: Blob?): void {
+        this.bankCount = 0;
+        if (blob == null || blob.byteLength < <u32>(BANK_HEADER * 4)) return;
+        let data = new Float32Array(<i32>(blob.byteLength / 4));
+        blob.readInto(0, data);
+        let count = min<i32>(<i32>data[0], MAX_SAMPLES);
+        for (let i = 0; i < count; i++) {
+            let r = 1 + i * BANK_RECORD;
+            this.bankOffset[i] = <f64>BANK_HEADER + <f64>data[r + B_OFFSET];
+            this.bankFrames[i] = <f64>data[r + B_FRAMES];
+            this.bankRate[i] = <f64>data[r + B_RATE];
+        }
+        this.bank = data;
+        this.bankCount = count;
+    }
+
+    // The zone of instrument `base` that plays `key`, or -1.
+    zoneFor(base: i32, key: f64): i32 {
+        let table = this.instruments;
+        let count = <i32>table[base + I_ZONE_COUNT];
+        for (let z = 0; z < count; z++) {
+            let zb = base + I_ZONE + z * ZONE_STRIDE;
+            let sample = <i32>table[zb + Z_SAMPLE];
+            if (sample < 0 || sample >= this.bankCount || this.bankFrames[sample] < 2) continue;
+            if (key >= table[zb + Z_LO] && key <= table[zb + Z_HI]) return z;
+        }
+        return -1;
+    }
+
+    // Points voice `v` at zone `zone` for note `key`.
+    startSample(v: Voice, base: i32, zone: i32, key: f64): void {
+        let table = this.instruments;
+        let zb = base + I_ZONE + zone * ZONE_STRIDE;
+        let sample = <i32>table[zb + Z_SAMPLE];
+        let rate = this.bankRate[sample];
+        let frames = this.bankFrames[sample];
+        let first = this.bankOffset[sample];
+        let a = Math.min(Math.max(Math.round(table[zb + Z_START] * rate), 0), frames - 1);
+        let endAt = table[zb + Z_END];
+        let e = endAt > 0 ? Math.min(Math.max(Math.round(endAt * rate), a + 1), frames) : frames;
+        let slices = <i32>table[zb + Z_SLICES];
+        let root = table[zb + Z_ROOT];
+        if (slices > 0) {
+            // One equal slice per note, from the root up; slices keep their pitch.
+            let k = Math.min(Math.max(key - root, 0), <f64>(slices - 1));
+            let len = (e - a) / <f64>slices;
+            let s0 = Math.floor(a + k * len);
+            e = Math.max(Math.floor(a + (k + 1) * len), s0 + 1);
+            a = s0;
+            root = NaN;
+        }
+        v.zone = zone;
+        v.choke = <i32>table[zb + Z_CHOKE];
+        v.sStart = first + a;
+        v.sEnd = first + e;
+        v.sOneshot = table[zb + Z_ONESHOT] > 0;
+        v.sReverse = table[zb + Z_REVERSE] > 0;
+        v.sLoop = table[zb + Z_LOOP] > 0 && slices == 0 && !v.sOneshot;
+        if (v.sLoop) {
+            let ls = Math.min(Math.max(Math.round(table[zb + Z_LOOP_START] * rate), a), e - 1);
+            let leAt = table[zb + Z_LOOP_END];
+            let le = leAt > 0 ? Math.min(Math.max(Math.round(leAt * rate), ls + 1), e) : e;
+            v.sLoopStart = first + ls;
+            v.sLoopEnd = first + le;
+            if (le - ls < 8) v.sLoop = false;
+        }
+        v.sPos = v.sReverse ? v.sEnd - 1 : v.sStart;
+        v.sRate = rate;
+        v.sRoot = root;
+        v.sTune = table[zb + Z_TUNE];
+        v.sGain = table[zb + Z_GAIN];
+        v.sDone = false;
+    }
+
+    // The bank frame at `i`, kept inside the voice's range.
+    @inline
+    frameAt(v: Voice, i: f64): f64 {
+        let j = i < v.sStart ? v.sStart : i >= v.sEnd ? v.sEnd - 1 : i;
+        return <f64>unchecked(this.bank[<i32>j]);
+    }
+
+    // Adds `n` frames of the voice's sample to `buf`, its pitch moving from
+    // `semis0` to `semis1` semitones off the file's own.
+    renderSample(v: Voice, buf: Float64Array, n: i32, semis0: f64, semis1: f64): void {
+        let sr = this.sampleRate;
+        let r0 = Math.min(v.sRate / sr * Math.pow(2, semis0 / 12), MAX_SAMPLE_STEP);
+        let r1 = Math.min(v.sRate / sr * Math.pow(2, semis1 / 12), MAX_SAMPLE_STEP);
+        let step = n > 0 ? (r1 - r0) / <f64>n : 0;
+        let rate = r0;
+        let dir = v.sReverse ? -1.0 : 1.0;
+        let pos = v.sPos;
+        let gain = v.sGain;
+        let loopLen = v.sLoopEnd - v.sLoopStart;
+        for (let i = 0; i < n; i++) {
+            if (pos >= v.sEnd || pos < v.sStart) {
+                v.sDone = true;
+                break;
+            }
+            // 4-point Hermite interpolation.
+            let ip = Math.floor(pos);
+            let f = pos - ip;
+            let xm1 = this.frameAt(v, ip - 1);
+            let x0 = this.frameAt(v, ip);
+            let x1 = this.frameAt(v, ip + 1);
+            let x2 = this.frameAt(v, ip + 2);
+            let c1 = 0.5 * (x1 - xm1);
+            let c2 = xm1 - 2.5 * x0 + 2 * x1 - 0.5 * x2;
+            let c3 = 0.5 * (x2 - xm1) + 1.5 * (x0 - x1);
+            let y = ((c3 * f + c2) * f + c1) * f + x0;
+            if (!v.sLoop) {
+                let left = dir > 0 ? v.sEnd - pos : pos - v.sStart + 1;
+                if (left < SAMPLE_FADE) y *= left / SAMPLE_FADE;
+            }
+            buf[i] += y * gain;
+            pos += dir * rate;
+            rate += step;
+            if (v.sLoop) {
+                if (dir > 0 && pos >= v.sLoopEnd) pos -= loopLen;
+                else if (dir < 0 && pos < v.sLoopStart) pos += loopLen;
+            }
+        }
+        v.sPos = pos;
     }
 
     // --- Score ------------------------------------------------------------
@@ -693,7 +850,8 @@ export class Engine {
             let note = <i32>w[o + 5];
             for (let i = 0; i < MAX_VOICES; i++) {
                 let v = this.voices[i];
-                if (v.active && !v.releasing && v.note == note && v.channel == channel) this.releaseVoice(v, false);
+                // One-shot samples ignore the note's end and play to theirs.
+                if (v.active && !v.releasing && v.note == note && v.channel == channel && !(v.zone >= 0 && v.sOneshot)) this.releaseVoice(v, false);
             }
             return;
         }
@@ -758,6 +916,23 @@ export class Engine {
         let note = <i32>w[o + 5];
         let seconds = w[o + 12];
         let mono = table[base + I_MONO] > 0;
+        // A sampled instrument plays the zone that covers the note, if any.
+        let zone = -1;
+        if (<i32>table[base + I_ZONE_COUNT] > 0) {
+            zone = this.zoneFor(base, Math.round(pitch));
+            if (zone < 0 && <i32>table[base + I_OSC_COUNT] == 0) return;
+            if (zone >= 0) {
+                let choke = <i32>table[base + I_ZONE + zone * ZONE_STRIDE + Z_CHOKE];
+                if (choke > 0) {
+                    for (let i = 0; i < MAX_VOICES; i++) {
+                        let other = this.voices[i];
+                        if (other.active && !other.releasing && other.channel == channel && other.inst == inst && other.zone >= 0 && other.choke == choke) {
+                            this.releaseVoice(other, true);
+                        }
+                    }
+                }
+            }
+        }
 
         // Mono instruments keep one voice per channel and owner, and glide.
         if (mono) {
@@ -775,6 +950,7 @@ export class Engine {
                     if (table[base + I_RETRIGGER] > 0) {
                         v.amp.stage = 1;
                         v.fenv.stage = 1;
+                        if (zone >= 0) this.startSample(v, base, zone, Math.round(pitch));
                     }
                     return;
                 }
@@ -843,6 +1019,11 @@ export class Engine {
         }
         v.gainL = 0;
         v.gainR = 0;
+        v.zone = -1;
+        v.choke = 0;
+        v.sOneshot = false;
+        v.sDone = false;
+        if (zone >= 0) this.startSample(v, base, zone, Math.round(pitch));
     }
 
     // --- Parameters -------------------------------------------------------
@@ -1000,7 +1181,7 @@ export class Engine {
         for (let vi = 0; vi < MAX_VOICES; vi++) {
             let v = this.voices[vi];
             if (!v.active) continue;
-            if (!v.releasing && t >= v.end) this.releaseVoice(v, false);
+            if (!v.releasing && t >= v.end && !(v.zone >= 0 && v.sOneshot)) this.releaseVoice(v, false);
             let base = v.base;
             let slot = this.slots[v.slot];
 
@@ -1064,6 +1245,12 @@ export class Engine {
                     prev[i] = raw[i];
                 }
             }
+            if (v.zone >= 0 && !v.sDone) {
+                // Slices (no root) keep their pitch; the rest follow the note.
+                let semis0 = (isNaN(v.sRoot) ? this.pitchEnv(v, t) : pitch0 - v.sRoot) + v.sTune + detuneAll;
+                let semis1 = (isNaN(v.sRoot) ? this.pitchEnv(v, tEnd) : pitch1 - v.sRoot) + v.sTune + detuneAll;
+                this.renderSample(v, buf, n, semis0, semis1);
+            }
 
             // Filter
             let ftype = <i32>table[base + I_FILTER_TYPE];
@@ -1120,7 +1307,7 @@ export class Engine {
             }
             v.gainL = targetL;
             v.gainR = targetR;
-            if (v.amp.stage == 0) {
+            if (v.amp.stage == 0 || (v.zone >= 0 && v.sDone && oscCount == 0)) {
                 v.active = false;
                 slot.refs--;
             }

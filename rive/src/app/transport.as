@@ -8,6 +8,8 @@ import { regionBytes, writeScore } from "../audio/scoreregion";
 import { Score } from "../score/compiler";
 import { FIELDS, packEvents } from "../score/events";
 import { packInstruments } from "../synth/insttable";
+import { emptyBank } from "../synth/samples";
+import { Blob } from "rive/shared";
 
 export enum TransportState {
     Stopped = 0,
@@ -23,7 +25,8 @@ class PendingScore {
 }
 
 export class Transport {
-    io: EngineIO = new EngineIO(INITIAL_CAPACITY);
+    samples: Blob = emptyBank();
+    io: EngineIO = new EngineIO(INITIAL_CAPACITY, this.samples);
     handle: AudioHandle? = null;
     status: PlayStatus = new PlayStatus();
     state: TransportState = TransportState.Stopped;
@@ -75,7 +78,24 @@ export class Transport {
         this.dispose();
         let capacity = INITIAL_CAPACITY;
         while (capacity < bytes) capacity *= 2;
-        this.io = new EngineIO(capacity);
+        this.io = new EngineIO(capacity, this.samples);
+        this.start();
+        if (playing) this.control(CTRL_PLAY, at);
+    }
+
+    // A new sample bank. The processor takes samples only when it starts, so
+    // a running one is replaced (playback continues from where it was).
+    setSamples(bank: Blob): void {
+        if (bank.id == this.samples.id) return;
+        this.samples = bank;
+        let running = this.handle != null;
+        let playing = this.state == TransportState.Playing;
+        let at = this.status.time;
+        this.dispose();
+        let old = this.io;
+        this.io = new EngineIO(old.capacity, bank);
+        old.release();
+        if (!running) return;
         this.start();
         if (playing) this.control(CTRL_PLAY, at);
     }

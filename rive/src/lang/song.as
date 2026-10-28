@@ -13,6 +13,13 @@ import { isName } from "./types";
 
 export const INSTRUMENTS_DIR: string = "instruments/";
 export const PATTERNS_DIR: string = "patterns/";
+export const SAMPLES_DIR: string = "samples/";
+export const SAMPLE_EXT: string = ".wav";
+
+// Whether `path` holds binary data, carried as base64 text (§7.4).
+export function isBinaryPath(path: string): bool {
+    return path.endsWith(SAMPLE_EXT);
+}
 
 export class ChannelSource {
     constructor(public config: ChannelConfig, public file: CheckedFile) {}
@@ -48,6 +55,9 @@ export class Song {
     patternNames: Array<string> = [];
     instruments: Map<string, CheckedFile> = new Map<string, CheckedFile>();
     instrumentNames: Array<string> = [];
+    // samples/<name>.wav, sorted by name: the sample bank's order (§7.4).
+    sampleNames: Array<string> = [];
+    sampleRevision: i32 = 0; // bumped when a sample file changes
     context: CheckContext = new CheckContext();
     revision: i32 = 0;
     private cache: Map<string, Parsed> = new Map<string, Parsed>();
@@ -70,6 +80,13 @@ export class Song {
         return this.files.has(path) ? this.files.get(path) : "";
     }
 
+    // The base64 text of each sample, in bank order.
+    sampleTexts(): Array<string> {
+        let out = new Array<string>();
+        for (let i = 0; i < this.sampleNames.length; i++) out.push(this.text(SAMPLES_DIR + this.sampleNames[i] + SAMPLE_EXT));
+        return out;
+    }
+
     toFiles(): Array<SongFile> {
         let out = new Array<SongFile>();
         for (let i = 0; i < this.paths.length; i++) out.push(new SongFile(this.paths[i], this.files.get(this.paths[i])));
@@ -78,6 +95,7 @@ export class Song {
 
     // Replaces (or adds) one file and refreshes what depends on it.
     setFile(path: string, text: string): void {
+        if (isBinaryPath(path) && !(this.files.has(path) && this.files.get(path) == text)) this.sampleRevision++;
         if (!this.files.has(path)) this.paths.push(path);
         this.files.set(path, text);
         this.rebuild();
@@ -85,6 +103,7 @@ export class Song {
 
     removeFile(path: string): void {
         if (!this.files.has(path)) return;
+        if (isBinaryPath(path)) this.sampleRevision++;
         this.files.delete(path);
         let i = this.paths.indexOf(path);
         if (i >= 0) this.paths.splice(i, 1);
@@ -206,6 +225,21 @@ export class Song {
         }
 
         this.conductor = this.check(CONDUCTOR_PATH, FileKind.Conductor, ctx);
+
+        // Samples: every samples/<name>.wav, by name.
+        let samples = new Array<string>();
+        for (let i = 0; i < this.paths.length; i++) {
+            let path = this.paths[i];
+            let name = nameIn(path, SAMPLES_DIR, SAMPLE_EXT);
+            if (name.length == 0) continue;
+            if (!isName(name)) {
+                this.songDiagnostics.error(1, 1, 1, "config", `'${path}': sample names use lowercase letters, digits and '_'`);
+                continue;
+            }
+            samples.push(name);
+        }
+        samples.sort();
+        this.sampleNames = samples;
 
         this.channels = [];
         let channels = this.config.channels;

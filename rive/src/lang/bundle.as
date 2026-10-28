@@ -41,48 +41,71 @@ export function pathProblem(path: string): string {
     return "";
 }
 
-export function parseBundle(path: string, text: string): Bundle {
-    let bundle = new Bundle(new Diagnostics(path));
-    let lines = splitLines(text);
-    if (lines.length == 0 || lines[0] != BUNDLE_MAGIC) {
-        bundle.diagnostics.error(1, 1, 1 + (lines.length > 0 ? lines[0].length : 0), "bundle", `a bundle starts with '${BUNDLE_MAGIC}'`);
-        return bundle;
-    }
-    let current: SongFile? = null;
-    let body = new Array<string>();
-    for (let i = 1; i < lines.length; i++) {
-        let line = lines[i];
-        if (line.startsWith(HEADER)) {
-            if (current != null) current.text = joinBody(body);
-            body = new Array<string>();
-            let filePath = line.substring(HEADER.length).trim();
-            let problem = pathProblem(filePath);
-            if (problem.length > 0) {
-                bundle.diagnostics.error(i + 1, 5, line.length + 1, "bundle", problem);
-                current = null;
-                continue;
-            }
-            if (bundle.file(filePath) != null) {
-                bundle.diagnostics.error(i + 1, 5, line.length + 1, "bundle", `'${filePath}' appears twice`);
-                current = null;
-                continue;
-            }
-            let file = new SongFile(filePath, "");
-            bundle.files.push(file);
-            current = file;
-        } else if (current != null) {
-            body.push(line);
-        } else if (line.trim().length > 0) {
-            bundle.diagnostics.error(i + 1, 1, line.length + 1, "bundle", "text outside of a file; start a file with '=== <path>'");
-        }
-    }
-    if (current != null) current.text = joinBody(body);
-    return bundle;
+// The index of the first line at or after `from` (a line start) that begins
+// with the file header, or -1.
+function headerAt(text: string, from: i32): i32 {
+    if (text.substring(from, from + HEADER.length) == HEADER) return from;
+    let k = text.indexOf("\n" + HEADER, from);
+    return k < 0 ? -1 : k + 1;
 }
 
-function joinBody(lines: Array<string>): string {
-    if (lines.length == 0) return "";
-    return lines.join("\n") + "\n";
+// The 1-based line `index` is on (only counted when there is a problem).
+function lineOf(text: string, index: i32): i32 {
+    let line = 1;
+    let k = text.indexOf("\n");
+    while (k >= 0 && k < index) {
+        line++;
+        k = text.indexOf("\n", k + 1);
+    }
+    return line;
+}
+
+// A file's body as the bundle holds it: LF line ends, ending with one when
+// it has any text. Bodies are sliced whole, so bundles with large files
+// (base64 samples) load without walking them line by line.
+function body(text: string, from: i32, to: i32): string {
+    if (to <= from) return "";
+    let b = text.substring(from, to);
+    if (b.includes("\r")) b = b.replaceAll("\r\n", "\n");
+    if (b.length > 0 && b.charCodeAt(b.length - 1) != 10) b += "\n";
+    return b;
+}
+
+export function parseBundle(path: string, text: string): Bundle {
+    let bundle = new Bundle(new Diagnostics(path));
+    let firstEnd = text.indexOf("\n");
+    let first = firstEnd < 0 ? text : text.substring(0, firstEnd);
+    if (first.endsWith("\r")) first = first.substring(0, first.length - 1);
+    if (first != BUNDLE_MAGIC) {
+        bundle.diagnostics.error(1, 1, 1 + first.length, "bundle", `a bundle starts with '${BUNDLE_MAGIC}'`);
+        return bundle;
+    }
+    let n = text.length;
+    let pos = firstEnd < 0 ? n : firstEnd + 1;
+    let header = pos < n ? headerAt(text, pos) : -1;
+    let before = header < 0 ? text.substring(pos) : text.substring(pos, header);
+    if (before.trim().length > 0) {
+        let at = pos + before.length - before.trimStart().length;
+        bundle.diagnostics.error(lineOf(text, at), 1, 2, "bundle", "text outside of a file; start a file with '=== <path>'");
+    }
+    while (header >= 0) {
+        let lineEnd = text.indexOf("\n", header);
+        let headerLine = lineEnd < 0 ? text.substring(header) : text.substring(header, lineEnd);
+        let start = lineEnd < 0 ? n : lineEnd + 1;
+        let next = start < n ? headerAt(text, start) : -1;
+        let end = next < 0 ? n : next;
+        let filePath = headerLine.substring(HEADER.length).trim();
+        let problem = pathProblem(filePath);
+        if (problem.length > 0) {
+            bundle.diagnostics.error(lineOf(text, header), 5, headerLine.length + 1, "bundle", problem);
+        } else if (bundle.file(filePath) != null) {
+            bundle.diagnostics.error(lineOf(text, header), 5, headerLine.length + 1, "bundle", `'${filePath}' appears twice`);
+        } else {
+            bundle.files.push(new SongFile(filePath, body(text, start, end)));
+        }
+        header = next;
+    }
+    return bundle;
 }
 
 // Why `files` cannot be packed, or "" when they can.

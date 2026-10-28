@@ -25,21 +25,22 @@ export class WavSettings {
 }
 
 // Renders a packed score to interleaved stereo f32 samples.
-@job export function renderScore(events: Blob, instruments: Blob, settings: RenderSettings, progress: Snapshot<RenderProgress>): Blob {
-    let out = renderSamples(events, instruments, settings, progress);
+@job export function renderScore(events: Blob, instruments: Blob, samples: Blob, settings: RenderSettings, progress: Snapshot<RenderProgress>): Blob {
+    let out = renderSamples(events, instruments, samples, settings, progress);
     return Blob.fromArray(out);
 }
 
 // Renders a packed score straight to the bytes of a WAV file.
-@job export function renderWav(events: Blob, instruments: Blob, settings: RenderSettings, wav: WavSettings, progress: Snapshot<RenderProgress>): Blob {
-    let out = renderSamples(events, instruments, settings, progress);
+@job export function renderWav(events: Blob, instruments: Blob, samples: Blob, settings: RenderSettings, wav: WavSettings, progress: Snapshot<RenderProgress>): Blob {
+    let out = renderSamples(events, instruments, samples, settings, progress);
     let bytes = encodeWav(out, out.length / 2, 2, <i32>settings.sampleRate, wav.format, wav.title, wav.author);
     return Blob.fromArray(bytes);
 }
 
-function renderSamples(events: Blob, instruments: Blob, settings: RenderSettings, progress: Snapshot<RenderProgress>): Float32Array {
+function renderSamples(events: Blob, instruments: Blob, samples: Blob, settings: RenderSettings, progress: Snapshot<RenderProgress>): Float32Array {
     let sr = settings.sampleRate;
     let engine = new Engine(sr, 2);
+    engine.attachSamples(samples);
     engine.load(events, instruments, 0);
     engine.play();
     let songFrames = <i32>Math.ceil(settings.duration * sr);

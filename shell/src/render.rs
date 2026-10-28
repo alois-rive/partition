@@ -143,7 +143,8 @@ pub fn render(files: &[SongFile], out: &Path, opts: &RenderOptions, progress: im
     }
     progress(&format!("rendering {:.1} s", report.duration));
     let raw: PathBuf = ws.path().join("build/render.wav");
-    let ms = ((report.duration + opts.tail) * 1000.0).ceil() as u64 + 100;
+    // Room for the frames before playback starts, too.
+    let ms = ((report.duration + opts.tail) * 1000.0).ceil() as u64 + 250;
     let mut args = vec![
         "--aot".to_string(),
         format!("--render-audio={}", raw.display()),
@@ -158,8 +159,17 @@ pub fn render(files: &[SongFile], out: &Path, opts: &RenderOptions, progress: im
         anyhow::anyhow!("rive wrote no audio{}", if problems.is_empty() { String::new() } else { format!(":\n{}", problems.join("\n")) })
     })?;
     let mut audio = wav::read(&bytes).context("reading the rendered audio")?;
-    // The capture starts when playback does; keep the song, then its release
-    // until it falls silent (at most `tail` seconds).
+    // The capture starts with the processor; playback starts at the frame the
+    // app reports (a frame or so later when it waited for its samples).
+    let started = lines
+        .iter()
+        .filter_map(|l| rivecli::host_message(l))
+        .find(|m| m["op"] == "started")
+        .and_then(|m| m["frame"].as_f64())
+        .unwrap_or(0.0)
+        .max(0.0) as usize;
+    audio.skip(started);
+    // Keep the song, then its release until it falls silent (at most `tail` seconds).
     let song_frames = (report.duration * audio.rate as f64).ceil() as usize;
     let most = ((report.duration + opts.tail) * audio.rate as f64).ceil() as usize;
     audio.truncate(most);

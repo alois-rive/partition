@@ -7,7 +7,7 @@
 use std::collections::{BTreeMap, HashMap};
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::sync::mpsc::{self, RecvTimeoutError};
+use std::sync::mpsc::{self, RecvTimeoutError, Sender};
 use std::thread;
 use std::time::{Duration, Instant};
 
@@ -15,7 +15,9 @@ use anyhow::{Context, Result};
 use notify::{RecursiveMode, Watcher};
 use serde_json::Value;
 
+use crate::base64;
 use crate::bundle::{self, SongFile};
+use crate::import;
 use crate::project::{self, Workspace};
 use crate::render::{self, RenderOptions};
 use crate::rivecli::{self, Output};
@@ -79,7 +81,12 @@ impl Session {
                         Some(t) => songdir::write_file(dir, &path, t)?,
                         None => songdir::remove_file(dir, &path)?,
                     }
-                    self.own.insert(path, text);
+                    // Binary files are compared as the shell reads them back.
+                    let own = match text {
+                        Some(t) if songdir::is_binary(&path) => Some(base64::encode(&base64::decode(&t)?)),
+                        other => other,
+                    };
+                    self.own.insert(path, own);
                 }
             }
             Some(SongSource::Bundle(file)) if !pending.is_empty() => {
@@ -90,6 +97,39 @@ impl Session {
             Some(SongSource::Bundle(_)) => {}
         }
         Ok(())
+    }
+
+    /// Adds imported audio files as samples (written at once, whatever the
+    /// autosave setting); answers the names they got.
+    pub fn import(&mut self, files: &[PathBuf]) -> Result<Vec<String>> {
+        let mut names = Vec::new();
+        for file in files {
+            let bytes = match import::to_wav(file) {
+                Ok(b) => b,
+                Err(e) => {
+                    say(&format!("{e:#}"));
+                    continue;
+                }
+            };
+            let taken = |n: &str| self.files.contains_key(&format!("samples/{n}.wav"));
+            let name = import::sample_name(file, &taken);
+            let rel = format!("samples/{name}.wav");
+            let text = base64::encode(&bytes);
+            self.files.insert(rel.clone(), text.clone());
+            match &self.source {
+                Some(SongSource::Folder(dir)) => {
+                    songdir::write_file(dir, &rel, &text)?;
+                    self.own.insert(rel, Some(text));
+                }
+                Some(SongSource::Bundle(_)) => {
+                    self.pending.insert(rel, Some(text));
+                    self.save()?;
+                }
+                None => {}
+            }
+            names.push(name);
+        }
+        Ok(names)
     }
 
     /// Changes on disk under the song: whether the app must reopen it. Our
@@ -106,7 +146,7 @@ impl Session {
                     if !is_song_file(&rel) || rel.starts_with("exports/") || rel.split('/').any(|p| p.starts_with('.')) {
                         continue;
                     }
-                    let disk = fs::read_to_string(path).ok();
+                    let disk = songdir::read_song_file(&dir, &rel).ok();
                     if self.own.get(&rel) == Some(&disk) || (self.files.get(&rel) == disk.as_ref() && !self.pending.contains_key(&rel)) {
                         continue;
                     }
@@ -222,13 +262,14 @@ pub fn open(source: Option<SongSource>, opts: OpenOptions) -> Result<i32> {
         None => None,
     };
 
+    let (import_tx, import_rx) = mpsc::channel::<Vec<PathBuf>>();
     let mut changed_paths: Vec<PathBuf> = Vec::new();
     let mut last_fs = Instant::now();
     loop {
         match rx.recv_timeout(Duration::from_millis(50)) {
             Ok(Output::Line(line)) => {
                 if let Some(msg) = rivecli::host_message(&line) {
-                    if let Err(e) = handle(&mut session, &msg) {
+                    if let Err(e) = handle(&mut session, &msg, &import_tx) {
                         say(&format!("{e:#}"));
                     }
                 } else if opts.verbose || rivecli::is_error(&line) {
@@ -248,6 +289,19 @@ pub fn open(source: Option<SongSource>, opts: OpenOptions) -> Result<i32> {
             changed_paths.push(p);
             last_fs = Instant::now();
         }
+        // Files picked in the import dialog: add them, then reopen on the last one.
+        while let Ok(files) = import_rx.try_recv() {
+            match session.import(&files) {
+                Ok(names) if !names.is_empty() => {
+                    say(&format!("imported {}", names.join(", ")));
+                    let mut files = session.song_files();
+                    files.push(SongFile::new(HOST_UI, format!("tab: 3\nsample: {}\n", names[names.len() - 1])));
+                    ws.set_song(&bundle::pack(&files)?)?;
+                }
+                Ok(_) => {}
+                Err(e) => say(&format!("import failed: {e:#}")),
+            }
+        }
         if !changed_paths.is_empty() && last_fs.elapsed() >= DEBOUNCE {
             let paths = std::mem::take(&mut changed_paths);
             match session.disk_changed(&paths) {
@@ -266,8 +320,27 @@ pub fn open(source: Option<SongSource>, opts: OpenOptions) -> Result<i32> {
     Ok(exit_rx.recv().ok().flatten().unwrap_or(0))
 }
 
-fn handle(session: &mut Session, msg: &Value) -> Result<()> {
+/// Where the app opens after a reopen the shell asked for (rive/src/app/app.as).
+const HOST_UI: &str = ".partition/ui";
+
+fn handle(session: &mut Session, msg: &Value, imports: &Sender<Vec<PathBuf>>) -> Result<()> {
     match msg["op"].as_str() {
+        Some("import") => {
+            if session.source.is_none() {
+                say("this song is not from disk: save it as a folder (partition new DIR) to import samples into it");
+                return Ok(());
+            }
+            // The dialog waits for the user, so it runs on a thread of its own.
+            let tx = imports.clone();
+            thread::spawn(move || match import::pick_files() {
+                Ok(files) if !files.is_empty() => {
+                    let _ = tx.send(files);
+                }
+                Ok(_) => {}
+                Err(e) => say(&format!("{e:#}")),
+            });
+            Ok(())
+        }
         Some("write") => {
             let path = msg["path"].as_str().unwrap_or("");
             let text = msg["text"].as_str().unwrap_or("").to_string();
@@ -341,6 +414,24 @@ mod tests {
         s.save().unwrap();
         fs::write(song.join("notes.txt"), "x").unwrap();
         assert!(s.disk_changed(&[song.join("notes.txt")]).unwrap().is_empty());
+    }
+
+    #[test]
+    fn imports_and_sample_edits_land_as_wav_files() {
+        let (dir, mut s) = folder();
+        let song = dir.path().join("s");
+        let source = dir.path().join("My Kick.wav");
+        fs::write(&source, b"RIFF\0\0\0\0WAVEfmt ").unwrap();
+        let names = s.import(std::slice::from_ref(&source)).unwrap();
+        assert_eq!(names, ["my_kick"]);
+        assert_eq!(fs::read(song.join("samples/my_kick.wav")).unwrap(), b"RIFF\0\0\0\0WAVEfmt ");
+        assert!(s.disk_changed(&[song.join("samples/my_kick.wav")]).unwrap().is_empty());
+        assert_eq!(s.import(std::slice::from_ref(&source)).unwrap(), ["my_kick_2"]);
+        // An edit from the app (its own base64 wrapping) is written as bytes,
+        // and not mistaken for a change from elsewhere.
+        s.edit("samples/my_kick.wav", Some("UklGRgAAAABXQVZF".into())).unwrap();
+        assert_eq!(fs::read(song.join("samples/my_kick.wav")).unwrap(), b"RIFF\0\0\0\0WAVE");
+        assert!(s.disk_changed(&[song.join("samples/my_kick.wav")]).unwrap().is_empty());
     }
 
     #[test]

@@ -5,6 +5,8 @@ import { Song } from "../lang/song";
 import { compileSong, Score } from "../score/compiler";
 import { EventKind } from "../score/events";
 import { Engine } from "../synth/engine";
+import { Blob } from "rive/shared";
+import { buildBank } from "../synth/samples";
 
 const SR: f64 = 48000;
 
@@ -38,9 +40,10 @@ function compileExample(expect: Expect, info: ExampleInfo, bytes: ArrayBuffer?):
 }
 
 @editTime
-function checkRender(expect: Expect, score: Score, from: f64, seconds: f64): void {
+function checkRender(expect: Expect, score: Score, bank: Blob?, from: f64, seconds: f64): void {
     let packed = packScore(score);
     let engine = new Engine(SR, 2);
+    engine.attachSamples(bank);
     engine.load(packed.events, packed.instruments, from);
     engine.play();
     let frames = <i32>(seconds * SR);
@@ -78,8 +81,15 @@ export class ExampleSongTests extends Tests {
                 });
                 if (info.id != "empty") {
                     test("renders a lively, bounded slice", (expect) => {
-                        let score = compileExample(expect, info, this.blob(info.blobName));
-                        if (score != null) checkRender(expect, score, probeTime(info.id, score.duration), 4);
+                        let bytes = this.blob(info.blobName);
+                        let score = compileExample(expect, info, bytes);
+                        if (score == null || bytes == null) return;
+                        // The example's samples, decoded as the app does (most examples have none).
+                        let song = Song.fromFiles(exampleBundle(info.id, bytes).files);
+                        let result = buildBank(song.sampleTexts());
+                        let errors = result.errors.join("");
+                        expect.that(errors).is("");
+                        checkRender(expect, score, result.bank, probeTime(info.id, score.duration), 4);
                     });
                 }
             });

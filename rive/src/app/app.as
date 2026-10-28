@@ -11,17 +11,27 @@ import { Audio } from "rive/audio";
 import { parseBundle, SongFile } from "../lang/bundle";
 import { Buffer } from "rive/buffer";
 import { CONDUCTOR_PATH, SONG_YAML } from "../lang/config";
-import { Diagnostic } from "../lang/diagnostics";
+import { Diagnostic, Severity } from "../lang/diagnostics";
+import { Job, Jobs } from "rive/jobs";
+import { Blob } from "rive/shared";
+import { BANK_HEADER, BANK_RECORD, B_FRAMES, B_RATE, BankResult, buildBank, decodeBase64, decodeWav, emptyBank, encodeBase64, SampleData } from "../synth/samples";
+import { editFrames } from "../synth/sampleedit";
+import { noteName, SamplePanel, Usage } from "../editor/samplepanel";
+import { encodeWav, FORMAT_FLOAT32, FORMAT_PCM16 } from "../audio/wav";
+import { renderScore, RenderProgress, RenderSettings } from "../audio/render";
+import { packScore } from "../audio/pack";
+import { Snapshot } from "rive/shared";
+import { PRESET_NAMES } from "../score/instrument";
 import { Song } from "../lang/song";
 import { CheckedFile } from "../lang/check";
 import { compileSong, CompileOptions, Score } from "../score/compiler";
 import { Grid, GridRow } from "../score/timeline";
-import { Rail, RAIL_WIDTH } from "../editor/rail";
+import { Rail, RAIL_WIDTH, SETTINGS_TAB, TAB_INSTRUMENTS, TAB_PATTERNS, TAB_SAMPLES } from "../editor/rail";
 import { FileList, LIST_WIDTH } from "../editor/filelist";
 import { SettingsPanel } from "../editor/settings";
 import { isName } from "../lang/types";
-import { renameReferences } from "../lang/rename";
-import { INSTRUMENTS_DIR, PATTERNS_DIR } from "../lang/song";
+import { REF_INSTRUMENT, REF_PATTERN, REF_SAMPLE, renameReferences } from "../lang/rename";
+import { INSTRUMENTS_DIR, isBinaryPath, PATTERNS_DIR, SAMPLE_EXT, SAMPLES_DIR } from "../lang/song";
 import { MAX_CHANNELS } from "../synth/engine";
 import { Column, EditorView, summaryAt } from "../editor/view";
 import { Doc, Pos } from "../editor/doc";
@@ -34,6 +44,8 @@ import { Transport, TransportState } from "./transport";
 export const COMPILE_DELAY: f64 = 0.15; // seconds after the last edit
 export const CHANGED_DELAY: f64 = 0.3; // before telling the host (§11.3)
 export const DEFAULT_EXAMPLE: string = "deep-house";
+// The shell's note of where to open, in the host bundle (§12.2).
+export const HOST_UI: string = ".partition/ui";
 // Toolbar toggles (loop, follow): lit when on.
 export const TOGGLE_ON: u32 = 0xFF3B5E8C;
 export const TOGGLE_OFF: u32 = 0xFF2B303B;
@@ -83,8 +95,21 @@ export class Partition extends Layout {
     tracksView: EditorView = new EditorView();
     patternsView: EditorView = new EditorView();
     instrumentsView: EditorView = new EditorView();
+    samplesView: EditorView = new EditorView();
     settingsView: EditorView = new EditorView();
     settings: SettingsPanel = new SettingsPanel();
+    // The samples tab (§10.11): its list, its panel, decoded samples, undo.
+    sampleList: FileList = new FileList("Samples", "sample");
+    samplePanel: SamplePanel = new SamplePanel();
+    decoded: Map<string, SampleData> = new Map<string, SampleData>();
+    decodedText: Map<string, string> = new Map<string, string>();
+    sampleUndo: Map<string, Array<string>> = new Map<string, Array<string>>();
+    bankInfo: Float32Array = new Float32Array(0); // the bank's header
+    recordJob: Job<Blob>? = null;
+    recordName: string = "";
+    recordSeconds: f64 = 0;
+    pendingRecord: bool = false;
+    auditionFrom: f64 = 0; // the frame a sample audition starts at
     view: EditorView = new EditorView();
     tab: i32 = 0;
     auditioning: bool = false;
@@ -128,10 +153,21 @@ export class Partition extends Layout {
     hostPaths: Array<string> = [];
     hostAt: f64 = -1;
     hostReady: bool = false;
+    // The sample bank (§7.4): decoded on a job whenever the song's samples
+    // change. Playback, auditions and exports wait for it.
+    bank: Blob = emptyBank();
+    bankJob: Job<BankResult>? = null;
+    bankSong: Song? = null; // the song and sample revision the bank is (being) built from
+    bankRevision: i32 = -1;
+    sampleProblems: Array<Diagnostic> = [];
+    pendingPlayRow: i32 = -1;
+    pendingAudition: bool = false;
+    pendingExport: bool = false;
+    reportedPlayFrame: f64 = -1;
     exampleItems: Array<ViewModel> = [];
 
     views(): Array<EditorView> {
-        return [this.tracksView, this.patternsView, this.instrumentsView, this.settingsView];
+        return [this.tracksView, this.patternsView, this.instrumentsView, this.samplesView, this.settingsView];
     }
 
     override init(context: Context): bool {
@@ -140,6 +176,8 @@ export class Partition extends Layout {
         this.patternsView.docsTopic = "patterns";
         this.instrumentsView.docsTopic = "instruments";
         this.instrumentsView.strip = 0;
+        this.samplesView.docsTopic = "samples";
+        this.samplesView.strip = 0;
         this.settingsView.docsTopic = "settings";
         this.settingsView.strip = 0;
         let views = this.views();
@@ -183,12 +221,36 @@ export class Partition extends Layout {
         this.hostBridge = true;
         let vm = this.vm;
         if (vm != null) vm.setBool(vm.app, "app", "hosted", true);
-        this.setSong(Song.fromFiles(bundle.files));
+        // `.partition/ui` is not part of the song: where the shell asks the
+        // app to open (after an import, the samples tab on the new sample).
+        let files = new Array<SongFile>();
+        let ui = "";
+        for (let i = 0; i < bundle.files.length; i++) {
+            if (bundle.files[i].path == HOST_UI) ui = bundle.files[i].text;
+            else files.push(bundle.files[i]);
+        }
+        this.setSong(Song.fromFiles(files));
         this.publishFiles();
+        this.applyHostUi(ui);
         this.currentExample = "";
         this.markCurrentExample();
         this.say(`opened ${this.song.config.title}`);
         return true;
+    }
+
+    // "tab: 3" and "sample: name" lines from the shell.
+    applyHostUi(text: string): void {
+        let lines = text.split("\n");
+        let tab = -1;
+        for (let i = 0; i < lines.length; i++) {
+            let colon = lines[i].indexOf(":");
+            if (colon < 0) continue;
+            let key = lines[i].substring(0, colon).trim();
+            let value = lines[i].substring(colon + 1).trim();
+            if (key == "sample") this.sampleList.selected = value;
+            else if (key == "tab") tab = <i32>parseInt(value);
+        }
+        if (tab >= 0) this.setTab(tab);
     }
 
     // One message to the shell: a JSON object on its own log line.
@@ -228,7 +290,7 @@ export class Partition extends Layout {
         let views = this.views();
         for (let i = 0; i < views.length; i++) {
             // Tracks and settings sit right of the rail; files right of the rail and the list.
-            let left = i == 1 || i == 2 ? RAIL_WIDTH + LIST_WIDTH : RAIL_WIDTH;
+            let left = i == TAB_PATTERNS || i == TAB_INSTRUMENTS || i == TAB_SAMPLES ? RAIL_WIDTH + LIST_WIDTH : RAIL_WIDTH;
             views[i].originX = left;
             views[i].width = Math.max(width - left, 120);
             views[i].height = height;
@@ -238,13 +300,14 @@ export class Partition extends Layout {
     }
 
     listFor(tab: i32): FileList {
-        return tab == 2 ? this.instrumentList : this.patternList;
+        if (tab == TAB_SAMPLES) return this.sampleList;
+        return tab == TAB_INSTRUMENTS ? this.instrumentList : this.patternList;
     }
 
     // --- Tabs (§10.9) --------------------------------------------------------------
 
     setTab(tab: i32): void {
-        if (tab < 0 || tab > 3 || tab == this.tab) return;
+        if (tab < 0 || tab > SETTINGS_TAB || tab == this.tab) return;
         let docs = this.view.docsOpen;
         this.closePopovers();
         this.tab = tab;
@@ -252,7 +315,8 @@ export class Partition extends Layout {
         this.view = this.views()[tab];
         if (docs && !this.view.docsOpen) this.view.openDocs();
         else if (!docs) this.view.docsOpen = false;
-        if (tab == 3) {
+        if (tab == TAB_SAMPLES) this.refreshList(TAB_SAMPLES);
+        if (tab == SETTINGS_TAB) {
             this.settings.cancelEdit();
             this.settings.load(this.song.text(SONG_YAML));
         }
@@ -260,9 +324,85 @@ export class Partition extends Layout {
         this.view.relayout();
     }
 
+    // --- Samples (§7.4) ------------------------------------------------------------
+
+    get samplesReady(): bool {
+        return this.bankJob == null && this.bankSong == this.song && this.bankRevision == this.song.sampleRevision;
+    }
+
+    // Starts decoding when the samples changed, takes a finished bank, and
+    // then runs what waited for it.
+    updateBank(): void {
+        let job = this.bankJob;
+        if (job != null) {
+            let r = job.peek();
+            if (r == null) return;
+            this.bankJob = null;
+            let current = this.bankSong == this.song && this.bankRevision == this.song.sampleRevision;
+            if (!r.ok) {
+                this.say(`the samples could not be read: ${r.error}`);
+                if (current) this.setBank(emptyBank(), []);
+            } else if (current) {
+                let result = r.value;
+                let bank = result.bank;
+                this.setBank(bank != null ? bank : emptyBank(), result.errors);
+            }
+            job.release();
+        }
+        if (!this.samplesReady && this.bankJob == null) {
+            this.bankSong = this.song;
+            this.bankRevision = this.song.sampleRevision;
+            let texts = this.song.sampleTexts();
+            if (texts.length == 0) this.setBank(emptyBank(), []);
+            else this.bankJob = Jobs.run(buildBank, texts);
+        }
+        if (!this.samplesReady) return;
+        if (this.pendingPlayRow >= 0) {
+            let row = this.pendingPlayRow;
+            this.pendingPlayRow = -1;
+            this.playFrom(row);
+        }
+        if (this.pendingAudition) {
+            this.pendingAudition = false;
+            if (this.tab == TAB_SAMPLES) this.auditionSample();
+            else this.auditionFile(false);
+        }
+        if (this.pendingRecord) {
+            this.pendingRecord = false;
+            this.recordSample();
+        }
+        if (this.pendingExport) {
+            this.pendingExport = false;
+            this.startExport();
+        }
+    }
+
+    setBank(bank: Blob, errors: Array<string>): void {
+        let old = this.bank;
+        this.bank = bank;
+        let info = new Float32Array(BANK_HEADER);
+        bank.readInto(0, info, 0, min<i32>(BANK_HEADER, <i32>(bank.byteLength / 4)));
+        this.bankInfo = info;
+        if (this.tab == TAB_SAMPLES) this.refreshList(TAB_SAMPLES);
+        this.transport.setSamples(bank);
+        if (old.id != bank.id) old.release();
+        let names = this.song.sampleNames;
+        this.sampleProblems = [];
+        for (let i = 0; i < errors.length && i < names.length; i++) {
+            if (errors[i].length == 0) continue;
+            this.sampleProblems.push(new Diagnostic(SAMPLES_DIR + names[i] + SAMPLE_EXT, 1, 1, 1, Severity.Error, "sample", errors[i]));
+        }
+        if (names.length > 0) this.compileAt = this.clock + 1e-6; // republish the diagnostics
+    }
+
     // The patterns and instruments tabs: a file list and one file.
     get fileTab(): bool {
-        return this.tab == 1 || this.tab == 2;
+        return this.tab == TAB_PATTERNS || this.tab == TAB_INSTRUMENTS;
+    }
+
+    // The tabs with a file list: patterns, instruments and samples.
+    get listTab(): bool {
+        return this.fileTab || this.tab == TAB_SAMPLES;
     }
 
     // --- Settings (§10.10) ---------------------------------------------------------
@@ -341,6 +481,263 @@ export class Partition extends Layout {
         this.compileAt = this.clock + COMPILE_DELAY;
     }
 
+    // --- Samples tab (§10.11) ----------------------------------------------------------
+
+    // "1.2 s" for sample `index` in bank order, from the bank's header.
+    sampleLength(index: i32): string {
+        let r = 1 + index * BANK_RECORD;
+        if (r + B_RATE >= this.bankInfo.length || <i32>this.bankInfo[0] <= index) return "";
+        let rate = <f64>this.bankInfo[r + B_RATE];
+        if (rate <= 0) return "";
+        return `${Math.round(<f64>this.bankInfo[r + B_FRAMES] / rate * 10) / 10} s`;
+    }
+
+    // Sample `name` decoded (cached while its text is the same).
+    decodeSample(name: string): SampleData? {
+        let path = SAMPLES_DIR + name + SAMPLE_EXT;
+        if (!this.song.files.has(path)) return null;
+        let text = this.song.text(path);
+        if (this.decoded.has(path) && this.decodedText.get(path) == text) return this.decoded.get(path);
+        let bytes = decodeBase64(text);
+        let data: SampleData;
+        if (bytes == null) {
+            data = new SampleData();
+            data.error = "not base64 text";
+        } else {
+            data = decodeWav(bytes);
+        }
+        this.decoded.set(path, data);
+        this.decodedText.set(path, text);
+        return data;
+    }
+
+    // Shows sample `name` in the panel, with the instruments that play it.
+    showSample(name: string): void {
+        let panel = this.samplePanel;
+        this.sampleList.selected = name;
+        panel.hosted = this.hostBridge;
+        panel.instruments = this.song.instrumentNames.slice(0);
+        for (let i = 0; i < PRESET_NAMES.length; i++) panel.instruments.push(PRESET_NAMES[i]);
+        if (panel.recInst >= panel.instruments.length) panel.recInst = 0;
+        if (name.length == 0) {
+            panel.show("", null);
+            return;
+        }
+        panel.show(name, this.decodeSample(name));
+        let path = SAMPLES_DIR + name + SAMPLE_EXT;
+        panel.canUndo = this.sampleUndo.has(path) && this.sampleUndo.get(path).length > 0;
+        let usages = new Array<Usage>();
+        let names = this.song.instrumentNames;
+        for (let i = 0; i < names.length; i++) {
+            let file = this.song.instruments.get(names[i]);
+            let lines = this.song.text(INSTRUMENTS_DIR + names[i] + ".inst").split("\n");
+            let cmds = file.commands();
+            for (let k = 0; k < cmds.length; k++) {
+                let c = cmds[k];
+                if (c.name != "sample" || c.str("file", "") != name) continue;
+                let line = c.line - 1 < lines.length ? lines[c.line - 1].trim() : "";
+                usages.push(new Usage(names[i], line));
+            }
+        }
+        panel.usages = usages;
+    }
+
+    handleSampleActions(): void {
+        let panel = this.samplePanel;
+        let actions = panel.takeActions();
+        for (let i = 0; i < actions.length; i++) {
+            let a = actions[i];
+            if (a == "play") this.toggleSampleAudition();
+            else if (a.startsWith("edit:")) this.editSample(a.substring(5));
+            else if (a == "undo") this.undoSample();
+            else if (a == "copy") {
+                let code = `sample(file: ${panel.name})\n`;
+                let views = this.views();
+                for (let v = 0; v < views.length; v++) views[v].clipboard = code;
+                this.say(`copied sample(file: ${panel.name}): paste it into an instrument (Cmd+V)`);
+            } else if (a == "newInstrument") this.instrumentForSample(panel.name);
+            else if (a.startsWith("open:")) {
+                this.setTab(TAB_INSTRUMENTS);
+                this.selectFile(TAB_INSTRUMENTS, a.substring(5));
+            } else if (a == "import") {
+                this.hostSend(`{"op":"import"}`);
+                this.say("choose the files to import in the dialog");
+            } else if (a == "record") this.recordSample();
+        }
+    }
+
+    // Applies an edit to the shown sample (to its selection, or all of it).
+    editSample(op: string): void {
+        let panel = this.samplePanel;
+        let data = panel.data;
+        if (data == null || data.error.length > 0 || data.frames == 0) return;
+        let a = <i32>panel.selA;
+        let b = <i32>panel.selB;
+        let frames = editFrames(data.data, op, a, b);
+        if (frames.length < 2) {
+            this.say("that would leave the sample empty");
+            return;
+        }
+        let path = SAMPLES_DIR + panel.name + SAMPLE_EXT;
+        let undo = this.sampleUndo.has(path) ? this.sampleUndo.get(path) : new Array<string>();
+        undo.push(this.song.text(path));
+        if (undo.length > 30) undo.shift();
+        this.sampleUndo.set(path, undo);
+        let format = data.float || data.bits > 16 ? FORMAT_FLOAT32 : FORMAT_PCM16;
+        let text = encodeBase64(encodeWav(frames, frames.length, 1, <i32>data.rate, format, "", ""));
+        this.fileEdited(path, text);
+        if (op == "trim" || op == "cut") {
+            panel.selA = op == "cut" ? panel.selA : 0;
+            panel.selB = panel.selA;
+        }
+        this.showSample(panel.name);
+    }
+
+    undoSample(): void {
+        let path = SAMPLES_DIR + this.samplePanel.name + SAMPLE_EXT;
+        if (!this.sampleUndo.has(path)) return;
+        let undo = this.sampleUndo.get(path);
+        if (undo.length == 0) return;
+        this.fileEdited(path, undo.pop());
+        this.showSample(this.samplePanel.name);
+        this.say("undone");
+    }
+
+    // Creates instruments/<name>.inst playing the sample, and opens it.
+    instrumentForSample(name: string): void {
+        let inst = name;
+        let n = 2;
+        while (this.song.files.has(`${INSTRUMENTS_DIR}${inst}.inst`) || PRESET_NAMES.includes(inst)) inst = `${name}_${n++}`;
+        let path = `${INSTRUMENTS_DIR}${inst}.inst`;
+        this.fileEdited(path, `sample(file: ${name})\n`);
+        this.refreshFileTabs();
+        this.setTab(TAB_INSTRUMENTS);
+        this.selectFile(TAB_INSTRUMENTS, inst);
+        this.say(`added ${path}; play it from a track with inst(name: ${inst})`);
+    }
+
+    // The instruments, patterns and samples of the song, for the temporary
+    // songs that auditions and recordings play.
+    soundFiles(): Array<SongFile> {
+        let files = new Array<SongFile>();
+        let all = this.song.toFiles();
+        for (let i = 0; i < all.length; i++) {
+            let p = all[i].path;
+            if (p.startsWith(PATTERNS_DIR) || p.startsWith(INSTRUMENTS_DIR) || isBinaryPath(p)) files.push(all[i]);
+        }
+        return files;
+    }
+
+    toggleSampleAudition(): void {
+        if (this.auditioning && this.auditionPath.startsWith(SAMPLES_DIR) && this.transport.state == TransportState.Playing) {
+            this.stop();
+            return;
+        }
+        this.auditionSample();
+    }
+
+    // Plays the shown sample (its selection, or all of it) once, as recorded.
+    auditionSample(): void {
+        let panel = this.samplePanel;
+        let data = panel.data;
+        if (data == null || data.frames == 0 || data.error.length > 0) return;
+        if (!this.samplesReady) {
+            this.pendingAudition = true;
+            return;
+        }
+        let a = panel.hasSelection ? panel.selA : 0;
+        let b = panel.hasSelection ? panel.selB : <f64>data.frames;
+        let start = a / data.rate;
+        let end = b / data.rate;
+        let files = this.soundFiles();
+        files.push(new SongFile("instruments/audition_sample.inst", `sample(file: ${panel.name}, start: ${start}s, end: ${end}s, oneshot: true)\n`));
+        files.push(new SongFile("song.yaml", "bpm: 120\nrows_per_beat: 4\nchannels:\n  - file: audition.ch\n"));
+        files.push(new SongFile("conductor.ch", ""));
+        files.push(new SongFile("audition.ch", `inst(name: audition_sample); note(p: C4, len: ${Math.max(end - start, 0.01)}s)\n`));
+        let options = new CompileOptions();
+        options.loops = 0;
+        let score = compileSong(Song.fromFiles(files), options);
+        this.auditioning = true;
+        this.auditionPath = SAMPLES_DIR + panel.name + SAMPLE_EXT;
+        this.auditionFrom = a;
+        this.transport.setLoop(-1, -1);
+        this.transport.state = TransportState.Stopped;
+        this.transport.setScore(score, false);
+        this.transport.play(0);
+    }
+
+    endSampleAudition(): void {
+        if (this.auditioning && this.auditionPath.startsWith(SAMPLES_DIR)) this.stop();
+    }
+
+    // Renders a note of an instrument into a new sample (on a job).
+    recordSample(): void {
+        let panel = this.samplePanel;
+        if (this.recordJob != null) return;
+        if (!this.samplesReady) {
+            this.pendingRecord = true;
+            return;
+        }
+        let inst = panel.recInst < panel.instruments.length ? panel.instruments[panel.recInst] : "";
+        let name = panel.recordName;
+        if (!isName(name)) {
+            panel.status = `'${name}' is not a valid name: use lowercase letters, digits and '_'`;
+            return;
+        }
+        let unique = name;
+        let n = 2;
+        while (this.song.files.has(SAMPLES_DIR + unique + SAMPLE_EXT)) unique = `${name}_${n++}`;
+        let files = this.soundFiles();
+        let config = this.song.config;
+        files.push(new SongFile("song.yaml", `bpm: ${config.bpm}\nrows_per_beat: ${config.rowsPerBeat}\nchannels:\n  - file: record.ch\n`));
+        files.push(new SongFile("conductor.ch", ""));
+        files.push(new SongFile("record.ch", `inst(name: ${inst}); note(p: ${noteName(panel.recNote)}, len: ${panel.recLength}s, vel: ${panel.recVel})\n`));
+        let options = new CompileOptions();
+        options.loops = 0;
+        let score = compileSong(Song.fromFiles(files), options);
+        let packed = packScore(score);
+        let settings = new RenderSettings();
+        settings.sampleRate = 48000;
+        settings.duration = score.duration;
+        settings.maxTail = 6;
+        this.recordJob = Jobs.run(renderScore, packed.events, packed.instruments, this.bank, settings, Snapshot.create<RenderProgress>());
+        packed.release();
+        this.recordName = unique;
+        this.recordSeconds = score.duration;
+        panel.status = `recording ${inst} ${noteName(panel.recNote)}...`;
+    }
+
+    // Takes a finished recording: mono, 16 bit, cut where it falls silent.
+    pollRecording(): void {
+        let job = this.recordJob;
+        if (job == null) return;
+        let r = job.peek();
+        if (r == null) return;
+        this.recordJob = null;
+        let panel = this.samplePanel;
+        if (!r.ok) {
+            panel.status = `recording failed: ${r.error}`;
+            job.release();
+            return;
+        }
+        let stereo = new Float32Array(<i32>(r.value.byteLength / 4));
+        r.value.readInto(0, stereo);
+        job.release();
+        let frames = stereo.length / 2;
+        let keep = min<i32>(<i32>Math.ceil(this.recordSeconds * 48000), frames);
+        let end = frames;
+        while (end > keep && Math.abs(<f64>stereo[(end - 1) * 2]) < 1e-4 && Math.abs(<f64>stereo[(end - 1) * 2 + 1]) < 1e-4) end--;
+        let mono = new Float32Array(max<i32>(end, 2));
+        for (let i = 0; i < end; i++) mono[i] = <f32>((<f64>stereo[i * 2] + <f64>stereo[i * 2 + 1]) * 0.5);
+        let path = SAMPLES_DIR + this.recordName + SAMPLE_EXT;
+        this.fileEdited(path, encodeBase64(encodeWav(mono, mono.length, 1, 48000, FORMAT_PCM16, "", "")));
+        panel.status = "";
+        panel.adding = false;
+        this.refreshList(TAB_SAMPLES);
+        this.showSample(this.recordName);
+        this.say(`recorded ${path} (${Math.round(<f64>mono.length / 480) / 100} s)`);
+    }
+
     // The tab and view that edit `path`.
     tabOf(path: string): i32 {
         if (path.startsWith(PATTERNS_DIR)) return 1;
@@ -350,12 +747,22 @@ export class Partition extends Layout {
 
     // The file lists and, in each file tab, the column of the selected file.
     refreshFileTabs(): void {
-        this.refreshList(1);
-        this.refreshList(2);
+        this.refreshList(TAB_PATTERNS);
+        this.refreshList(TAB_INSTRUMENTS);
+        this.refreshList(TAB_SAMPLES);
     }
 
     refreshList(tab: i32): void {
         let list = this.listFor(tab);
+        if (tab == TAB_SAMPLES) {
+            let names = this.song.sampleNames;
+            list.names = names.slice(0);
+            list.details = [];
+            for (let i = 0; i < names.length; i++) list.details.push(this.sampleLength(i));
+            if (!list.names.includes(list.selected)) list.selected = list.names.length > 0 ? list.names[0] : "";
+            this.showSample(list.selected);
+            return;
+        }
         let pattern = tab == 1;
         let names = pattern ? this.song.patternNames : this.song.instrumentNames;
         list.names = [];
@@ -467,13 +874,18 @@ export class Partition extends Layout {
     }
 
     handleListActions(): void {
-        if (!this.fileTab) return;
+        if (!this.listTab) return;
         let list = this.listFor(this.tab);
         let actions = list.takeActions();
+        let samples = this.tab == TAB_SAMPLES;
         for (let i = 0; i < actions.length; i++) {
             let a = actions[i];
-            if (a == "add") this.newFile();
-            else if (a.startsWith("select:")) this.selectFile(this.tab, a.substring(7)); else if (a.startsWith("delete:")) this.deleteFile(this.tab, a.substring(7));
+            if (a == "add" && samples) this.samplePanel.startAdding();
+            else if (a == "add") this.newFile();
+            else if (a.startsWith("select:") && samples) {
+                this.endSampleAudition();
+                this.showSample(a.substring(7));
+            } else if (a.startsWith("select:")) this.selectFile(this.tab, a.substring(7)); else if (a.startsWith("delete:")) this.deleteFile(this.tab, a.substring(7));
             else if (a.startsWith("rename:")) {
                 let parts = a.split(":");
                 if (parts.length == 3) this.renameFile(this.tab, parts[1], parts[2]);
@@ -490,7 +902,8 @@ export class Partition extends Layout {
     }
 
     filePath(tab: i32, name: string): string {
-        return tab == 1 ? `${PATTERNS_DIR}${name}.pat` : `${INSTRUMENTS_DIR}${name}.inst`;
+        if (tab == TAB_SAMPLES) return `${SAMPLES_DIR}${name}${SAMPLE_EXT}`;
+        return tab == TAB_PATTERNS ? `${PATTERNS_DIR}${name}.pat` : `${INSTRUMENTS_DIR}${name}.inst`;
     }
 
     deleteFile(tab: i32, name: string): void {
@@ -499,6 +912,8 @@ export class Partition extends Layout {
         if (this.auditionPath == path) this.stop();
         this.song.removeFile(path);
         this.fileColumnCache.delete(path);
+        this.decoded.delete(path);
+        this.sampleUndo.delete(path);
         this.removeFileFromVm(path);
         this.refreshFileTabs();
         this.editedSinceLoad = true;
@@ -508,7 +923,9 @@ export class Partition extends Layout {
 
     // Renames a pattern or instrument and the references to it in every file.
     renameFile(tab: i32, from: string, to: string): void {
-        let pattern = tab == 1;
+        let pattern = tab == TAB_PATTERNS;
+        let kind = pattern ? REF_PATTERN : tab == TAB_SAMPLES ? REF_SAMPLE : REF_INSTRUMENT;
+        let noun = pattern ? "pattern" : tab == TAB_SAMPLES ? "sample" : "instrument";
         let list = this.listFor(tab);
         if (!isName(to)) {
             this.say(`'${to}' is not a valid name: use lowercase letters, digits and '_'`);
@@ -517,7 +934,7 @@ export class Partition extends Layout {
         let oldPath = this.filePath(tab, from);
         let newPath = this.filePath(tab, to);
         if (this.song.files.has(newPath)) {
-            this.say(`there is already a ${pattern ? "pattern" : "instrument"} named '${to}'`);
+            this.say(`there is already a ${noun} named '${to}'`);
             return;
         }
         let text = this.song.text(oldPath);
@@ -537,9 +954,10 @@ export class Partition extends Layout {
         let paths = this.song.paths.slice(0);
         for (let i = 0; i < paths.length; i++) {
             let p = paths[i];
-            if (!p.endsWith(".ch") && !p.endsWith(".pat")) continue;
+            // Samples are named in instruments; patterns and instruments in tracks and patterns.
+            if (kind == REF_SAMPLE ? !p.endsWith(".inst") : !p.endsWith(".ch") && !p.endsWith(".pat")) continue;
             let before = this.song.text(p);
-            let after = renameReferences(before, from, to, pattern);
+            let after = renameReferences(before, from, to, kind);
             if (after == before) continue;
             changed++;
             this.song.setFile(p, after);
@@ -547,6 +965,10 @@ export class Partition extends Layout {
             this.updateOpenDoc(p, after);
         }
         if (this.auditionPath == oldPath) this.auditionPath = newPath;
+        if (this.sampleUndo.has(oldPath)) {
+            this.sampleUndo.set(newPath, this.sampleUndo.get(oldPath));
+            this.sampleUndo.delete(oldPath);
+        }
         list.selected = to;
         this.refreshFileTabs();
         this.editedSinceLoad = true;
@@ -591,6 +1013,10 @@ export class Partition extends Layout {
     auditionFile(keep: bool): void {
         let c = this.view.focused;
         if (c == null || !this.fileTab) return;
+        if (!this.samplesReady) {
+            this.pendingAudition = true;
+            return;
+        }
         let path = c.doc.path;
         let name = c.name;
         let config = this.song.config;
@@ -623,7 +1049,7 @@ export class Partition extends Layout {
         let all = this.song.toFiles();
         for (let i = 0; i < all.length; i++) {
             let p = all[i].path;
-            if (p.startsWith(PATTERNS_DIR) || p.startsWith(INSTRUMENTS_DIR)) files.push(all[i]);
+            if (p.startsWith(PATTERNS_DIR) || p.startsWith(INSTRUMENTS_DIR) || isBinaryPath(p)) files.push(all[i]);
         }
         files.push(new SongFile("song.yaml", yaml));
         files.push(new SongFile("conductor.ch", conductor));
@@ -838,6 +1264,7 @@ export class Partition extends Layout {
             options.endRow = to > 0 ? to : -1;
         }
         let score = compileSong(this.song, options);
+        for (let i = 0; i < this.sampleProblems.length; i++) score.diagnostics.push(this.sampleProblems[i]);
         this.score = score;
         this.tracksView.grid = score.grid;
         this.patternsView.grid = this.patternGrid();
@@ -928,6 +1355,10 @@ export class Partition extends Layout {
     }
 
     playFrom(row: i32): void {
+        if (!this.samplesReady) {
+            this.pendingPlayRow = row;
+            return;
+        }
         this.endAudition();
         this.startRow = row;
         this.transport.state = TransportState.Stopped;
@@ -1050,6 +1481,7 @@ export class Partition extends Layout {
             this.tryStart();
             if (!this.ready) return true;
         }
+        this.updateBank();
         this.handleActions();
         this.handleListActions();
         this.rail.advance(seconds);
@@ -1057,7 +1489,11 @@ export class Partition extends Layout {
         this.instrumentList.advance(seconds);
         this.settings.advance(seconds);
         this.applySettings();
-        if (this.tab == 3) this.settings.load(this.song.text(SONG_YAML));
+        this.sampleList.advance(seconds);
+        this.samplePanel.advance(seconds);
+        this.handleSampleActions();
+        this.pollRecording();
+        if (this.tab == SETTINGS_TAB) this.settings.load(this.song.text(SONG_YAML));
         let views = this.views();
         for (let v = 0; v < views.length; v++) {
             let changed = views[v].takeChanged();
@@ -1094,7 +1530,9 @@ export class Partition extends Layout {
         if (action.startsWith("tab:")) this.setTab(<i32>parseInt(action.substring(4)));
         else if (action == "newFile") this.newFile();
         // In the pattern and instrument tabs, the play keys audition the file.
-        else if ((action == "play" || action == "playFromCursor" || action == "transport.toggle" || action == "transport.play") && this.fileTab) {
+        else if ((action == "play" || action == "playFromCursor" || action == "transport.toggle" || action == "transport.play") && this.tab == TAB_SAMPLES) {
+            this.toggleSampleAudition();
+        } else if ((action == "play" || action == "playFromCursor" || action == "transport.toggle" || action == "transport.play") && this.fileTab) {
             if (this.auditioning && this.transport.state == TransportState.Playing) this.stop();
             else this.auditionFile(false);
         } else if (action == "play" || action == "transport.toggle") this.togglePlay();
@@ -1190,6 +1628,11 @@ export class Partition extends Layout {
         let playing = this.transport.state == TransportState.Playing && st.playing > 0;
         let idle = this.transport.state == TransportState.Stopped && st.playing == 0;
         let tracks = this.tracksView;
+        let panel = this.samplePanel;
+        let hearing = this.auditioning && this.auditionPath == SAMPLES_DIR + panel.name + SAMPLE_EXT;
+        panel.playing = hearing && this.transport.state == TransportState.Playing;
+        let data = panel.data;
+        panel.playhead = hearing && playing && data != null ? this.auditionFrom + st.time * data.rate : -1;
         if (this.auditioning) {
             // The audition's playhead runs through the pattern being heard.
             tracks.playing = false;
@@ -1212,6 +1655,10 @@ export class Partition extends Layout {
     // --- Export ---------------------------------------------------------------------
 
     startExport(): void {
+        if (!this.samplesReady) {
+            this.pendingExport = true;
+            return;
+        }
         let vm = this.vm;
         let options = new CompileOptions();
         let rate = 48000.0;
@@ -1226,7 +1673,7 @@ export class Partition extends Layout {
         }
         if (rate != 44100 && rate != 48000 && rate != 96000) rate = 48000;
         let score = compileSong(this.song, options);
-        this.exporter.start(score, rate, formatId(format), tail, this.song.config.title, this.song.config.author);
+        this.exporter.start(score, this.bank, rate, formatId(format), tail, this.song.config.title, this.song.config.author);
         this.say(`rendering ${this.song.config.title} at ${<i32>rate} Hz`);
     }
 
@@ -1396,6 +1843,12 @@ export class Partition extends Layout {
             this.changedPaths = [];
         }
         this.flushHost();
+        // A headless render keeps the audio from the frame playback started at.
+        let playFrame = this.transport.status.playFrame;
+        if (this.realtimeRender && playFrame >= 0 && playFrame != this.reportedPlayFrame) {
+            this.reportedPlayFrame = playFrame;
+            this.hostSend(`{"op":"started","frame":${playFrame}}`);
+        }
         this.pollFilesIn -= seconds;
         if (this.pollFilesIn <= 0) {
             this.pollFilesIn = 0.25;
@@ -1547,12 +2000,18 @@ export class Partition extends Layout {
             if (tab >= 0) this.setTab(tab);
             return;
         }
-        if (this.fileTab && x < RAIL_WIDTH + LIST_WIDTH) {
+        if (this.listTab && x < RAIL_WIDTH + LIST_WIDTH) {
             event.hit();
             this.listFor(this.tab).pointerDown(x - RAIL_WIDTH, y);
             return;
         }
-        if (this.tab == 3 && !this.onSettingsDocs(x)) {
+        if (this.tab == TAB_SAMPLES && !this.onDocs(x)) {
+            event.hit();
+            this.layoutSamples();
+            this.samplePanel.pointerDown(x - RAIL_WIDTH - LIST_WIDTH, y);
+            return;
+        }
+        if (this.tab == SETTINGS_TAB && !this.onSettingsDocs(x)) {
             event.hit();
             this.layoutSettings();
             this.settings.pointerDown(x - RAIL_WIDTH, y);
@@ -1565,9 +2024,16 @@ export class Partition extends Layout {
         let x = <f64>event.position.x;
         let y = <f64>event.position.y;
         this.rail.pointerMove(x, y >= 0 && y <= this.layoutH ? y : -1000);
-        if (this.fileTab) this.listFor(this.tab).pointerMove(x - RAIL_WIDTH, y);
+        if (this.listTab) this.listFor(this.tab).pointerMove(x - RAIL_WIDTH, y);
         if (this.popoverOpen) return;
-        if (this.tab == 3) {
+        if (this.tab == TAB_SAMPLES) {
+            this.layoutSamples();
+            let panel = this.samplePanel;
+            panel.pointerMove(x - RAIL_WIDTH - LIST_WIDTH, this.onDocs(x) && !panel.dragging ? -1000 : y);
+            if (panel.dragging) event.hit();
+            return;
+        }
+        if (this.tab == SETTINGS_TAB) {
             this.layoutSettings();
             this.settings.pointerMove(x - RAIL_WIDTH, this.onSettingsDocs(x) && this.settings.dragging.length == 0 ? -1000 : y);
             if (this.settings.dragging.length > 0) event.hit();
@@ -1578,12 +2044,24 @@ export class Partition extends Layout {
 
     override pointerUp(event: PointerEvent): void {
         this.settings.pointerUp();
+        this.samplePanel.pointerUp();
         if (this.popoverOpen) return;
         this.view.pointerUp(event);
     }
 
     layoutSettings(): void {
         this.settings.layout(this.settingsView, this.settingsView.layoutWidth(), this.layoutH);
+    }
+
+    layoutSamples(): void {
+        let v = this.samplesView;
+        this.samplePanel.layout(v, v.layoutWidth(), this.layoutH);
+    }
+
+    // Whether a point is on the documentation panel of the tab on screen.
+    onDocs(x: f64): bool {
+        let v = this.view;
+        return v.docsOpen && x - v.originX >= v.docsLeft();
     }
 
     // In the settings tab, whether a point is on the documentation panel.
@@ -1597,13 +2075,20 @@ export class Partition extends Layout {
         this.patternList.hover = -1;
         this.instrumentList.hover = -1;
         this.settings.hover = "";
+        this.samplePanel.hover = "";
+        this.sampleList.hover = -1;
     }
 
     override pointerScroll(event: ScrollEvent): void {
         let x = <f64>event.position.x;
         if (this.popoverOpen && this.onPopover(x, <f64>event.position.y)) return;
-        if (x < RAIL_WIDTH || (this.fileTab && x < RAIL_WIDTH + LIST_WIDTH)) return;
-        if (this.tab == 3 && !this.onSettingsDocs(x)) {
+        if (x < RAIL_WIDTH || (this.listTab && x < RAIL_WIDTH + LIST_WIDTH)) return;
+        if (this.tab == TAB_SAMPLES && !this.onDocs(x)) {
+            event.hit();
+            this.samplePanel.scroll(-<f64>event.delta.y);
+            return;
+        }
+        if (this.tab == SETTINGS_TAB && !this.onSettingsDocs(x)) {
             event.hit();
             this.settings.scroll(-<f64>event.delta.y);
             return;
@@ -1618,19 +2103,27 @@ export class Partition extends Layout {
             return true;
         }
         // A file being renamed takes the keys; F2 starts renaming.
-        if (this.fileTab && event.phase != "up" && !event.meta && !event.control) {
+        if (this.listTab && event.phase != "up" && !event.meta && !event.control) {
             if (this.listFor(this.tab).key(key)) return true;
         }
+        if (this.tab == TAB_SAMPLES && event.phase != "up") {
+            if ((event.meta || event.control) && key == 90) { // Cmd+Z undoes the last edit of the sample
+                this.undoSample();
+                return true;
+            }
+            if (!event.meta && !event.control && this.samplePanel.key(key)) return true;
+        }
         // A settings field being typed in takes the keys.
-        if (this.tab == 3 && event.phase != "up" && !event.meta && !event.control) {
+        if (this.tab == SETTINGS_TAB && event.phase != "up" && !event.meta && !event.control) {
             if (this.settings.key(key)) return true;
         }
         return this.view.keyboard(event);
     }
 
     override textEvent(event: TextInput): bool {
-        if (this.fileTab && this.listFor(this.tab).typeText(event.text)) return true;
-        if (this.tab == 3) return this.settings.typeText(event.text);
+        if (this.listTab && this.listFor(this.tab).typeText(event.text)) return true;
+        if (this.tab == TAB_SAMPLES) return this.samplePanel.typeText(event.text);
+        if (this.tab == SETTINGS_TAB) return this.settings.typeText(event.text);
         return this.view.textInput(event);
     }
 
@@ -1638,7 +2131,11 @@ export class Partition extends Layout {
         // The editor, offset to the right of the rail (and the file list).
         renderer.save();
         renderer.transform(Mat2D.withTranslation(<f32>this.view.originX, 0));
-        if (this.tab == 3) {
+        if (this.tab == TAB_SAMPLES) {
+            let v = this.samplesView;
+            this.samplePanel.draw(renderer, v, v.layoutWidth(), this.layoutH);
+            if (v.docsOpen) v.drawDocs(renderer);
+        } else if (this.tab == SETTINGS_TAB) {
             // The settings form, then the documentation over it when open.
             let v = this.settingsView;
             this.settings.draw(renderer, v, v.layoutWidth(), this.layoutH);
@@ -1647,7 +2144,7 @@ export class Partition extends Layout {
             this.view.draw(renderer);
         }
         renderer.restore();
-        if (this.fileTab) this.listFor(this.tab).draw(renderer, this.view, RAIL_WIDTH, this.layoutH);
+        if (this.listTab) this.listFor(this.tab).draw(renderer, this.view, RAIL_WIDTH, this.layoutH);
         this.rail.draw(renderer, this.view, this.layoutH);
         this.rail.drawHint(renderer, this.view);
     }

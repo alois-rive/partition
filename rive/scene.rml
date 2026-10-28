@@ -1178,23 +1178,24 @@
     <BlobAsset file="assets/examples/example-boss-battle.song" name="example-boss-battle" id="0:101"/>
     <BlobAsset file="assets/examples/example-bossa.song" name="example-bossa" id="0:102"/>
     <BlobAsset file="assets/examples/example-chiptune.song" name="example-chiptune" id="0:103"/>
-    <BlobAsset file="assets/examples/example-deep-house.song" name="example-deep-house" id="0:104"/>
-    <BlobAsset file="assets/examples/example-disco.song" name="example-disco" id="0:105"/>
-    <BlobAsset file="assets/examples/example-dnb.song" name="example-dnb" id="0:106"/>
-    <BlobAsset file="assets/examples/example-dub-techno.song" name="example-dub-techno" id="0:107"/>
-    <BlobAsset file="assets/examples/example-empty.song" name="example-empty" id="0:108"/>
-    <BlobAsset file="assets/examples/example-funk.song" name="example-funk" id="0:109"/>
-    <BlobAsset file="assets/examples/example-garage.song" name="example-garage" id="0:110"/>
-    <BlobAsset file="assets/examples/example-invention.song" name="example-invention" id="0:111"/>
-    <BlobAsset file="assets/examples/example-jazz.song" name="example-jazz" id="0:112"/>
-    <BlobAsset file="assets/examples/example-lofi.song" name="example-lofi" id="0:113"/>
-    <BlobAsset file="assets/examples/example-reggae.song" name="example-reggae" id="0:114"/>
-    <BlobAsset file="assets/examples/example-seven-steps.song" name="example-seven-steps" id="0:115"/>
-    <BlobAsset file="assets/examples/example-synthwave.song" name="example-synthwave" id="0:116"/>
-    <BlobAsset file="assets/examples/example-techno.song" name="example-techno" id="0:117"/>
-    <BlobAsset file="assets/examples/example-tidal.song" name="example-tidal" id="0:118"/>
-    <BlobAsset file="assets/examples/example-trance.song" name="example-trance" id="0:119"/>
-    <BlobAsset file="assets/examples/example-trap.song" name="example-trap" id="0:120"/>
-    <BlobAsset file="assets/examples/example-waltz.song" name="example-waltz" id="0:121"/>
+    <BlobAsset file="assets/examples/example-chopped.song" name="example-chopped" id="0:104"/>
+    <BlobAsset file="assets/examples/example-deep-house.song" name="example-deep-house" id="0:105"/>
+    <BlobAsset file="assets/examples/example-disco.song" name="example-disco" id="0:106"/>
+    <BlobAsset file="assets/examples/example-dnb.song" name="example-dnb" id="0:107"/>
+    <BlobAsset file="assets/examples/example-dub-techno.song" name="example-dub-techno" id="0:108"/>
+    <BlobAsset file="assets/examples/example-empty.song" name="example-empty" id="0:109"/>
+    <BlobAsset file="assets/examples/example-funk.song" name="example-funk" id="0:110"/>
+    <BlobAsset file="assets/examples/example-garage.song" name="example-garage" id="0:111"/>
+    <BlobAsset file="assets/examples/example-invention.song" name="example-invention" id="0:112"/>
+    <BlobAsset file="assets/examples/example-jazz.song" name="example-jazz" id="0:113"/>
+    <BlobAsset file="assets/examples/example-lofi.song" name="example-lofi" id="0:114"/>
+    <BlobAsset file="assets/examples/example-reggae.song" name="example-reggae" id="0:115"/>
+    <BlobAsset file="assets/examples/example-seven-steps.song" name="example-seven-steps" id="0:116"/>
+    <BlobAsset file="assets/examples/example-synthwave.song" name="example-synthwave" id="0:117"/>
+    <BlobAsset file="assets/examples/example-techno.song" name="example-techno" id="0:118"/>
+    <BlobAsset file="assets/examples/example-tidal.song" name="example-tidal" id="0:119"/>
+    <BlobAsset file="assets/examples/example-trance.song" name="example-trance" id="0:120"/>
+    <BlobAsset file="assets/examples/example-trap.song" name="example-trap" id="0:121"/>
+    <BlobAsset file="assets/examples/example-waltz.song" name="example-waltz" id="0:122"/>
     <BlobAsset file="assets/host/song.song" name="host-song" id="0:99"/>
 </Rive>

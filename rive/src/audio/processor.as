@@ -2,7 +2,7 @@
 // Engine, and the messages the main lane sends it.
 
 import { AudioProcessor } from "rive/audio";
-import { Ring, SharedRegion, Snapshot } from "rive/shared";
+import { Blob, Ring, SharedRegion, Snapshot } from "rive/shared";
 import { H_GENERATION } from "./scoreregion";
 import { Engine, MAX_CHANNELS } from "../synth/engine";
 
@@ -38,6 +38,7 @@ export class PlayStatus {
     peakL: f64 = 0;
     peakR: f64 = 0;
     generation: f64 = 0; // the score it is playing
+    playFrame: f64 = -1; // the output frame the last play started at (renders align on it)
     channelPeaks: StaticArray<f64> = new StaticArray<f64>(MAX_CHANNELS);
 }
 
@@ -47,9 +48,11 @@ export class EngineIO {
     status: Snapshot<PlayStatus> = Snapshot.create<PlayStatus>(1024);
     regions: Array<SharedRegion> = [];
     capacity: u32 = 0;
+    samples: Blob; // the song's sample bank (synth/samples.as)
 
-    constructor(capacity: u32) {
+    constructor(capacity: u32, samples: Blob) {
         this.capacity = capacity;
+        this.samples = samples;
         for (let i = 0; i < REGIONS; i++) this.regions.push(SharedRegion.create(capacity));
     }
 
@@ -70,10 +73,14 @@ export class PartitionProcessor extends AudioProcessor<EngineIO> {
     status: PlayStatus = new PlayStatus();
     generation: f64 = 0;
     idleBlocks: i32 = 0;
+    blockFrame: f64 = 0; // startFrame of the block being processed
+    playFrame: f64 = -1;
 
     override init(sampleRate: f64, maxFrames: i32, channels: i32, io: EngineIO): void {
         this.io = io;
-        this.engine = new Engine(sampleRate, channels);
+        let engine = new Engine(sampleRate, channels);
+        engine.attachSamples(io.samples);
+        this.engine = engine;
     }
 
     @unchecked
@@ -81,6 +88,7 @@ export class PartitionProcessor extends AudioProcessor<EngineIO> {
         let io = this.io!;
         let engine = this.engine!;
         let woke = false;
+        this.blockFrame = startFrame;
         while (io.control.receiveInto(this.control)) {
             this.apply(engine, this.control);
             woke = true;
@@ -104,6 +112,7 @@ export class PartitionProcessor extends AudioProcessor<EngineIO> {
         if (kind == CTRL_PLAY) {
             if (c.a >= 0) engine.seek(c.a);
             engine.play();
+            this.playFrame = this.blockFrame;
         } else if (kind == CTRL_STOP) {
             engine.stop();
         } else if (kind == CTRL_LOOP) {
@@ -136,6 +145,7 @@ export class PartitionProcessor extends AudioProcessor<EngineIO> {
         s.peakL = e.peakL;
         s.peakR = e.peakR;
         s.generation = this.generation;
+        s.playFrame = this.playFrame;
         for (let i = 0; i < MAX_CHANNELS; i++) s.channelPeaks[i] = e.channelPeaks[i];
         io.status.publish(s);
     }

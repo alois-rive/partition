@@ -233,6 +233,14 @@ export function registry(): Registry {
     b.cmd("defaults", IN, "channel values applied when first selected")
         .opt("vol", ArgType.Gain, 0, 4).opt("pan", T, -1, 1)
         .opt("delay", ArgType.Gain, 0, 1).opt("reverb", ArgType.Gain, 0, 1);
+    b.cmd("sample", IN, "play a sample file, samples/<file>.wav, over a range of notes")
+        .req("file", ArgType.Name).opt("root", ArgType.Pitch).opt("lo", ArgType.Pitch).opt("hi", ArgType.Pitch)
+        .opt("key", ArgType.Pitch)
+        .opt("gain", ArgType.Gain, 0, 8).opt("tune", ArgType.Interval, -48, 48)
+        .opt("start", ArgType.Time, 0, 3600).opt("end", ArgType.Time, 0, 3600)
+        .opt("loop", ArgType.Bool).opt("loop_start", ArgType.Time, 0, 3600).opt("loop_end", ArgType.Time, 0, 3600)
+        .opt("slices", T, 1, 128).int().opt("oneshot", ArgType.Bool).opt("reverse", ArgType.Bool)
+        .opt("choke", T, 0, 16).int();
     b.cmd("param", IN, "define a macro parameter")
         .req("name", ArgType.Ident).req("target", ArgType.Ident).opt("min", T).opt("max", T);
 

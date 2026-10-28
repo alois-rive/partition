@@ -5,11 +5,28 @@ use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result, bail};
 
+use crate::base64;
 use crate::bundle::{self, SongFile, path_problem};
 
 /// Whether a path inside a song folder is one of the song's files.
 pub fn is_song_file(rel: &str) -> bool {
-    rel == "song.yaml" || rel.ends_with(".ch") || rel.ends_with(".pat") || rel.ends_with(".inst")
+    rel == "song.yaml" || rel.ends_with(".ch") || rel.ends_with(".pat") || rel.ends_with(".inst") || is_binary(rel)
+}
+
+/// Song files that are binary on disk (samples, docs/spec.md §7.4). In a
+/// song (bundles, the app) they are base64 text.
+pub fn is_binary(rel: &str) -> bool {
+    rel.ends_with(".wav")
+}
+
+/// A song file's text as the song carries it: base64 for binary files.
+pub fn read_song_file(dir: &Path, rel: &str) -> Result<String> {
+    let abs = dir.join(rel);
+    if is_binary(rel) {
+        let bytes = fs::read(&abs).with_context(|| format!("reading {}", abs.display()))?;
+        return Ok(base64::encode(&bytes));
+    }
+    fs::read_to_string(&abs).with_context(|| format!("reading {} (song files are UTF-8)", abs.display()))
 }
 
 /// Folders the shell writes into a song folder that are not part of the song.
@@ -58,8 +75,7 @@ pub fn read_dir(dir: &Path) -> Result<Vec<SongFile>> {
     walk(dir, dir, &mut paths)?;
     let mut files = Vec::new();
     for rel in paths {
-        let abs = dir.join(&rel);
-        let text = fs::read_to_string(&abs).with_context(|| format!("reading {} (song files are UTF-8)", abs.display()))?;
+        let text = read_song_file(dir, &rel)?;
         files.push(SongFile::new(rel, text));
     }
     sort_files(&mut files);
@@ -76,18 +92,27 @@ pub fn resolve(dir: &Path, rel: &str) -> Result<PathBuf> {
 
 /// Writes `text` through a temporary file and a rename, so readers never see half a file.
 pub fn write_atomic(path: &Path, text: &str) -> Result<()> {
+    write_atomic_bytes(path, text.as_bytes())
+}
+
+pub fn write_atomic_bytes(path: &Path, bytes: &[u8]) -> Result<()> {
     if let Some(parent) = path.parent() {
         fs::create_dir_all(parent).with_context(|| format!("creating {}", parent.display()))?;
     }
     let name = path.file_name().unwrap_or_default().to_string_lossy();
     let tmp = path.with_file_name(format!(".{name}.partition-tmp"));
-    fs::write(&tmp, text).with_context(|| format!("writing {}", tmp.display()))?;
+    fs::write(&tmp, bytes).with_context(|| format!("writing {}", tmp.display()))?;
     fs::rename(&tmp, path).with_context(|| format!("replacing {}", path.display()))?;
     Ok(())
 }
 
 pub fn write_file(dir: &Path, rel: &str, text: &str) -> Result<()> {
-    write_atomic(&resolve(dir, rel)?, text)
+    let path = resolve(dir, rel)?;
+    if is_binary(rel) {
+        let bytes = base64::decode(text).with_context(|| format!("{rel} is not base64"))?;
+        return write_atomic_bytes(&path, &bytes);
+    }
+    write_atomic(&path, text)
 }
 
 pub fn remove_file(dir: &Path, rel: &str) -> Result<()> {
@@ -189,8 +214,16 @@ mod tests {
         fs::write(d.join("exports/x.ch"), "ignored").unwrap();
         fs::write(d.join("notes.txt"), "ignored").unwrap();
         fs::write(d.join(".hidden.ch"), "ignored").unwrap();
-        let paths: Vec<String> = read_dir(d).unwrap().into_iter().map(|f| f.path).collect();
-        assert_eq!(paths, ["song.yaml", "conductor.ch", "channels/a.ch", "channels/b.ch", "patterns/p.pat"]);
+        fs::create_dir_all(d.join("samples")).unwrap();
+        fs::write(d.join("samples/k.wav"), [0u8, 255, 7]).unwrap();
+        let files = read_dir(d).unwrap();
+        let paths: Vec<&str> = files.iter().map(|f| f.path.as_str()).collect();
+        assert_eq!(paths, ["song.yaml", "conductor.ch", "channels/a.ch", "channels/b.ch", "patterns/p.pat", "samples/k.wav"]);
+        // Samples travel as base64, and land as bytes again.
+        assert_eq!(files[5].text, "AP8H\n");
+        let out = tempfile::tempdir().unwrap();
+        write_song(&out.path().join("s"), &files).unwrap();
+        assert_eq!(fs::read(out.path().join("s/samples/k.wav")).unwrap(), [0u8, 255, 7]);
     }
 
     #[test]

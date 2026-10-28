@@ -6,25 +6,18 @@
 // the live mix) is reported as actions.
 
 import { Renderer } from "rive/renderer";
-import { Text } from "rive/text";
 import { ChannelConfig, parseSongConfig, SongConfig, songConfigText } from "../lang/config";
 import { EditorView, KEY_BACKSPACE, KEY_ENTER, KEY_ESCAPE, KEY_TAB, trackColor } from "./view";
+import { CONTROL_H, Form, Hit } from "./form";
 
 export const SETTINGS_PAD: f64 = 32;
 export const SETTINGS_WIDTH: f64 = 720; // the form's widest
 const LABEL_W: f64 = 200;
 const ROW_H: f64 = 52;
-const CONTROL_H: f64 = 26;
-const SECTION_H: f64 = 44;
 const TRACK_ROW_H: f64 = 34;
 const BUTTON_W: f64 = 26;
 const SLIDER_W: f64 = 240;
 export const DENOMINATORS: StaticArray<i32> = [2, 4, 8, 16];
-
-// A clickable area drawn this frame.
-class Hit {
-    constructor(public x: f64, public y: f64, public w: f64, public h: f64, public id: string) {}
-}
 
 // `v` with at most `places` decimals, without trailing zeros.
 export function decimals(v: f64, places: i32): string {
@@ -41,14 +34,12 @@ export function gainDb(gain: f64): string {
     return `${db > 0.05 ? "+" : ""}${text} dB`;
 }
 
-export class SettingsPanel {
+export class SettingsPanel extends Form {
     config: SongConfig = new SongConfig();
     // The song.yaml text the form shows; a change that it did not make reloads the form.
     shownYaml: string = "";
     yaml: string = ""; // a new song.yaml to write, "" for none
     actions: Array<string> = [];
-    hits: Array<Hit> = [];
-    hover: string = "";
     editing: string = ""; // the field being typed in
     buffer: string = "";
     error: string = "";
@@ -60,8 +51,6 @@ export class SettingsPanel {
     scrollY: f64 = 0;
     contentH: f64 = 0;
     viewH: f64 = 600;
-    clock: f64 = 0;
-    renderer: Renderer? = null; // set while painting
 
     // The form follows song.yaml as the song has it, unless it is mid-edit.
     load(text: string): void {
@@ -256,19 +245,6 @@ export class SettingsPanel {
 
     // --- Input (coordinates relative to the panel's top left) -----------------------
 
-    hitAt(x: f64, y: f64): string {
-        for (let i = this.hits.length - 1; i >= 0; i--) {
-            let h = this.hits[i];
-            if (x >= h.x && x < h.x + h.w && y >= h.y && y < h.y + h.h) return h.id;
-        }
-        return "";
-    }
-
-    hitOf(id: string): Hit? {
-        for (let i = 0; i < this.hits.length; i++) if (this.hits[i].id == id) return this.hits[i];
-        return null;
-    }
-
     isTextField(id: string): bool {
         return id == "title" || id == "author" || id == "bpm" || id == "sigNum" || id == "rpb" ||
             (id.startsWith("trk:") && (id.endsWith(":name") || id.endsWith(":width")));
@@ -397,12 +373,6 @@ export class SettingsPanel {
 
     // --- Drawing ---------------------------------------------------------------------------
 
-    textWidth(t: Text?): f64 {
-        if (t == null) return 0;
-        let b = t.bounds();
-        return <f64>(b.v1.x - b.v0.x);
-    }
-
     // Paints the form, and notes where its controls are.
     draw(renderer: Renderer, ui: EditorView, width: f64, height: f64): void {
         this.renderer = renderer;
@@ -414,41 +384,6 @@ export class SettingsPanel {
     layout(ui: EditorView, width: f64, height: f64): void {
         this.renderer = null;
         this.run(ui, width, height);
-    }
-
-    rect(ui: EditorView, x: f64, y: f64, w: f64, h: f64, color: u32): void {
-        let r = this.renderer;
-        if (r != null) ui.rect(r, x, y, w, h, color);
-    }
-
-    text(ui: EditorView, t: Text?, x: f64, y: f64): void {
-        let r = this.renderer;
-        if (r != null) ui.drawText(r, t, x, y);
-    }
-
-    line(ui: EditorView, x1: f64, y1: f64, x2: f64, y2: f64, width: f64, color: u32): void {
-        let r = this.renderer;
-        if (r != null) ui.line(r, x1, y1, x2, y2, width, color);
-    }
-
-    dot(ui: EditorView, x: f64, y: f64, radius: f64, color: u32, hollow: bool): void {
-        let r = this.renderer;
-        if (r != null) ui.dot(r, x, y, radius, color, hollow);
-    }
-
-    clip(ui: EditorView, x: f64, y: f64, w: f64, h: f64): void {
-        let r = this.renderer;
-        if (r != null) ui.clipRect(r, x, y, w, h);
-    }
-
-    save(): void {
-        let r = this.renderer;
-        if (r != null) r.save();
-    }
-
-    restore(): void {
-        let r = this.renderer;
-        if (r != null) r.restore();
     }
 
     run(ui: EditorView, width: f64, height: f64): void {
@@ -552,17 +487,6 @@ export class SettingsPanel {
         this.scroll(0);
     }
 
-    section(ui: EditorView, title: string, x: f64, y: f64, w: f64): f64 {
-        this.text(ui, ui.labelIn(title, ui.headingStyle, "sx:"), x, y + 12);
-        this.rect(ui, x, y + SECTION_H - 8, w, 1, ui.colors.divider);
-        return y + SECTION_H;
-    }
-
-    label(ui: EditorView, name: string, hint: string, x: f64, y: f64): void {
-        this.text(ui, ui.labelIn(name, ui.boldStyle, "n1:"), x, y + 4);
-        if (hint.length > 0) this.text(ui, ui.labelIn(hint, ui.hintStyle, "sh:"), x, y + 26);
-    }
-
     // A text field; while typed in, a caret and (if refused) the reason.
     field(ui: EditorView, id: string, x: f64, y: f64, w: f64): void {
         let k = ui.colors;
@@ -591,16 +515,6 @@ export class SettingsPanel {
         this.field(ui, id, x + BUTTON_W + 2, y, w);
         this.button(ui, id + "+", "+", x + BUTTON_W + 4 + w, y, BUTTON_W, false);
         return x + BUTTON_W * 2 + 4 + w;
-    }
-
-    button(ui: EditorView, id: string, label: string, x: f64, y: f64, w: f64, on: bool): void {
-        let k = ui.colors;
-        let hover = this.hover == id;
-        this.rect(ui, x, y, w, CONTROL_H, on ? k.edge : hover ? k.edge : k.divider);
-        this.rect(ui, x + 1, y + 1, w - 2, CONTROL_H - 2, on ? 0xFF222222 : hover ? 0xFF1A1A1A : k.control);
-        let t = ui.labelIn(label, on ? ui.boldStyle : ui.nameStyle, on ? "n1:" : "n0:");
-        this.text(ui, t, x + (w - this.textWidth(t)) * 0.5, y + 4);
-        this.hits.push(new Hit(x, y, w, CONTROL_H, id));
     }
 
     toggle(ui: EditorView, id: string, label: string, x: f64, y: f64, on: bool): void {

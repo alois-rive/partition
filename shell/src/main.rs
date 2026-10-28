@@ -2,8 +2,10 @@
 //! It opens songs from disk in a window, keeps them saved, and renders and
 //! checks them headless. The app itself runs on the Rive CLI.
 
+mod base64;
 mod bundle;
 mod host;
+mod import;
 mod project;
 mod render;
 mod rivecli;

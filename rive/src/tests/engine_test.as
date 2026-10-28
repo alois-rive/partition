@@ -5,6 +5,7 @@ import { Song } from "../lang/song";
 import { compileSong, CompileOptions, Score } from "../score/compiler";
 import { packScore, PackedScore } from "../audio/pack";
 import { renderScore, renderWav, RenderProgress, RenderSettings, WavSettings } from "../audio/render";
+import { emptyBank } from "../synth/samples";
 import { encodeWav, FORMAT_FLOAT32, FORMAT_PCM16, WavChunks, wavHeader } from "../audio/wav";
 import { Engine } from "../synth/engine";
 import { sinTurn } from "../synth/dsp";
@@ -220,7 +221,7 @@ export class EngineTests extends Tests {
                 settings.duration = s.duration;
                 settings.maxTail = 1;
                 let progress = Snapshot.create<RenderProgress>();
-                let blob = renderScore(packed.events, packed.instruments, settings, progress);
+                let blob = renderScore(packed.events, packed.instruments, emptyBank(), settings, progress);
                 let frames = <i32>(blob.byteLength / 8);
                 let rendered = new Float32Array(frames * 2);
                 blob.readInto(0, rendered, 0, frames * 2);
@@ -246,8 +247,8 @@ export class EngineTests extends Tests {
                 settings.maxTail = 0.5;
                 let wav = new WavSettings();
                 wav.title = "Song";
-                let file = renderWav(packed.events, packed.instruments, settings, wav, Snapshot.create<RenderProgress>());
-                let samples = renderScore(packed.events, packed.instruments, settings, Snapshot.create<RenderProgress>());
+                let file = renderWav(packed.events, packed.instruments, emptyBank(), settings, wav, Snapshot.create<RenderProgress>());
+                let samples = renderScore(packed.events, packed.instruments, emptyBank(), settings, Snapshot.create<RenderProgress>());
                 let frames = <i32>(samples.byteLength / 8);
                 let header = wavHeader(frames, 2, 48000, FORMAT_PCM16, "Song", "");
                 expect.that(<i32>file.byteLength).is(header.byteLength + frames * 4);

@@ -37,7 +37,26 @@ export const I_MONO: i32 = I_POLY + 1;
 export const I_GLIDE: i32 = I_MONO + 1;
 export const I_RETRIGGER: i32 = I_GLIDE + 1;
 export const I_FIXED: i32 = I_RETRIGGER + 1;
-export const INST_STRIDE: i32 = I_FIXED + 1;
+export const I_ZONE_COUNT: i32 = I_FIXED + 1;
+export const I_ZONE: i32 = I_ZONE_COUNT + 1; // MAX_ZONES records of ZONE_STRIDE
+export const MAX_ZONE: i32 = 16;
+export const Z_SAMPLE: i32 = 0;
+export const Z_ROOT: i32 = 1;
+export const Z_LO: i32 = 2;
+export const Z_HI: i32 = 3;
+export const Z_GAIN: i32 = 4;
+export const Z_TUNE: i32 = 5;
+export const Z_START: i32 = 6;
+export const Z_END: i32 = 7;
+export const Z_LOOP: i32 = 8;
+export const Z_LOOP_START: i32 = 9;
+export const Z_LOOP_END: i32 = 10;
+export const Z_SLICES: i32 = 11;
+export const Z_ONESHOT: i32 = 12;
+export const Z_REVERSE: i32 = 13;
+export const Z_CHOKE: i32 = 14;
+export const ZONE_STRIDE: i32 = 15;
+export const INST_STRIDE: i32 = I_ZONE + MAX_ZONE * ZONE_STRIDE;
 
 export const WAVE_SINE: i32 = 0;
 export const WAVE_TRI: i32 = 1;
@@ -115,6 +134,27 @@ export function packInstruments(defs: Array<InstrumentDef>): Float64Array {
         out[b + I_GLIDE] = d.glide;
         out[b + I_RETRIGGER] = d.retrigger ? 1 : 0;
         out[b + I_FIXED] = d.fixedPitch;
+        let zones = min<i32>(d.zones.length, MAX_ZONE);
+        out[b + I_ZONE_COUNT] = <f64>zones;
+        for (let z = 0; z < zones; z++) {
+            let zone = d.zones[z];
+            let zb = b + I_ZONE + z * ZONE_STRIDE;
+            out[zb + Z_SAMPLE] = <f64>zone.sampleIndex;
+            out[zb + Z_ROOT] = zone.root;
+            out[zb + Z_LO] = zone.lo;
+            out[zb + Z_HI] = zone.hi;
+            out[zb + Z_GAIN] = zone.gain;
+            out[zb + Z_TUNE] = zone.tune;
+            out[zb + Z_START] = zone.start;
+            out[zb + Z_END] = zone.end;
+            out[zb + Z_LOOP] = zone.loop ? 1 : 0;
+            out[zb + Z_LOOP_START] = zone.loopStart;
+            out[zb + Z_LOOP_END] = zone.loopEnd;
+            out[zb + Z_SLICES] = <f64>zone.slices;
+            out[zb + Z_ONESHOT] = zone.oneshot ? 1 : 0;
+            out[zb + Z_REVERSE] = zone.reverse ? 1 : 0;
+            out[zb + Z_CHOKE] = <f64>zone.choke;
+        }
     }
     return out;
 }

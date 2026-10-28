@@ -105,3 +105,20 @@ fn render_writes_a_wav_of_the_right_length() {
     let peak = bytes[44..].as_chunks::<2>().0.iter().map(|c| i16::from_le_bytes([c[0], c[1]]).unsigned_abs()).max().unwrap();
     assert!(peak > 1000, "silent render");
 }
+
+#[test]
+fn samples_are_wav_files_on_disk_and_base64_in_bundles() {
+    let tmp = tempfile::tempdir().unwrap();
+    let song = tmp.path().join("chopped");
+    let o = partition(tmp.path(), &["new", song.to_str().unwrap(), "--template", "chopped"]);
+    assert!(o.status.success(), "{}", text(&o));
+    let kick = fs::read(song.join("samples/kick.wav")).unwrap();
+    assert_eq!(&kick[0..4], b"RIFF");
+    let bundle = tmp.path().join("c.song");
+    assert!(partition(tmp.path(), &["pack", song.to_str().unwrap(), "-o", bundle.to_str().unwrap()]).status.success());
+    let packed = fs::read_to_string(&bundle).unwrap();
+    assert!(packed.contains("=== samples/kick.wav\nUklGR"));
+    let back = tmp.path().join("back");
+    assert!(partition(tmp.path(), &["unpack", bundle.to_str().unwrap(), "-o", back.to_str().unwrap()]).status.success());
+    assert_eq!(fs::read(back.join("samples/kick.wav")).unwrap(), kick);
+}

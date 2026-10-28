@@ -161,6 +161,8 @@ my-song/
     warm_pad.inst
   patterns/              # optional reusable phrases
     hats_a.pat
+  samples/               # optional WAV files, played by instruments (§7.4)
+    break.wav
 ```
 
 All files are UTF-8 with LF or CRLF line endings. Partition writes LF.
@@ -214,6 +216,11 @@ note(p: C1)
 - A line starting with `=== ` at column 0 begins the file at the path that
   follows. The file runs until the next header or the end of the bundle.
 - File content may not contain a line starting with `=== `.
+- Binary files (samples, `*.wav`) are base64, in lines of 76 characters. The
+  app and the shell carry them as that text: in `song/files`, in bundles,
+  and in the shell's messages. On disk, the shell writes them as bytes.
+- Readers slice each file's body whole, rather than walking it line by line,
+  so bundles with samples load within a frame.
 
 ---
 
@@ -553,6 +560,66 @@ so any of them can be copied into `instruments/` as a starting point.
 Drum presets other than `tom` use `voice(fixed: …)`, so they ignore the
 written pitch: `note(p: C1)` on `kick` plays the kick.
 
+### 7.4 Samples (M9)
+
+A sample is a WAV file in `samples/`. It is named by its file name, so
+`samples/break.wav` is `break`; names use lowercase letters, digits and `_`.
+The decoder reads any rate, PCM at 8, 16, 24 or 32 bits, and float at 32 or
+64 bits. Channels are mixed to mono (stereo voices are M13).
+
+```
+sample(file: name, root?: pitch, lo?: pitch, hi?: pitch, key?: pitch,
+       gain?: gain, tune?: interval, start?: time, end?: time,
+       loop?: bool, loop_start?: time, loop_end?: time,
+       slices?: 1..128, oneshot?: bool, reverse?: bool, choke?: 0..16)
+```
+
+- **Zones.** Each `sample(…)` is a zone, up to 16 per instrument. It plays
+  the notes from `lo` to `hi`: at the file's own pitch on `root` (default C4),
+  and shifted for other notes. The first zone that covers a note plays it, and
+  a note no zone covers is silent. `key: C2` sets root, lo and hi to C2, for a
+  drum hit.
+- **Slices.** `slices: N` cuts the zone (or its `start`..`end` part) into N
+  equal parts. Note `root + k` plays part k at its own pitch. Slices ignore
+  `loop`.
+- **Playback.**
+  - `start` and `end` trim the file.
+  - `tune` shifts it.
+  - `loop` repeats `loop_start..loop_end` (default: the whole zone) while the
+    note is held.
+  - `oneshot` plays to the end whatever the note's length or a note-off; only
+    `cut` stops it.
+  - `reverse` plays backwards.
+  - A new note in choke group `n` releases the group's other sounding notes on
+    the same track (open and closed hi-hats).
+- **Sound.**
+  - The rest of the instrument shapes the samples as it would oscillators:
+    `env`, `filter`, `filter_env`, `drive`, `pitch_env`, `voice` (mono and
+    glide), `defaults` and macros. Channel automation applies too, such as an
+    LFO on `detune` for vibrato.
+  - Without an `env` or a `base`, a sample plays as recorded: a 1 ms attack, a
+    sustain of 1 and a 50 ms release.
+  - An instrument that declares samples drops the oscillators of its base, but
+    the oscillators it declares itself play alongside the samples.
+- **Rendering.**
+  - Reading uses 4-point Hermite interpolation, at up to 16 file frames per
+    output frame.
+  - A sample that stops without a loop fades over its last 64 frames.
+- **Decoding.**
+  - When the song's samples change, a job decodes them into one sample bank: a
+    blob of f32 values holding a header (offset, frames, rate and peak per
+    sample) and the PCM data, at most 2^24 frames and 64 samples.
+  - The audio processor receives the bank when it starts, so a new bank
+    restarts it, keeping the playback position. Offline renders take the bank
+    as a job argument. Each engine copies the bank once, before it plays.
+  - Playback, auditions and exports wait until the bank is ready.
+- **Diagnostics.** A file that does not decode is reported on its path. An
+  unknown `file:` is reported on the instrument.
+- **Example.** `chopped` (from `tools/gen_chopped.py`) uses every feature: a
+  sliced break and its reversed slices, a drum kit with choked hats, a vocal
+  "ah" with a seamless sustain loop played as a melody, two-zone keys, a
+  looping vinyl bed and a reversed crash.
+
 ---
 
 ## 8. Patterns
@@ -855,7 +922,7 @@ On macOS `Mod` is Cmd (`meta`). Elsewhere it is Ctrl.
 | `Mod+E` / `Mod+Shift+E` | Collapse or expand the current column / all columns |
 | `Mod+=` / `Mod+-` | Zoom the overview in or out while every column is collapsed |
 | `Mod+/` or `F1` | The documentation panel (Escape closes it) |
-| `Mod+1` / `Mod+2` / `Mod+3` / `Mod+4` | Tracks / Patterns / Instruments / Settings tab (§10.9, §10.10) |
+| `Mod+1` … `Mod+5` | Tracks / Patterns / Instruments / Samples / Settings tab (§10.9–10.11) |
 | `Mod+,` | Settings tab |
 | `F2` | Rename the selected pattern or instrument (Patterns and Instruments tabs) |
 | Arrows, Home/End, PgUp/PgDn, `Mod+↑/↓` | Navigation (`Mod+↑/↓` goes to the file start/end) |
@@ -926,11 +993,12 @@ The content is in `rive/src/editor/docs.as`. It includes a *Pattern files*
 and an *Instrument files* section. In the Patterns and Instruments tabs the
 panel opens at those sections when the cursor is not on a command.
 
-### 10.9 Tabs: tracks, patterns, instruments
+### 10.9 Tabs: tracks, patterns, instruments, samples
 
 A 44 px **rail** on the left of the editor area holds one icon per tab:
-Tracks (`Mod+1`), Patterns (`Mod+2`) and Instruments (`Mod+3`), and, pinned
-to the bottom, a cog for Song settings (`Mod+4` or `Mod+,`, §10.10). The selected
+Tracks (`Mod+1`), Patterns (`Mod+2`), Instruments (`Mod+3`) and Samples
+(`Mod+4`, §10.11), and, pinned to the bottom, a cog for Song settings (`Mod+5`
+or `Mod+,`, §10.10). The selected
 icon is highlighted with a white edge. Hovering an icon for 0.6 s shows a hint
 with the tab's name and shortcut. The title bar, transport and footer are the
 same in every tab.
@@ -1006,6 +1074,73 @@ leaves room for the documentation panel, which opens at *Song settings*.
   unless a field is being typed in.
 - Hit areas come from a layout pass that does not paint. Input is therefore
   right before the first frame is drawn, and the form can be tested headless.
+### 10.11 Samples tab
+
+The fourth tab (`Mod+4`, an icon of waveform bars) manages `samples/`. Its
+200 px list (§10.9) shows each sample with its length.
+- **Rename** (pencil, double-click, `F2`) updates every
+  `sample(file: …)` in `instruments/`.
+- **Delete** (× twice) removes the file. Instruments that named it report an
+  unknown sample.
+- **+** opens the add form.
+
+The panel (`rive/src/editor/samplepanel.as`, drawn like the settings form,
+§10.10) shows the selected sample:
+
+- **Waveform.** One min/max bar per pixel, with a time ruler (start, middle,
+  end), and a playhead while it plays.
+  - **Selection.** Dragging across the waveform selects frames.
+    `Delete`/`Backspace` cuts the selection and `Escape` clears it.
+  - **Play** (and `Mod+Enter`) plays the selection, or the whole sample, once
+    as recorded. It does this through a temporary one-shot instrument with
+    `start`/`end`.
+- **Edits** apply to the selection, or to the whole sample:
+  - Trim (keep the selection) and Cut (drop it);
+  - Normalize (peak 0.98), Reverse, Fade in, Fade out, −3 dB and +3 dB.
+
+  Each edit rewrites the WAV. 16-bit files stay 16-bit, and deeper or float
+  files become 32-bit float, at the file's own rate. The edit then goes
+  through the normal file path: the song and the bank are rebuilt, and the
+  shell writes the file. Undo (`Mod+Z`) steps back through up to 30 edits per
+  sample, held in memory.
+- **Use it.**
+  - It shows `sample(file: <name>)`.
+  - **Copy** puts that line on the editor's clipboard, so it can be pasted into
+    an instrument.
+  - **New instrument** writes `instruments/<name>.inst` with that line, adding
+    `_2` and up if the name is taken, including by a preset. It then opens the
+    file in the Instruments tab.
+- **Used by.** Every `sample(…)` line in `instruments/` that names it, with
+  its instrument. A click opens that instrument.
+
+The **add form** (shown by **+**, or when the song has no samples) has two
+ways to add samples:
+
+- **Import files**, with the shell (§12) only, since the app cannot read the
+  disk. The app sends `{"op":"import"}`, and the shell opens the system's file
+  dialog:
+  - **Dialogs:** `osascript` on macOS, `zenity` elsewhere.
+  - **Conversion:** WAV files are copied as they are. On macOS, other audio
+    (AIFF, MP3, M4A, CAF, FLAC) is converted with `afconvert` to 16-bit WAV.
+  - **Naming:** each file is named from its file name, lowercased, with other
+    characters turned into `_`, and made unique.
+  - **Writing:** the files are written to `samples/` at once, whatever the
+    autosave setting.
+  - **Reopening:** the shell reopens the song with `.partition/ui` (`tab: 3`,
+    `sample: <name>`) in the bundle, so the app comes back on the Samples tab
+    with the new sample selected. The app does not keep `.partition/` as part
+    of the song.
+
+  WAV files copied into the song folder's `samples/` by hand appear too, since
+  the shell watches the folder.
+- **Record an instrument.** Pick any of the song's instruments or a preset,
+  a note, a length (0.25–30 s), a velocity and a name (suggested as
+  `<instrument>_<note>`). The note is rendered on a job, with the song's sample
+  bank, its effect sends and up to 6 s of tail. The result is mixed to mono,
+  cut where it falls below −80 dBFS after the note, and saved as 48 kHz 16-bit
+  `samples/<name>.wav`. Uses: resampling a synth, freezing a sound with its
+  effects, building a kit from presets.
+
 ## 11. View-model contract
 
 The contract is the program's public API. The RML chrome, the Rust shell and
@@ -1158,12 +1293,14 @@ library (§18.3), so the shell runs the app on the installed `rive` CLI
 | `{"op":"save"}` | `Mod+S` (pending writes are sent first) |
 | `{"op":"export","title"}` | Export WAV in the app: the shell renders instead (§12.3) |
 | `{"op":"playing","clock","duration"}` | Playback started with `render/realtime` |
+| `{"op":"import"}` | Import files into `samples/` (§10.11) |
+| `{"op":"started","frame"}` | The audio processor's output frame that playback started on. A render trims the capture to it, because the processor may join a frame before playback, for instance while samples decode |
 
 ### 12.3 Wiring
 
 | Event | Shell action |
 |---|---|
-| Open a song | Read every song file (`song.yaml`, `*.ch`, `*.pat`, `*.inst`; not `exports/` or hidden files), pack it, start `rive <copy> --aot` (the previewer window) |
+| Open a song | Read every song file (`song.yaml`, `*.ch`, `*.pat`, `*.inst`, and `*.wav` as base64; not `exports/` or hidden files), pack it, start `rive <copy> --aot` (the previewer window) |
 | `write` / `remove` | Apply to the song: write atomically (temp file + rename), or delete. With `--no-autosave`, keep it pending until `save`. A bundle is rewritten whole |
 | `save` | Write what is pending |
 | `export` | Render the song as the app has it to `exports/<title>.wav` in the folder (next to a bundle), on a thread; report in the terminal |
@@ -1175,13 +1312,17 @@ and the render settings (§11.5), and `song/autoplay=true`:
 
 1. A short run reads `ready` and `playing`: the diagnostics and the duration
    of what will play.
-2. `--render-audio` for duration + tail (`--advance`). The capture starts
-   when playback does. The shell keeps the song, then its release until the
-   sound drops below −100 dBFS (at most `--tail`), and writes PCM16 or float32.
+2. `--render-audio` for duration + tail (`--advance`). The shell drops the
+   frames before the `started` frame. It then keeps the song, and its release
+   until the sound drops below −100 dBFS (at most `--tail`), and writes PCM16
+   or float32.
 
 `check` makes the first run only, and prints the diagnostics.
 
 ### 12.4 Limits
+
+These come from running on the CLI. M8 (§17.1) removes them by binding the
+Rive engine once its bindings run AnimaScript and audio.
 
 - The window is the `rive` previewer. Its menus, title and window settings
   come from `rive.yaml`, and the shell adds no native menu (Open, Save As).
@@ -1298,7 +1439,7 @@ unique (hence `example-deep-house.song`).
 ## 16. Bundled examples
 
 Every example is a `.song` bundle in `rive/assets/examples/`, declared as a
-blob asset in `scene.rml` and listed in `rive/src/app/examples.as`. Each one uses only presets and song-local instruments, has a
+blob asset in `scene.rml` and listed in `rive/src/app/examples.as`. Each one uses only presets, song-local instruments and song-local samples, has a
 conductor with marks, and uses at least one pattern and one automation.
 
 | Id | Title | bpm | Shows |
@@ -1325,6 +1466,7 @@ conductor with marks, and uses at least one pattern and one automation.
 | `tidal` | Tidal | 60 | patterns of 5, 7, 11 and 13 rows drifting in and out of phase |
 | `disco` | Mirrorball | 120 | octave bass, string stabs, a long filter sweep |
 | `reggae` | Island Drift | 76 | one-drop rhythm, offbeat skank, bubbling organ |
+| `chopped` | Chopped | 90 | samples (§7.4): a sliced break with reversed slices, a kit with choked hats, a looped vocal melody with vibrato, two-zone keys, a vinyl loop, a reversed crash. Generated by `tools/gen_chopped.py` |
 
 The toolbar's **Examples ▾** button opens a dropdown listing every example in
 two columns (an `ArtboardComponentList` of `ExampleRow` components bound to
@@ -1423,6 +1565,71 @@ The full songs are written during milestone M6.
 | M5 ✅ | `ChannelGrid` editor: aligned bands, synced scroll, editing, highlighting, playhead (`rive/src/editor`) | Screenshot tests |
 | M6 ✅ | RML chrome, view-model contract, examples (`rive/scene.rml`, `rive/src/app`, `rive/assets/examples`) | Contract tests, all six examples |
 | M7 ✅ | Rust shell: window, wiring, watch, CLI, headless render, macOS releases (`shell/`, `.github/workflows`) | Shell unit and integration tests (`cargo test`), real renders and checks through the Rive CLI |
+| M8 | Bound engine: replace the `rive` CLI in the shell with the Rive runtime linked in (§17.1), once its Rust bindings run AnimaScript (scripts, jobs, processors) and the audio engine | The M7 tests unchanged, plus the §17.1 checks |
+| M9 ✅ … M13 | Samples, mixer, musical abstractions, controlled randomness, sound design (§17.2) | Per milestone, in §17.2 |
+
+### 17.1 M8: the bound engine
+
+**Starts when** the Rive Rust bindings (or the C++ runtime through FFI) can do
+all of the following:
+- load a signed `.riv` with AnimaScript modules (wasm, AOT);
+- run its `Layout` scripts, jobs and audio processors;
+- play through the built-in audio engine, and render that engine offline to
+  a buffer;
+- read and write view-model properties (strings, numbers, booleans,
+  triggers, lists, and blobs), and listen to them.
+
+Until then, the shell stays on the CLI (§12.2).
+
+**Scope**
+- **Runtime.** The `.riv` is built with `rive rive/ --publish` (signed, AOT)
+  and embedded with `include_bytes!` in place of the project sources. The
+  working copies, the `host-song` blob and the log channel go away. Running no
+  longer needs the CLI installed, nor a first-run compile.
+- **Window.** `winit`, the GPU renderer, keyboard, text and pointer input,
+  with native menus (Open, Save As, Export WAV) and an OS clipboard bridge
+  (`editor/copied`, `editor/pasteRequested`).
+- **Contract.** The shell drives §11 directly, as §11.6 describes. It fills
+  `song/files` and fires `song/load`. It reacts to `editor/changed`,
+  `saveRequested` and `render/chunkReady` (reading `render/chunk` and acking
+  each chunk). Outside edits bump `revision`, so the app reloads a single file
+  and keeps its editor state.
+- **Headless.** `render` uses the app's offline export (`render/start`, the
+  chunked WAV) instead of a real-time capture. `check` reads
+  `song/diagnostics`. The duration comes from `song/durationSeconds`.
+- **App.** `hostSend`, `openHostSong`, `render/realtime` and the `host-song`
+  blob are removed once no host uses them. The `endRow` compile option stays
+  and backs `render/toRow` in the offline export.
+- **Releases.** The release workflow builds the `.riv` too, so it needs the
+  Rive CLI and a signing login on the runner. The binary is self-contained.
+  Notarization comes with it.
+
+**Done when**
+- The shell's commands and options are unchanged, and the M7 tests pass with
+  no Rive CLI on `PATH`.
+- An offline render through the bound engine is bit-exact with the app's own
+  export (§14 Determinism).
+- An edit made on disk reloads only that file: the cursor, undo history and
+  playback are kept.
+- The release tarball runs on a Mac without the Rive CLI.
+
+
+### 17.2 Toward advanced music: M9–M13
+
+Five milestones take Partition from synth sketches to finished, varied
+productions. They are independent and can be taken in any order after M8,
+but M9 comes first because samples matter in the most genres. Each one ships:
+- at least one new bundled example that depends on what it adds;
+- its documentation entries in the panel;
+- its tests.
+
+| # | Milestone | Scope | Done when |
+|---|---|---|---|
+| M9 ✅ | **Samples** (§7.4) | WAV files in `samples/`. `sample(…)` in instruments: zones across the keyboard, slices, loops, one-shots, reverse, choke groups. Background decoding into a sample bank shared with the processor and offline renders. Bundles and the shell carry samples as base64 | A sliced break, a drum kit and a multi-sampled instrument play in tune and in time, and real-time playback is bit-exact with offline render |
+| M10 | **Mixer** | Per-track insert effects (EQ, compressor, distortion, chorus/phaser, filter), with `fx(type: comp, sidechain: kick)` for sidechain compression. Group buses (`bus:` in `song.yaml`) and named send buses with their own effects. Master chain with metering (peak, LUFS). Every effect parameter can be automated | A pumping sidechain example; per-track effects are automatable; CPU stays within budget at 16 tracks |
+| M11 | **Musical abstractions** | Keys and scale degrees (`key(v: D dorian)`, `note(d: 5)`); chord progressions by function (`prog(v: "ii V I")`); patterns with arguments (`pattern(name: riff, root: F)`, used inside as `$root`); variation by pass (`every(n: 4) { … }`, or an `on:` argument) | One pattern reused in several keys and densities; a fill on every 4th pass |
+| M12 | **Controlled randomness** | `prob:` on notes, `humanize(time:, vel:)`, `euclid(hits:, steps:, rot:)`, seeded choices (`pick(from: [...])`). A song-level `seed:` keeps playback, render and export repeatable | Same seed, same render bit for bit; a generative example that varies over a long loop |
+| M13 | **Sound design** | A modulation matrix (`mod(src: lfo2, dst: cutoff, amt:)` with envelopes, LFOs, velocity, key and random sources); wavetable oscillators (`osc(wave: table, file:, pos:)`); stereo voices (stereo samples, per-voice width); per-note expression (`bend:`, `press:`); other tunings (`tuning(v: just)` or Scala files) | An evolving wavetable pad and an expressive lead example |
 
 ---
 
@@ -1438,8 +1645,8 @@ The full songs are written during milestone M6.
    shell therefore runs the app on the installed CLI (§12.2). Blobs never
    cross to the host: the song goes in as a blob asset, and everything comes
    back as log lines, including renders, which are captured with
-   `--render-audio` instead of chunked through `render/chunk`. If an embeddable
-   runtime appears, the contract in §11 is what it would drive.
+   `--render-audio` instead of chunked through `render/chunk`. Moving to a
+   bound runtime, driven through the contract in §11, is milestone M8 (§17.1).
 4. **Host audio (resolved in M7).** The previewer plays through the built-in
    engine with `--aot`, and headless renders run the same processor.
 5. **Text input.** No IME composition or dead keys are documented, so typing

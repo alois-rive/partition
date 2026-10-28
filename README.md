@@ -19,10 +19,11 @@ In the window:
 - **Audition:** Alt+Enter plays just the cursor's row.
 - **Loop:** Cmd+L loops the selected rows, or the cursor's bar.
 - **Documentation:** **Docs** in the title bar (or Cmd+/) opens a reference for every command, scrolled to the one under the cursor.
-- **Tabs:** the rail on the left switches between Tracks (Cmd+1), Patterns (Cmd+2), Instruments (Cmd+3) and Song settings (Cmd+4 or Cmd+,, the cog at the bottom). Settings edits song.yaml as a form: title, tempo, signature, rows per beat, swing, master volume, and the track list. In Patterns and Instruments, a list adds, renames (F2) and deletes files; renaming updates every reference. Play there loops only the selected pattern, or an example phrase on the selected instrument.
+- **Tabs:** the rail on the left switches between Tracks (Cmd+1), Patterns (Cmd+2), Instruments (Cmd+3), Samples (Cmd+4) and Song settings (Cmd+5 or Cmd+,, the cog at the bottom). Settings edits song.yaml as a form: title, tempo, signature, rows per beat, swing, master volume, and the track list. In Patterns and Instruments, a list adds, renames (F2) and deletes files; renaming updates every reference. Play there loops only the selected pattern, or an example phrase on the selected instrument.
 - **Overview:** each column starts with a strip that draws every command as a line or shape. Cmd+E collapses a column to just its strip; **Collapse all** (Cmd+Shift+E) shows the whole song at once, with Cmd+= and Cmd+- to zoom.
+- **Samples:** the Samples tab imports audio files (with the `partition` app) or records any instrument into a sample. It shows the waveform with a selection to play, trim, cut, normalize, reverse, fade or change the gain of (with undo), and makes an instrument that plays it. Instruments play samples with `sample(file: …)`: zones across the keyboard, slices of a break, loops, one-shots, reverse and choke groups (spec §7.4, §10.11). Try the **Chopped** example.
 - **Mute and solo:** Cmd+M mutes the current channel and Cmd+Shift+S solos it. The M and S buttons in each column header do the same.
-- **Toolbar:** **Examples ▾** opens a dropdown of the 22 bundled songs, **New** starts an empty one, and **Export WAV** renders the song. Saving to disk needs the shell (below); in the plain previewer, edits stay in memory.
+- **Toolbar:** **Examples ▾** opens a dropdown of the 23 bundled songs, **New** starts an empty one, and **Export WAV** renders the song. Saving to disk needs the shell (below); in the plain previewer, edits stay in memory.
 
 Render a song to WAV without a window:
 
@@ -32,7 +33,7 @@ rive rive --render-audio=song.wav --data=song/exampleId=techno --data=song/autop
 
 ## The `partition` shell
 
-`shell/` is a Rust command line that opens songs from disk in a window and keeps them saved, and renders and checks them without one (spec §12). It runs the app on the Rive CLI, so `rive` must be installed and signed in.
+`shell/` is a Rust command line that opens songs from disk in a window and keeps them saved, and renders and checks them without one (spec §12). It runs the app on the Rive CLI, so `rive` must be installed and signed in. Milestone M8 (spec §17.1) replaces the CLI with the Rive engine linked into the shell, once its bindings run AnimaScript and the audio engine.
 
 ```bash
 cd shell && cargo build --release        # or download a macOS release (Releases on GitHub)
@@ -65,7 +66,7 @@ rive rive --publish=web --uat
   - `src/editor`: the channel grid (M5).
   - `src/app`: the app, transport, export and view-model bindings (M4/M6).
   - `scene.rml`: the chrome and the view-model contract (M6).
-  - `assets/examples`: the 22 bundled songs.
+  - `assets/examples`: the 23 bundled songs (`chopped` is made by `tools/gen_chopped.py`, samples included).
   - `src/tests`: the test suites.
 - `shell/`: the `partition` shell (M7), with `.github/workflows` for CI and macOS releases.
 - `spikes/m0/`: the platform spike, with results in [docs/m0-findings.md](docs/m0-findings.md).

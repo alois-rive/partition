@@ -45,7 +45,7 @@ export class Exporter {
     totalBytes: i32 = 0;
     unclaimed: bool = false; // no host took the first chunk
 
-    start(score: Score, sampleRate: f64, format: i32, maxTail: f64, title: string, author: string): void {
+    start(score: Score, samples: Blob, sampleRate: f64, format: i32, maxTail: f64, title: string, author: string): void {
         this.cancel();
         let packed = packScore(score);
         let settings = new RenderSettings();
@@ -56,7 +56,7 @@ export class Exporter {
         wav.format = format;
         wav.title = title;
         wav.author = author;
-        this.job = Jobs.run(renderWav, packed.events, packed.instruments, settings, wav, this.progress);
+        this.job = Jobs.run(renderWav, packed.events, packed.instruments, samples, settings, wav, this.progress);
         packed.release();
         this.state = ExportState.Rendering;
         this.fraction = 0;
