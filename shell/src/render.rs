@@ -56,6 +56,12 @@ pub struct Report {
     pub title: String,
     pub duration: f64,
     pub diagnostics: Vec<Diagnostic>,
+    /// Integrated loudness of the rendered file (renders only).
+    pub lufs: f64,
+}
+
+pub fn loudness_text(lufs: f64) -> String {
+    if lufs.is_finite() { format!("{lufs:.1} LUFS") } else { "silent".into() }
 }
 
 impl Report {
@@ -176,6 +182,8 @@ pub fn render(files: &[SongFile], out: &Path, opts: &RenderOptions, progress: im
     let end = audio.end_of_sound(song_frames, 1.0e-5);
     audio.truncate(end);
     let seconds = audio.seconds();
+    let mut report = report;
+    report.lufs = crate::loudness::integrated(&audio);
     let part = out.with_extension("wav.part");
     fs::write(&part, wav::write(&audio, opts.format)).with_context(|| format!("writing {}", part.display()))?;
     fs::rename(&part, out).with_context(|| format!("writing {}", out.display()))?;

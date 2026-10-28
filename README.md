@@ -22,8 +22,10 @@ In the window:
 - **Tabs:** the rail on the left switches between Tracks (Cmd+1), Patterns (Cmd+2), Instruments (Cmd+3), Samples (Cmd+4) and Song settings (Cmd+5 or Cmd+,, the cog at the bottom). Settings edits song.yaml as a form: title, tempo, signature, rows per beat, swing, master volume, and the track list. In Patterns and Instruments, a list adds, renames (F2) and deletes files; renaming updates every reference. Play there loops only the selected pattern, or an example phrase on the selected instrument.
 - **Overview:** each column starts with a strip that draws every command as a line or shape. Cmd+E collapses a column to just its strip; **Collapse all** (Cmd+Shift+E) shows the whole song at once, with Cmd+= and Cmd+- to zoom.
 - **Samples:** the Samples tab imports audio files (with the `partition` app) or records any instrument into a sample. It shows the waveform with a selection to play, trim, cut, normalize, reverse, fade or change the gain of (with undo), and makes an instrument that plays it. Instruments play samples with `sample(file: …)`: zones across the keyboard, slices of a break, loops, one-shots, reverse and choke groups (spec §7.4, §10.11). Try the **Chopped** example.
+- **Mixer:** `fx(type: eq|comp|dist|chorus|phaser|filter, …)` builds an effect chain on a track, a bus (`buses:` in song.yaml, shown after the tracks) or the master (in `conductor.ch`). Compressors take a `sidechain: kick`, tracks play into a group bus with `bus:` or send to one with `set(send.space: 0.3)`, every effect parameter can be set, ramped or modulated (`ramp(filter.cutoff: 8k, over: 4bar)`), and the footer shows the loudness in LUFS (spec §7.5). Try the **Pump** example.
+- **Keys and variations:** `key(root: A, mode: minor)` (song-wide in the conductor, or per track) lets notes be written as scale degrees (`note(d: [1, 3, 5])`, `chord(d: 2)`) and chords as progressions (`prog(chords: "ii V7 I", every: 1bar)`). Patterns take arguments (`pattern(name: riff, root: F3, busy: true)`, used inside as `$root`, defaults with `args(...)`), and any command can play on some passes only (`on: 4/4`, `except: 4/4`, `if: $busy`) for fills and variations (spec §5.6, §8.1, §8.2). Try the **Variations** example.
 - **Mute and solo:** Cmd+M mutes the current channel and Cmd+Shift+S solos it. The M and S buttons in each column header do the same.
-- **Toolbar:** **Examples ▾** opens a dropdown of the 23 bundled songs, **New** starts an empty one, and **Export WAV** renders the song. Saving to disk needs the shell (below); in the plain previewer, edits stay in memory.
+- **Toolbar:** **Examples ▾** opens a dropdown of the 25 bundled songs, **New** starts an empty one, and **Export WAV** renders the song. Saving to disk needs the shell (below); in the plain previewer, edits stay in memory.
 
 Render a song to WAV without a window:
 
@@ -66,7 +68,7 @@ rive rive --publish=web --uat
   - `src/editor`: the channel grid (M5).
   - `src/app`: the app, transport, export and view-model bindings (M4/M6).
   - `scene.rml`: the chrome and the view-model contract (M6).
-  - `assets/examples`: the 23 bundled songs (`chopped` is made by `tools/gen_chopped.py`, samples included).
+  - `assets/examples`: the 25 bundled songs (`chopped`, `pump` and `variations` are made by the scripts in `tools/`).
   - `src/tests`: the test suites.
 - `shell/`: the `partition` shell (M7), with `.github/workflows` for CI and macOS releases.
 - `spikes/m0/`: the platform spike, with results in [docs/m0-findings.md](docs/m0-findings.md).

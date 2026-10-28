@@ -17,7 +17,16 @@ export class ChannelConfig {
     widthSet: bool = false; // song.yaml gave a width; otherwise the editor sizes the column
     mute: bool = false;
     solo: bool = false;
+    bus: string = ""; // the group bus it plays into ("" for the master)
     line: i32 = 0; // where song.yaml declares it
+}
+
+// A bus (§7.5): a file of effects and automation that tracks play into
+// (`bus:` on a channel) or send to (`send.<name>`).
+export class BusConfig {
+    name: string = "";
+    file: string = "";
+    line: i32 = 0;
 }
 
 export class SongConfig {
@@ -30,14 +39,17 @@ export class SongConfig {
     swing: f64 = 0;
     masterVolume: f64 = 1;
     channels: Array<ChannelConfig> = [];
+    buses: Array<BusConfig> = [];
 }
 
 export class ConfigResult {
     constructor(public config: SongConfig, public diagnostics: Diagnostics) {}
 }
 
-const SONG_KEYS: Array<string> = ["title", "author", "bpm", "signature", "rows_per_beat", "swing", "master_volume", "channels"];
-const CHANNEL_KEYS: Array<string> = ["name", "file", "width", "mute", "solo"];
+const SONG_KEYS: Array<string> = ["title", "author", "bpm", "signature", "rows_per_beat", "swing", "master_volume", "channels", "buses"];
+const CHANNEL_KEYS: Array<string> = ["name", "file", "width", "mute", "solo", "bus"];
+const BUS_KEYS: Array<string> = ["name", "file"];
+export const MAX_SONG_BUSES: i32 = 4;
 
 // Reads a scalar the way the channel language would (so `-1dB` and `4/4` work).
 function scalarValue(text: string): ValueNode? {
@@ -143,6 +155,18 @@ export function parseSongConfig(text: string): ConfigResult {
         else if (key == "master_volume") config.masterVolume = reader.number(v, key, ArgType.Gain, 0, 4, false, config.masterVolume);
         else if (key == "signature") readSignature(reader, v, config);
         else if (key == "channels") readChannels(reader, v, config);
+        else if (key == "buses") readBuses(reader, v, config);
+    }
+    // Channels name buses that exist.
+    for (let i = 0; i < config.channels.length; i++) {
+        let c = config.channels[i];
+        if (c.bus.length == 0) continue;
+        let found = false;
+        for (let b = 0; b < config.buses.length; b++) if (config.buses[b].name == c.bus) found = true;
+        if (!found) {
+            diagnostics.error(c.line, 1, 2, "config", `channel '${c.name}' plays into bus '${c.bus}', which buses: does not declare`);
+            c.bus = "";
+        }
     }
     return new ConfigResult(config, diagnostics);
 }
@@ -189,6 +213,7 @@ function readChannels(reader: ConfigReader, v: YamlNode, config: SongConfig): vo
                 channel.widthSet = true;
             }
             else if (key == "mute") channel.mute = reader.bool(value, key);
+            else if (key == "bus") channel.bus = reader.text(value, key);
             else if (key == "solo") channel.solo = reader.bool(value, key);
         }
         if (channel.file.length == 0) {
@@ -202,6 +227,46 @@ function readChannels(reader: ConfigReader, v: YamlNode, config: SongConfig): vo
         }
         names.push(channel.name);
         config.channels.push(channel);
+    }
+}
+
+function readBuses(reader: ConfigReader, v: YamlNode, config: SongConfig): void {
+    if (v.kind == YamlKind.Null) return;
+    if (v.kind != YamlKind.List) {
+        reader.fail(v, "'buses' must be a list");
+        return;
+    }
+    for (let i = 0; i < v.items.length; i++) {
+        let item = v.items[i];
+        if (item.kind != YamlKind.Map) {
+            reader.fail(item, "each bus is a mapping with 'name' and 'file'");
+            continue;
+        }
+        reader.warnUnknown(item, BUS_KEYS);
+        let bus = new BusConfig();
+        bus.line = item.line;
+        for (let k = 0; k < item.keys.length; k++) {
+            let key = item.keys[k];
+            let value = item.values[k];
+            if (key == "name") bus.name = reader.text(value, key);
+            else if (key == "file") bus.file = reader.text(value, key);
+        }
+        if (bus.file.length == 0) {
+            reader.fail(item, "a bus needs a 'file' (such as buses/drums.ch)");
+            continue;
+        }
+        if (bus.name.length == 0) bus.name = baseName(bus.file);
+        let taken = false;
+        for (let b = 0; b < config.buses.length; b++) if (config.buses[b].name == bus.name) taken = true;
+        if (taken) {
+            reader.fail(item, `two buses are named '${bus.name}'`);
+            continue;
+        }
+        if (config.buses.length >= MAX_SONG_BUSES) {
+            reader.fail(item, `a song has at most ${MAX_SONG_BUSES} buses`);
+            continue;
+        }
+        config.buses.push(bus);
     }
 }
 
@@ -221,6 +286,14 @@ export function songConfigText(config: SongConfig): string {
         if (c.widthSet) out += `    width: ${c.width}\n`;
         if (c.mute) out += "    mute: true\n";
         if (c.solo) out += "    solo: true\n";
+        if (c.bus.length > 0) out += `    bus: ${quote(c.bus)}\n`;
+    }
+    if (config.buses.length > 0) {
+        out += "buses:\n";
+        for (let i = 0; i < config.buses.length; i++) {
+            let b = config.buses[i];
+            out += `  - name: ${quote(b.name)}\n    file: ${quote(b.file)}\n`;
+        }
     }
     return out;
 }

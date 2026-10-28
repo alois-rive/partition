@@ -23,6 +23,14 @@ import {
     Z_HI, Z_LO, Z_LOOP, Z_LOOP_END, Z_LOOP_START, Z_ONESHOT, Z_REVERSE, Z_ROOT, Z_SAMPLE, Z_SLICES, Z_START, Z_TUNE,
 } from "./insttable";
 import { BANK_HEADER, BANK_RECORD, B_FRAMES, B_OFFSET, B_RATE, MAX_SAMPLES } from "./samples";
+import { FxState, Loudness } from "./mixer";
+import { ParamKind } from "../lang/paramkind";
+import {
+    FX_BASE, FX_CHORUS, FX_COMP, FX_DIST, FX_EQ, FX_FILTER, FX_PARAM_COUNT, FX_PHASER, fxParams, MAX_BUSES, MAX_FX,
+    P_CHORUS_DEPTH, P_CHORUS_MIX, P_CHORUS_RATE, P_COMP_ATTACK, P_COMP_MAKEUP, P_COMP_MIX, P_COMP_RATIO, P_COMP_RELEASE,
+    P_COMP_THRESHOLD, P_DIST_DRIVE, P_DIST_MIX, P_DIST_TONE, P_EQ_HIGH, P_EQ_HIGH_FREQ, P_EQ_LOW, P_EQ_LOW_FREQ, P_EQ_MID,
+    P_EQ_MID_FREQ, P_FILTER_CUTOFF, P_FILTER_RES, P_PHASER_DEPTH, P_PHASER_FEEDBACK, P_PHASER_MIX, P_PHASER_RATE, SEND_BASE,
+} from "../lang/fx";
 
 // Frames a sample fades over where it stops without a loop, so it never clicks.
 const SAMPLE_FADE: f64 = 64;
@@ -39,6 +47,9 @@ export const MAX_UNISON: i32 = 7;
 export const STRIP_PARAMS: i32 = 4; // vol, pan, delay, reverb
 export const EVENT_WINDOW: i32 = 256;
 export const MAX_CHASE: i32 = 64; // held notes a seek restarts
+// Mixer strips (§7.5): the tracks, then the buses (channel MAX_CHANNELS + b), then the master.
+export const STRIP_MASTER: i32 = 16 + 4; // MAX_CHANNELS + MAX_BUSES
+export const STRIPS: i32 = STRIP_MASTER + 1;
 
 // A parameter's value over time: a target and the ramp towards it.
 class Param {
@@ -311,6 +322,33 @@ class Voice {
     }
 }
 
+// A track's, bus's or the master's effects, sends and route (§7.5).
+class Strip {
+    fxCount: i32 = 0;
+    fxType: Int32Array = new Int32Array(MAX_FX);
+    fxKey: Int32Array = new Int32Array(MAX_FX); // a compressor's sidechain track, or -1
+    fxMode: Int32Array = new Int32Array(MAX_FX); // a filter's mode
+    params: Array<Param> = [];
+    sends: Array<Param> = [];
+    state: FxState = new FxState();
+    route: i32 = -1; // the bus a track plays into, or -1 for the master
+
+    constructor() {
+        for (let i = 0; i < FX_PARAM_COUNT; i++) this.params.push(new Param());
+        for (let i = 0; i < MAX_BUSES; i++) this.sends.push(new Param());
+        this.fxType.fill(0);
+    }
+
+    // Before a score's events set it up again: no effects, no sends, the
+    // master. Effect state stays, so an unchanged chain plays on seamlessly.
+    resetConfig(defaults: Float64Array): void {
+        this.fxCount = 0;
+        this.route = -1;
+        for (let i = 0; i < FX_PARAM_COUNT; i++) this.params[i].assign(0, defaults[i], NaN, 0, 0);
+        for (let i = 0; i < MAX_BUSES; i++) this.sends[i].assign(0, 0, NaN, 0, 0);
+    }
+}
+
 // Reads a score's packed events through a small window, from a blob (renders)
 // or a shared region (the processor), so a lane never copies the whole score.
 class EventReader {
@@ -371,6 +409,9 @@ export class EngineStatus {
     voices: f64 = 0;
     peakL: f64 = 0;
     peakR: f64 = 0;
+    lufsM: f64 = -Infinity; // loudness: momentary (400 ms), short-term (3 s), integrated
+    lufsS: f64 = -Infinity;
+    lufsI: f64 = -Infinity;
     channelPeaks: StaticArray<f64> = new StaticArray<f64>(MAX_CHANNELS);
 }
 
@@ -419,6 +460,19 @@ export class Engine {
     status: EngineStatus = new EngineStatus();
     peakDecay: f64;
     chaseBuf: Float64Array = new Float64Array(MAX_CHASE * FIELDS);
+    // The mixer (§7.5).
+    strips: Array<Strip> = [];
+    fxDefaults: Float64Array = new Float64Array(FX_PARAM_COUNT);
+    fxMin: Float64Array = new Float64Array(FX_PARAM_COUNT);
+    fxMax: Float64Array = new Float64Array(FX_PARAM_COUNT);
+    fxFreq: Int32Array = new Int32Array(FX_PARAM_COUNT); // LFOs move these in octaves
+    busL: Float64Array = new Float64Array(MAX_BUSES * BLOCK);
+    busR: Float64Array = new Float64Array(MAX_BUSES * BLOCK);
+    masterL: Float64Array = new Float64Array(BLOCK);
+    masterR: Float64Array = new Float64Array(BLOCK);
+    keys: Float64Array = new Float64Array(MAX_CHANNELS * BLOCK); // each track's level, for sidechains
+    ownKey: Float64Array = new Float64Array(BLOCK);
+    loudness: Loudness;
     // The sample bank (synth/samples.as), copied into this lane once.
     bank: Float32Array = new Float32Array(0);
     bankCount: i32 = 0;
@@ -434,6 +488,19 @@ export class Engine {
         this.delay = new Delay(sampleRate);
         this.reverb = new Reverb(sampleRate);
         this.limiter = new Limiter(sampleRate);
+        this.loudness = new Loudness(sampleRate);
+        let fx = fxParams();
+        for (let i = 0; i < FX_PARAM_COUNT; i++) {
+            this.fxDefaults[i] = fx[i].defaultValue;
+            this.fxMin[i] = fx[i].min;
+            this.fxMax[i] = fx[i].max;
+            this.fxFreq[i] = fx[i].kind == ParamKind.Freq ? 1 : 0;
+        }
+        for (let i = 0; i < STRIPS; i++) {
+            let strip = new Strip();
+            strip.resetConfig(this.fxDefaults);
+            this.strips.push(strip);
+        }
         this.peakDecay = Math.exp(-1 / (0.3 * sampleRate / <f64>BLOCK));
         this.master.assign(0, 1, NaN, 0, 0);
         this.clearSlotMap();
@@ -567,6 +634,83 @@ export class Engine {
         v.sPos = pos;
     }
 
+    // --- Mixer (§7.5) --------------------------------------------------------
+
+    // An Fx event: effect `type` takes place `w[o+5]` of strip `s`'s chain.
+    configureFx(s: i32, w: Float64Array, o: i32): void {
+        if (s < 0 || s >= STRIPS) return;
+        let strip = this.strips[s];
+        let at = <i32>w[o + 5];
+        let type = <i32>w[o + 6];
+        if (at < 0 || at >= MAX_FX) return;
+        if (strip.fxType[at] != type) strip.state.reset(type);
+        strip.fxType[at] = type;
+        strip.fxKey[at] = <i32>w[o + 7];
+        strip.fxMode[at] = <i32>w[o + 14];
+        strip.fxCount = max<i32>(strip.fxCount, at + 1);
+    }
+
+    // Effect parameter `i` of strip `s` at time `t`, with the LFOs of its
+    // file's own rows (owner 0), within its range.
+    fxValue(strip: Strip, slot: i32, i: i32, t: f64): f64 {
+        let v = strip.params[i].at(t);
+        if (slot >= 0) {
+            let sl = this.slots[slot];
+            for (let k = 0; k < SLOT_LFOS; k++) {
+                let l = sl.lfos[k];
+                if (!l.active || l.param != FX_BASE + i || l.inst >= 0) continue;
+                let m = l.value(t) * l.depth;
+                if (this.fxFreq[i] != 0) v *= Math.pow(2, m);
+                else v += m;
+            }
+        }
+        return Math.min(Math.max(v, this.fxMin[i]), this.fxMax[i]);
+    }
+
+    sendValue(strip: Strip, slot: i32, b: i32, t: f64): f64 {
+        let v = strip.sends[b].at(t);
+        if (slot >= 0) v = this.modulate(this.slots[slot], -1, SEND_BASE + b, v, t);
+        return Math.min(Math.max(v, 0), 1);
+    }
+
+    // Runs strip `s`'s chain over BLOCK frames of `l`/`r` from `off`.
+    runStrip(s: i32, l: Float64Array, r: Float64Array, off: i32, t: f64): void {
+        let strip = this.strips[s];
+        if (strip.fxCount == 0) return;
+        let sr = this.sampleRate;
+        let slot = s < STRIP_MASTER ? this.findSlot(s, 0) : -1;
+        let st = strip.state;
+        for (let k = 0; k < strip.fxCount; k++) {
+            let type = strip.fxType[k];
+            if (type == FX_EQ) {
+                st.eq(l, r, off, BLOCK, this.fxValue(strip, slot, P_EQ_LOW, t), this.fxValue(strip, slot, P_EQ_MID, t), this.fxValue(strip, slot, P_EQ_HIGH, t),
+                    this.fxValue(strip, slot, P_EQ_LOW_FREQ, t), this.fxValue(strip, slot, P_EQ_MID_FREQ, t), this.fxValue(strip, slot, P_EQ_HIGH_FREQ, t), sr);
+            } else if (type == FX_COMP) {
+                let key = strip.fxKey[k];
+                let keys = this.keys;
+                let keyOff = key * BLOCK;
+                if (key < 0 || key >= MAX_CHANNELS) {
+                    // Its own level.
+                    keys = this.ownKey;
+                    keyOff = 0;
+                    for (let i = 0; i < BLOCK; i++) keys[i] = Math.max(Math.abs(l[off + i]), Math.abs(r[off + i]));
+                }
+                st.comp(l, r, off, keys, keyOff, BLOCK, this.fxValue(strip, slot, P_COMP_THRESHOLD, t), this.fxValue(strip, slot, P_COMP_RATIO, t),
+                    this.fxValue(strip, slot, P_COMP_ATTACK, t), this.fxValue(strip, slot, P_COMP_RELEASE, t),
+                    this.fxValue(strip, slot, P_COMP_MAKEUP, t), this.fxValue(strip, slot, P_COMP_MIX, t), sr);
+            } else if (type == FX_DIST) {
+                st.dist(l, r, off, BLOCK, this.fxValue(strip, slot, P_DIST_DRIVE, t), this.fxValue(strip, slot, P_DIST_TONE, t), this.fxValue(strip, slot, P_DIST_MIX, t), sr);
+            } else if (type == FX_CHORUS) {
+                st.chorus(l, r, off, BLOCK, this.fxValue(strip, slot, P_CHORUS_RATE, t), this.fxValue(strip, slot, P_CHORUS_DEPTH, t), this.fxValue(strip, slot, P_CHORUS_MIX, t), sr);
+            } else if (type == FX_PHASER) {
+                st.phaser(l, r, off, BLOCK, this.fxValue(strip, slot, P_PHASER_RATE, t), this.fxValue(strip, slot, P_PHASER_DEPTH, t),
+                    this.fxValue(strip, slot, P_PHASER_FEEDBACK, t), this.fxValue(strip, slot, P_PHASER_MIX, t), sr);
+            } else if (type == FX_FILTER) {
+                st.filter(l, r, off, BLOCK, strip.fxMode[k], this.fxValue(strip, slot, P_FILTER_CUTOFF, t), this.fxValue(strip, slot, P_FILTER_RES, t), sr);
+            }
+        }
+    }
+
     // --- Score ------------------------------------------------------------
 
     // Replaces the score. The new one starts at `time` with the state its
@@ -609,6 +753,7 @@ export class Engine {
         this.clearSlotMap();
         for (let i = 0; i < MAX_SLOTS; i++) this.slots[i].mapped = false;
         this.master.assign(0, 1, NaN, 0, 0);
+        for (let s = 0; s < STRIPS; s++) this.strips[s].resetConfig(this.fxDefaults);
         this.ended = false;
         let r = this.events;
         let i = 0;
@@ -617,7 +762,7 @@ export class Engine {
             let w = r.window;
             if (w[o] >= t) break;
             let kind = <i32>w[o + 1];
-            if (kind == EventKind.Fork || kind == EventKind.Param || kind == EventKind.Lfo || kind == EventKind.LfoOff || kind == EventKind.RowMark) {
+            if (kind == EventKind.Fork || kind == EventKind.Param || kind == EventKind.Lfo || kind == EventKind.LfoOff || kind == EventKind.RowMark || kind == EventKind.Fx || kind == EventKind.Route) {
                 this.apply(w, o);
             } else if (chase && kind == EventKind.NoteOn && w[o] + w[o + 12] > t) {
                 // Held across `t`: keep it to start once the state is in place.
@@ -787,11 +932,32 @@ export class Engine {
             this.playing = false;
             return;
         }
+        if (kind == EventKind.Fx) {
+            this.configureFx(channel < 0 ? STRIP_MASTER : channel, w, o);
+            return;
+        }
+        if (kind == EventKind.Route) {
+            if (channel >= 0 && channel < MAX_CHANNELS) this.strips[channel].route = <i32>w[o + 10];
+            return;
+        }
+        if (kind == EventKind.Param && <i32>w[o + 7] >= FX_BASE) {
+            // Effect parameters and sends belong to the strip, whichever owner sets them.
+            let strip = channel < 0 ? STRIP_MASTER : channel;
+            if (strip >= STRIPS) return;
+            let param = <i32>w[o + 7];
+            let p: Param? = null;
+            if (param >= SEND_BASE && param < SEND_BASE + MAX_BUSES) p = this.strips[strip].sends[param - SEND_BASE];
+            else if (param < FX_BASE + FX_PARAM_COUNT) p = this.strips[strip].params[param - FX_BASE];
+            if (p != null) p.assign(t, w[o + 10], w[o + 11], w[o + 12], <i32>w[o + 14]);
+            return;
+        }
         if (channel < 0) {
             if (kind == EventKind.Param && <i32>w[o + 7] == ParamId.Master) this.master.assign(t, w[o + 10], w[o + 11], w[o + 12], <i32>w[o + 14]);
             return;
         }
-        if (channel >= MAX_CHANNELS) return;
+        // Buses (channels from MAX_CHANNELS) take parameters and LFOs, not notes.
+        if (channel >= STRIP_MASTER) return;
+        if (channel >= MAX_CHANNELS && kind != EventKind.Param && kind != EventKind.Lfo && kind != EventKind.LfoOff && kind != EventKind.Fork) return;
         if (kind == EventKind.Fork) {
             let parent = this.slotFor(channel, <i32>w[o + 4], t);
             let s = this.newSlot(channel, owner, t);
@@ -905,6 +1071,7 @@ export class Engine {
     }
 
     noteOn(t: f64, channel: i32, owner: i32, w: Float64Array, o: i32): void {
+        if (channel < 0 || channel >= MAX_CHANNELS) return;
         let inst = <i32>w[o + 6];
         if (inst < 0 || inst >= this.instrumentCount) return;
         let table = this.instruments;
@@ -1329,42 +1496,127 @@ export class Engine {
         return (this.muteMask & bit) != 0;
     }
 
+    // Tracks' effects, buses, sends and returns, the master chain, then the
+    // limiter and the meters.
     mixBlock(): void {
         let st = this.status;
-        let t = (this.songFrame) / this.sampleRate;
+        let t = this.songFrame / this.sampleRate;
         let masterGain = this.master.at(t);
         let decay = this.peakDecay;
+        let chL = this.chL;
+        let chR = this.chR;
+        // Each track's level before its effects: what sidechains listen to.
+        for (let i = 0; i < MAX_CHANNELS * BLOCK; i++) this.keys[i] = Math.max(Math.abs(chL[i]), Math.abs(chR[i]));
+        for (let c = 0; c < MAX_CHANNELS; c++) this.runStrip(c, chL, chR, c * BLOCK, t);
         for (let c = 0; c < MAX_CHANNELS; c++) {
             let peak = 0.0;
             let off = c * BLOCK;
-            for (let i = 0; i < BLOCK; i++) {
-                peak = Math.max(peak, Math.max(Math.abs(this.chL[off + i]), Math.abs(this.chR[off + i])));
-            }
+            for (let i = 0; i < BLOCK; i++) peak = Math.max(peak, Math.max(Math.abs(chL[off + i]), Math.abs(chR[off + i])));
             st.channelPeaks[c] = Math.max(peak, st.channelPeaks[c] * decay);
         }
-        let pl = 0.0;
-        let pr = 0.0;
-        for (let i = 0; i < BLOCK; i++) {
-            let l = 0.0;
-            let r = 0.0;
-            for (let c = 0; c < MAX_CHANNELS; c++) {
-                l += this.chL[c * BLOCK + i];
-                r += this.chR[c * BLOCK + i];
+
+        // Tracks into the master or their bus, and their sends to buses.
+        let mL = this.masterL;
+        let mR = this.masterR;
+        let bL = this.busL;
+        let bR = this.busR;
+        mL.fill(0);
+        mR.fill(0);
+        bL.fill(0);
+        bR.fill(0);
+        for (let c = 0; c < MAX_CHANNELS; c++) {
+            let strip = this.strips[c];
+            let off = c * BLOCK;
+            let route = strip.route;
+            if (route >= 0 && route < MAX_BUSES) {
+                let bo = route * BLOCK;
+                for (let i = 0; i < BLOCK; i++) {
+                    bL[bo + i] += chL[off + i];
+                    bR[bo + i] += chR[off + i];
+                }
+            } else {
+                for (let i = 0; i < BLOCK; i++) {
+                    mL[i] += chL[off + i];
+                    mR[i] += chR[off + i];
+                }
             }
+            // Sends: only tracks that set one (an LFO alone on a send does nothing).
+            let sends = false;
+            for (let b = 0; b < MAX_BUSES; b++) {
+                let p = strip.sends[b];
+                if (p.value > 0 || (p.seconds > 0 && p.from > 0)) sends = true;
+            }
+            if (!sends) continue;
+            let slot = this.findSlot(c, 0);
+            for (let b = 0; b < MAX_BUSES; b++) {
+                let amount = this.sendValue(strip, slot, b, t);
+                if (amount <= 0) continue;
+                let bo = b * BLOCK;
+                for (let i = 0; i < BLOCK; i++) {
+                    bL[bo + i] += chL[off + i] * amount;
+                    bR[bo + i] += chR[off + i] * amount;
+                }
+            }
+        }
+
+        // Buses: their effects, their volume and pan, their delay and reverb sends.
+        for (let b = 0; b < MAX_BUSES; b++) {
+            let s = MAX_CHANNELS + b;
+            let bo = b * BLOCK;
+            this.runStrip(s, bL, bR, bo, t);
+            let slot = this.findSlot(s, 0);
+            let vol = 1.0;
+            let pan = 0.0;
+            let sendD = 0.0;
+            let sendR = 0.0;
+            if (slot >= 0) {
+                let sl = this.slots[slot];
+                vol = Math.max(this.stripParam(sl, ParamId.Vol, 1, t), 0);
+                pan = Math.min(Math.max(this.stripParam(sl, ParamId.Pan, 0, t), -1), 1);
+                sendD = Math.max(this.stripParam(sl, ParamId.Delay, 0, t), 0);
+                sendR = Math.max(this.stripParam(sl, ParamId.Reverb, 0, t), 0);
+            }
+            let angle = (pan + 1) * Math.PI * 0.25;
+            let gl = vol * Math.cos(angle) * 1.4142135623730951;
+            let gr = vol * Math.sin(angle) * 1.4142135623730951;
+            for (let i = 0; i < BLOCK; i++) {
+                let l = bL[bo + i] * gl;
+                let r = bR[bo + i] * gr;
+                mL[i] += l;
+                mR[i] += r;
+                this.sendDL[i] += l * sendD;
+                this.sendDR[i] += r * sendD;
+                this.sendRv[i] += (l + r) * 0.5 * sendR;
+            }
+        }
+
+        // The delay and reverb returns, then the master chain.
+        for (let i = 0; i < BLOCK; i++) {
             this.delay.process(this.sendDL[i], this.sendDR[i]);
             this.reverb.process(this.sendRv[i]);
-            l += this.delay.outL + this.reverb.outL;
-            r += this.delay.outR + this.reverb.outR;
-            this.limiter.process(l * masterGain, r * masterGain);
+            mL[i] += this.delay.outL + this.reverb.outL;
+            mR[i] += this.delay.outR + this.reverb.outR;
+        }
+        this.runStrip(STRIP_MASTER, mL, mR, 0, t);
+
+        let pl = 0.0;
+        let pr = 0.0;
+        let loud = this.loudness;
+        for (let i = 0; i < BLOCK; i++) {
+            this.limiter.process(mL[i] * masterGain, mR[i] * masterGain);
             let ol = this.limiter.outL;
             let or = this.limiter.outR;
             this.blockL[i] = ol;
             this.blockR[i] = or;
             pl = Math.max(pl, Math.abs(ol));
             pr = Math.max(pr, Math.abs(or));
+            if (this.playing) loud.add(ol, or);
         }
         st.peakL = Math.max(pl, st.peakL * decay);
         st.peakR = Math.max(pr, st.peakR * decay);
+        st.lufsM = loud.momentary;
+        st.lufsS = loud.shortTerm;
+        st.lufsI = loud.integrated;
     }
 
     publishStatus(): void {

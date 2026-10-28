@@ -1,10 +1,14 @@
 // The score compiler (docs/spec.md §9.1): simulates every channel in playback
 // order and emits the events the engine plays.
 
-import { CheckedCommand, CheckedFile, ParamArg } from "../lang/check";
+import { checkArgValue, CheckedCommand, CheckedFile, ParamArg } from "../lang/check";
+import { ValueKind, ValueNode } from "../lang/ast";
+import { MODES } from "../lang/commands";
+import { degreeSemitones, parseNumeral, progressionTokens } from "../lang/scales";
 import { chordIntervals } from "../lang/commands";
 import { Diagnostic, Diagnostics } from "../lang/diagnostics";
 import { OSC_FIELDS, ParamId, paramById, ParamInfo, ParamScope } from "../lang/params";
+import { BUS_CHANNEL, FILTER_MODES, FX_BASE, fxParams, fxTypeId, SEND_BASE } from "../lang/fx";
 import { Song } from "../lang/song";
 import { DurUnit, Typed } from "../lang/types";
 import { Curve, curveFromName, curveValue } from "./curves";
@@ -91,6 +95,8 @@ class ChannelState {
     transpose: f64 = 0;
     vel: f64 = 0.8;
     len: Typed = Typed.duration(DurUnit.Rows, 1);
+    keyRoot: i32 = -1; // the track's own key (§5.6), or -1 to follow the song's
+    keyMode: i32 = 0;
     // Keyed by (instrument + 1) × 256 + param: channel-strip params use instrument -1.
     params: Map<i32, ParamTrack> = new Map<i32, ParamTrack>();
 
@@ -101,6 +107,8 @@ class ChannelState {
         s.transpose = this.transpose;
         s.vel = this.vel;
         s.len = this.len;
+        s.keyRoot = this.keyRoot;
+        s.keyMode = this.keyMode;
         let keys = this.params.keys();
         for (let i = 0; i < keys.length; i++) s.params.set(keys[i], this.params.get(keys[i]).clone());
         return s;
@@ -118,6 +126,7 @@ class Instance {
     owner: i32 = 0;
     active: bool = true;
     state: ChannelState;
+    vars: Map<string, ValueNode> = new Map<string, ValueNode>(); // its variables' values (§8.1)
 
     constructor(
         public name: string,
@@ -154,6 +163,7 @@ class Compiler {
 
     // Per channel while it is simulated:
     channel: i32 = 0;
+    fxCount: i32 = 0; // effects declared so far on the channel being compiled
     path: string = "";
     nextOwner: i32 = 1;
     instances: Array<Instance> = [];
@@ -213,9 +223,23 @@ class Compiler {
         this.findCycles();
 
         let tailEnd = this.playback.count;
+        // Routing (§7.5): tracks that play into a bus, from the start.
+        for (let ch = 0; ch < song.channels.length; ch++) {
+            let bus = song.channels[ch].config.bus;
+            if (bus.length == 0) continue;
+            for (let b = 0; b < song.buses.length; b++) {
+                if (song.buses[b].name != bus) continue;
+                this.channel = ch;
+                let e = this.emit(EventKind.Route, 0);
+                e.value = <f64>b;
+            }
+        }
         for (let ch = 0; ch < song.channels.length; ch++) {
             score.channelNames.push(song.channels[ch].name);
             tailEnd = max<i32>(tailEnd, this.runChannel(ch));
+        }
+        for (let b = 0; b < song.buses.length; b++) {
+            tailEnd = max<i32>(tailEnd, this.runSource(BUS_CHANNEL + b, song.buses[b].file));
         }
 
         let pb = this.playback;
@@ -298,19 +322,24 @@ class Compiler {
 
     // Simulates channel `ch`; returns the played row its last pattern ends on.
     runChannel(ch: i32): i32 {
-        let source = this.song.channels[ch];
+        return this.runSource(ch, this.song.channels[ch].file);
+    }
+
+    // Plays one file on channel `ch`: a track, or a bus (BUS_CHANNEL + b).
+    runSource(ch: i32, file: CheckedFile): i32 {
         this.channel = ch;
-        this.path = source.file.path;
+        this.fxCount = 0;
+        this.path = file.path;
         this.nextOwner = 1;
         this.instances = [];
         this.selected = new Map<i32, bool>();
         this.lastPitch = NaN;
         let state = new ChannelState();
         state.inst = max<i32>(this.library.indexOf(DEFAULT_INSTRUMENT), 0);
-        let file = source.file;
         let pb = this.playback;
         let p = 0;
         let last = pb.count;
+        let visits = new Map<i32, i32>();
         while (true) {
             let inSong = p < pb.count;
             // After end() nothing more starts, patterns included.
@@ -321,7 +350,12 @@ class Compiler {
             }
             if (inSong) {
                 let row = pb.source[p];
-                if (row < file.rowCount) this.runRow(file.rows[row], p, state, 0, null);
+                if (row < file.rowCount) {
+                    // The pass of a row: how many times it has played, jumps included.
+                    let pass = visits.has(row) ? visits.get(row) + 1 : 1;
+                    visits.set(row, pass);
+                    this.runRow(file.rows[row], p, state, 0, null, pass);
+                }
             }
             // Instances started on this row play their first row now, so loop
             // by index: the list grows while it is walked.
@@ -340,7 +374,7 @@ class Compiler {
                     inst.owner = this.fork(inst.snapshotOwner, pb.rowTime(p));
                 }
                 let rowIndex = k % inst.length;
-                this.runRow(inst.pattern.rows[rowIndex], p, inst.state, inst.owner, inst);
+                this.runRow(inst.pattern.rows[rowIndex], p, inst.state, inst.owner, inst, rep + 1);
                 if (k + 1 >= inst.length * inst.times) {
                     inst.active = false;
                     last = max<i32>(last, p + 1);
@@ -371,9 +405,54 @@ class Compiler {
         return owner;
     }
 
-    runRow(cmds: Array<CheckedCommand>, p: i32, state: ChannelState, owner: i32, inst: Instance?): void {
+    runRow(cmds: Array<CheckedCommand>, p: i32, state: ChannelState, owner: i32, inst: Instance?, pass: i32): void {
         let path = inst != null ? inst.pattern.path : this.path;
-        for (let i = 0; i < cmds.length; i++) this.run(cmds[i], p, state, owner, inst, path);
+        for (let i = 0; i < cmds.length; i++) {
+            let c = cmds[i];
+            if (c.deferred.length > 0) {
+                let bound = this.bind(c, inst, path);
+                if (bound == null) continue;
+                c = bound;
+            }
+            if (this.passes(c, pass)) this.run(c, p, state, owner, inst, path);
+        }
+    }
+
+    // Whether a command plays on this pass: on: 3 (the third), on: 4/4 (the
+    // fourth of every four), except: likewise, if: false (§8.2).
+    passes(c: CheckedCommand, pass: i32): bool {
+        if (c.has("if") && !c.get("if").bool) return false;
+        if (c.has("on") && !onPass(c.get("on"), pass)) return false;
+        if (c.has("except") && onPass(c.get("except"), pass)) return false;
+        return true;
+    }
+
+    // `c` with its variables replaced by the pattern's values and typed (§8.1).
+    bind(c: CheckedCommand, inst: Instance?, path: string): CheckedCommand? {
+        let vars = inst != null ? inst.vars : new Map<string, ValueNode>();
+        let out = new CheckedCommand(c.spec, c.node);
+        let keys = c.args.keys();
+        for (let i = 0; i < keys.length; i++) out.args.set(keys[i], c.args.get(keys[i]));
+        out.params = c.params;
+        out.vars = c.vars;
+        for (let i = 0; i < c.deferred.length; i++) {
+            let arg = c.deferred[i];
+            let missing = new Array<string>();
+            let value = substitute(arg.value, vars, missing);
+            if (missing.length > 0) {
+                let who = inst != null ? `pattern '${inst.name}'` : "this file";
+                this.report(path, c.line, arg.value.col, arg.value.endCol, "variable", `${who} has no value for $${missing[0]}: give it in pattern(name: ..., ${missing[0]}: ...) or args(${missing[0]}: ...)`);
+                return null;
+            }
+            let check = checkArgValue(c.spec.arg(arg.name)!, arg.name, value);
+            let typed = check.value;
+            if (typed == null) {
+                this.report(path, c.line, arg.value.col, arg.value.endCol, "type", `${check.error} (from $${variableName(arg.value)})`);
+                return null;
+            }
+            out.args.set(arg.name, typed);
+        }
+        return out;
     }
 
     run(c: CheckedCommand, p: i32, state: ChannelState, owner: i32, inst: Instance?, path: string): void {
@@ -381,22 +460,37 @@ class Compiler {
         let pb = this.playback;
         let t = pb.rowTime(p);
         if (n == "note") {
-            let pitches = c.get("p").items;
             let list = new Array<f64>();
-            for (let i = 0; i < pitches.length; i++) list.push(this.pitchOf(pitches[i], state));
-            this.notes(c, p, state, owner, list, 0, path);
-        } else if (n == "chord") {
-            let root = this.pitchOf(c.get("root"), state);
-            let intervals = chordIntervals(c.str("type", "maj"));
-            let list = new Array<f64>();
-            for (let i = 0; i < intervals.length; i++) list.push(root + <f64>intervals[i]);
-            let inv = <i32>c.num("inv", 0);
-            for (let k = 0; k < inv; k++) {
-                let low = list.shift();
-                list.push(low + 12);
+            if (c.has("d")) {
+                let d = c.get("d");
+                if (d.items.length == 0) list.push(this.degreePitch(<i32>d.num, state, p));
+                for (let i = 0; i < d.items.length; i++) list.push(this.degreePitch(<i32>d.items[i].num, state, p));
+            } else {
+                let pitches = c.get("p").items;
+                for (let i = 0; i < pitches.length; i++) list.push(this.pitchOf(pitches[i], state));
             }
-            let spread = c.num("spread", 0);
-            for (let k = 1; k < list.length; k += 2) list[k] += 12 * spread;
+            this.notes(c, p, state, owner, list, 0, path);
+        } else if (n == "key") {
+            let root = c.get("root");
+            state.keyRoot = (((<i32>root.num) % 12) + 12) % 12;
+            state.keyMode = max<i32>(MODES.indexOf(c.str("mode", "major")), 0);
+        } else if (n == "args") {
+            // Defaults, read when the pattern starts.
+        } else if (n == "prog") {
+            this.progression(c, p, state, owner);
+        } else if (n == "chord") {
+            let list = new Array<f64>();
+            if (c.has("d") && !c.has("type")) {
+                // The key's own chord on that degree: every other scale note.
+                let d = <i32>c.num("d", 1);
+                let size = <i32>c.num("size", 3);
+                for (let k = 0; k < size; k++) list.push(this.degreePitch(d + 2 * k, state, p));
+            } else {
+                let root = c.has("d") ? this.degreePitch(<i32>c.num("d", 1), state, p) : this.pitchOf(c.get("root"), state);
+                let intervals = chordIntervals(c.str("type", "maj"));
+                for (let i = 0; i < intervals.length; i++) list.push(root + <f64>intervals[i]);
+            }
+            voice(list, <i32>c.num("inv", 0), c.num("spread", 0));
             let strum = c.has("strum") ? pb.secondsOf(c.get("strum"), <f64>p) : 0;
             this.notes(c, p, state, owner, list, strum, path);
         } else if (n == "cut") {
@@ -457,6 +551,8 @@ class Compiler {
                 e.value = c.num("depth", 0);
                 e.curve = lfoShape(c.str("shape", "sine"));
             }
+        } else if (n == "fx") {
+            this.effect(c, t, state, owner, path);
         } else if (n == "pattern") {
             this.startPattern(c, p, state, owner, inst, path);
         } else if (n == "stop") {
@@ -465,6 +561,105 @@ class Compiler {
                 let other = this.instances[i];
                 if (id.length == 0 || other.id == id) other.active = false;
             }
+        }
+    }
+
+    // fx(type: …): the effect, in the next place of the chain, and its
+    // parameters' starting values (those it gives, or the defaults).
+    effect(c: CheckedCommand, t: f64, state: ChannelState, owner: i32, path: string): void {
+        let type = c.str("type", "");
+        let e = this.emit(EventKind.Fx, t);
+        e.note = this.fxCount++;
+        e.inst = fxTypeId(type);
+        e.param = -1;
+        e.curve = max<i32>(FILTER_MODES.indexOf(c.str("mode", "lowpass")), 0);
+        if (c.has("sidechain")) {
+            let name = c.str("sidechain", "");
+            for (let i = 0; i < this.song.channels.length; i++) if (this.song.channels[i].name == name) e.param = i;
+            if (e.param < 0) {
+                let v = c.get("sidechain");
+                this.report(path, c.line, v.col, v.endCol, "unknown-track", `there is no track named '${name}' to key the compressor`);
+            }
+        }
+        let all = fxParams();
+        for (let i = 0; i < all.length; i++) {
+            let f = all[i];
+            if (f.type != type) continue;
+            let value = c.has(f.arg) ? c.num(f.arg, f.defaultValue) : f.defaultValue;
+            // A high-pass filter starts open at the bottom.
+            if (type == "filter" && f.arg == "cutoff" && !c.has("cutoff") && e.curve == 1) value = 20;
+            this.setParam(state, owner, -1, FX_BASE + i, value, t, 0, Curve.Linear);
+        }
+    }
+
+    // The key at played row `p`: the track's own, or the song's.
+    keyRootAt(state: ChannelState, p: i32): i32 {
+        if (state.keyRoot >= 0) return state.keyRoot;
+        let pb = this.playback;
+        return pb.count > 0 ? pb.keyRoot[min<i32>(max<i32>(p, 0), pb.count - 1)] : 0;
+    }
+
+    keyModeAt(state: ChannelState, p: i32): i32 {
+        if (state.keyRoot >= 0) return state.keyMode;
+        let pb = this.playback;
+        return pb.count > 0 ? pb.keyMode[min<i32>(max<i32>(p, 0), pb.count - 1)] : 0;
+    }
+
+    // Scale degree `d` of the key, in the octave `oct` sets (degree 1 is the root).
+    degreePitch(d: i32, state: ChannelState, p: i32): f64 {
+        return <f64>((<i32>state.oct + 1) * 12 + this.keyRootAt(state, p) + degreeSemitones(this.keyModeAt(state, p), d)) + state.transpose;
+    }
+
+    // prog(chords: "ii V7 I", every: 1bar): one chord per step from this row,
+    // "-" holding the one before and "." resting.
+    progression(c: CheckedCommand, p: i32, state: ChannelState, owner: i32): void {
+        let pb = this.playback;
+        let tokens = progressionTokens(c.str("chords", ""));
+        let every = c.has("every") ? c.get("every") : Typed.duration(DurUnit.Bars, 1);
+        let step = pb.rowsOf(every, p);
+        if (step <= 0) return;
+        let vel = c.num("vel", state.vel);
+        let strum = c.has("strum") ? pb.secondsOf(c.get("strum"), <f64>p) : 0;
+        let inv = <i32>c.num("inv", 0);
+        let spread = c.num("spread", 0);
+        let mode = this.keyModeAt(state, p);
+        let root = this.keyRootAt(state, p);
+        let base = <f64>((<i32>state.oct + 1) * 12 + root) + state.transpose;
+        for (let i = 0; i < tokens.length; i++) {
+            let n = parseNumeral(tokens[i], mode);
+            if (n.hold || n.rest || n.error.length > 0) continue;
+            let span = 1;
+            while (i + span < tokens.length && tokens[i + span] == "-") span++;
+            let pos = <f64>p + <f64>i * step;
+            let start = pb.timeAt(pos);
+            let seconds = c.has("len") ? pb.secondsOf(c.get("len"), pos) : pb.timeAt(pos + <f64>span * step) - start;
+            let intervals = chordIntervals(n.type);
+            let list = new Array<f64>();
+            for (let k = 0; k < intervals.length; k++) list.push(base + <f64>(n.root + intervals[k]));
+            voice(list, inv, spread);
+            this.emitNotes(list, start, seconds, vel, state.inst, owner, strum, c.line);
+        }
+    }
+
+    // Notes at `start` (strummed `strum` apart), like note(…) emits them.
+    emitNotes(pitches: Array<f64>, start: f64, seconds: f64, vel: f64, instIndex: i32, owner: i32, strum: f64, line: i32): void {
+        for (let i = 0; i < pitches.length; i++) {
+            let at = start + strum * <f64>i;
+            let note = this.nextNote++;
+            let on = this.emit(EventKind.NoteOn, at);
+            on.owner = owner;
+            on.note = note;
+            on.pitch = pitches[i];
+            on.vel = vel;
+            on.inst = instIndex;
+            on.seconds = seconds;
+            on.from = NaN;
+            on.value = 0;
+            on.row = line;
+            let off = this.emit(EventKind.NoteOff, at + seconds);
+            off.owner = owner;
+            off.note = note;
+            this.lastPitch = pitches[i];
         }
     }
 
@@ -546,13 +741,14 @@ class Compiler {
             info = macro.target;
             value = macro.map(value);
         }
-        let inst = info.scope == ParamScope.Channel ? -1 : state.inst;
+        let inst = info.scope == ParamScope.Channel || info.scope == ParamScope.Strip ? -1 : state.inst;
         return new Target(info, inst, value);
     }
 
     // A parameter's value before anything sets it: the channel strip's default,
     // or what the instrument defines.
     initialValue(inst: i32, param: i32): f64 {
+        if (param >= SEND_BASE) return 0;
         if (inst < 0) {
             let info = paramById(param);
             return info != null ? info.defaultValue : NaN;
@@ -621,9 +817,33 @@ class Compiler {
             this.report(path, c.line, v.col, v.endCol, "range", `pattern '${name}' is empty`);
             return;
         }
+        // Its variables: the pattern's own defaults (args), then the call's values,
+        // which may use the caller's variables.
+        let vars = new Map<string, ValueNode>();
+        for (let r = 0; r < file.rows.length; r++) {
+            let row = file.rows[r];
+            for (let k = 0; k < row.length; k++) {
+                if (row[k].name != "args") continue;
+                let names = row[k].vars.keys();
+                for (let j = 0; j < names.length; j++) vars.set(names[j], row[k].vars.get(names[j]));
+            }
+        }
+        let given = c.vars.keys();
+        for (let j = 0; j < given.length; j++) {
+            let missing = new Array<string>();
+            let value = substitute(c.vars.get(given[j]), caller != null ? caller.vars : new Map<string, ValueNode>(), missing);
+            if (missing.length > 0) {
+                let w = c.vars.get(given[j]);
+                this.report(path, c.line, w.col, w.endCol, "variable", `no value for $${missing[0]} here`);
+                continue;
+            }
+            vars.set(given[j], value);
+        }
         let snapshot = this.fork(owner, this.playback.rowTime(p));
         let times = <i32>c.num("times", 1);
-        this.instances.push(new Instance(name, file, p, times, state.clone(), snapshot, depth, c.str("id", "")));
+        let instance = new Instance(name, file, p, times, state.clone(), snapshot, depth, c.str("id", ""));
+        instance.vars = vars;
+        this.instances.push(instance);
     }
 
     // Rows before the start set state only (§6.3): their sounds are dropped and
@@ -685,4 +905,63 @@ function idNumber(id: string): i32 {
 export function compileSong(song: Song, options: CompileOptions = new CompileOptions()): Score {
     let compiler = new Compiler(song, options);
     return compiler.compile();
+}
+
+// Inversions move the lowest notes up an octave; spread lifts every other note.
+function voice(list: Array<f64>, inv: i32, spread: f64): void {
+    for (let k = 0; k < inv; k++) {
+        let low = list.shift();
+        list.push(low + 12);
+    }
+    for (let k = 1; k < list.length; k += 2) list[k] += 12 * spread;
+}
+
+// Whether `pass` is one `t` names: N, or N/M (the Nth of every M).
+function onPass(t: Typed, pass: i32): bool {
+    let n = <i32>t.num;
+    let m = <i32>t.num2;
+    if (m <= 0) return pass == n;
+    return (pass - 1) % m == n - 1;
+}
+
+function variableName(v: ValueNode): string {
+    if (v.kind == ValueKind.Word && v.text.startsWith("$")) return v.text.substring(1);
+    for (let i = 0; i < v.items.length; i++) {
+        let n = variableName(v.items[i]);
+        if (n.length > 0) return n;
+    }
+    return "";
+}
+
+// `v` with each $name replaced by its value in `vars`; names with no value
+// go to `missing`.
+function substitute(v: ValueNode, vars: Map<string, ValueNode>, missing: Array<string>): ValueNode {
+    if (v.kind == ValueKind.Word && v.text.startsWith("$")) {
+        let name = v.text.substring(1);
+        if (!vars.has(name)) {
+            missing.push(name);
+            return v;
+        }
+        let found = vars.get(name);
+        let out = new ValueNode();
+        out.kind = found.kind;
+        out.text = found.text;
+        out.num = found.num;
+        out.den = found.den;
+        out.unit = found.unit;
+        out.items = found.items;
+        out.col = v.col;
+        out.endCol = v.endCol;
+        return out;
+    }
+    if (v.kind == ValueKind.List) {
+        let out = new ValueNode();
+        out.kind = ValueKind.List;
+        out.text = v.text;
+        out.col = v.col;
+        out.endCol = v.endCol;
+        for (let i = 0; i < v.items.length; i++) out.items.push(substitute(v.items[i], vars, missing));
+        return out;
+    }
+    return v;
 }

@@ -34,6 +34,10 @@ function example(name: string): string {
     if (name == "glide") return "glide(to: G4, over: 1b)";
     if (name == "lfo") return "lfo(param: cutoff, rate: 1bar, depth: 0.4, shape: tri)";
     if (name == "lfo_off") return "lfo_off(param: cutoff)";
+    if (name == "fx") return "fx(type: comp, threshold: -30dB, ratio: 8, release: 180ms, sidechain: kick)\nfx(type: filter, mode: highpass, cutoff: 300)";
+    if (name == "key") return "key(root: A, mode: minor)";
+    if (name == "prog") return "prog(chords: \"i VI III VII\", every: 1bar, strum: 20ms)";
+    if (name == "args") return "args(root: C4, busy: false)";
     if (name == "pattern") return "pattern(name: four_floor, times: 8)";
     if (name == "stop") return "stop(id: hats)";
     if (name == "bpm") return "bpm(v: 128)";
@@ -86,8 +90,27 @@ export function docBlocks(): Array<DocBlock> {
     out.push(new DocBlock(DocKind.Paragraph, "Durations: 2 (rows), 1/8 (a note value), 1b (beats), 2bar (bars), 250ms or 1.5s. Gains: 0.8, 80% or -6dB. Frequencies: 440, 440Hz or 2k. Intervals: 7st or 25c. Pitches: C4, F#3, Bb2, a MIDI number such as 60, or C alone to use the octave set by oct()."));
 
     commands(out, "Notes", "", ["note", "chord", "cut"]);
+
+    out.push(new DocBlock(DocKind.Heading, "Keys and degrees", "keys"));
+    out.push(new DocBlock(DocKind.Paragraph, "key(root: D, mode: dorian) sets a key: in conductor.ch for the whole song from that row (C major until one says otherwise), or in a track for that track. Modes: major, minor, dorian, phrygian, lydian, mixolydian, locrian, harmonic_minor, melodic_minor, pentatonic, minor_pentatonic, blues, chromatic."));
+    out.push(new DocBlock(DocKind.Paragraph, "In a key, write scale degrees instead of pitches: note(d: 1) is the root in the octave oct sets, d: 8 the root an octave up, d: 0 the degree below the root, and d: [1, 3, 5] three notes at once. chord(d: 2) stacks the key's own notes on degree 2 (size: 4 for sevenths); chord(d: 5, type: dom7) builds a chord type there. A key change moves everything written in degrees."));
+    out.push(new DocBlock(DocKind.Code, "key(root: A, mode: minor); oct(v: 4)\nnote(d: [1, 3, 5])\n\nchord(d: 6, size: 4)"));
+    out.push(new DocBlock(DocKind.Heading, "Progressions", "progressions"));
+    out.push(new DocBlock(DocKind.Paragraph, "prog(chords: \"ii V7 I\", every: 1bar) plays Roman-numeral chords in the key, one per step from its row: uppercase for major, lowercase for minor, then 7, maj7, 9, 6, dim, dim7, m7b5, aug, sus2, sus4 or add9 (V7 is dominant, ii7 minor); b or # before the numeral lowers or raises its root (bVII). - holds the chord before for another step, . rests. In a minor key the numerals sit on its own degrees (III is the relative major). inv, spread, strum, vel and len work as in chord."));
+    out.push(new DocBlock(DocKind.Code, "oct(v: 3); prog(chords: \"i VI III VII\", every: 1bar)\nprog(chords: \"I - vi -\", every: 2b, strum: 30ms)"));
+    commands(out, "Keys and progressions", "", ["key", "prog"]);
     commands(out, "Track settings", "These last until changed, for every later command on the track.", ["inst", "oct", "transpose", "vel", "len", "vol", "pan", "set"]);
     commands(out, "Automation", "Ramps and LFOs work on vol, pan, delay, reverb and the instrument's parameters (cutoff, res, env, drive, attack, decay, sustain, release, pw, detune, oscN.level …).", ["ramp", "glide", "lfo", "lfo_off"]);
+    out.push(new DocBlock(DocKind.Heading, "Mixer", "mixer"));
+    out.push(new DocBlock(DocKind.Paragraph, "Every track, every bus and the master has a chain of effects: fx(type: ...) adds one, in the order the file lists them, with its starting values. A file has at most one of each type. Put fx on the first rows of a track or bus file, or in conductor.ch for the master."));
+    out.push(new DocBlock(DocKind.Code, "fx(type: eq, low: -3dB, mid: 2dB, mid_freq: 800, high: 1.5dB)\nfx(type: comp, threshold: -18dB, ratio: 4, attack: 5ms, release: 120ms, makeup: 2dB)\nfx(type: dist, drive: 0.4, tone: 4k, mix: 0.6)\nfx(type: chorus, rate: 0.8Hz, depth: 0.5, mix: 0.5)\nfx(type: phaser, rate: 0.3Hz, depth: 0.7, feedback: 0.5)\nfx(type: filter, mode: highpass, cutoff: 200, res: 0.2)"));
+    out.push(new DocBlock(DocKind.Paragraph, "eq is a low shelf, a mid bell and a high shelf (gains in dB). comp compresses above threshold by ratio; with sidechain: kick it listens to the kick track instead of itself, the way house basses and pads duck under every kick. dist saturates, tone smooths it. chorus thickens, phaser sweeps notches, filter is a low-, high- or band-pass (mode)."));
+    out.push(new DocBlock(DocKind.Paragraph, "Every effect parameter moves like any other: set(comp.ratio: 8), ramp(filter.cutoff: 8k, over: 4bar), lfo(param: chorus.depth, rate: 2bar, depth: 0.3). Effect parameters belong to the track: a pattern that changes them changes them for the whole track. In conductor.ch, set and ramp move the master's effects."));
+    out.push(new DocBlock(DocKind.Paragraph, "Buses: song.yaml lists them under buses: (a name and a file, such as buses/drums.ch), at most 4; they show after the tracks. A track with bus: drums plays into that bus instead of the master (a group: compress the drums together). Any track can also send to a bus with set(send.space: 0.3) (a send: share one reverb space). A bus file holds the bus's fx, vol, pan, its delay and reverb sends and their automation, but no notes."));
+    out.push(new DocBlock(DocKind.Code, "channels:\n  - name: hats\n    file: channels/hats.ch\n    bus: drums\nbuses:\n  - name: drums\n    file: buses/drums.ch\n  - name: space\n    file: buses/space.ch"));
+    out.push(new DocBlock(DocKind.Paragraph, "The order: each note's volume, pan and delay/reverb sends; the track's effects; its bus or the master, and its sends to buses; each bus's effects, volume and pan; the delay and reverb; the master's effects, master volume and the limiter. While it plays, the footer shows the output's short-term and integrated loudness in LUFS (streaming services aim near -14). The Pump example uses all of this."));
+    commands(out, "Mixer command", "", ["fx"]);
+
     out.push(new DocBlock(DocKind.Heading, "Pattern files", "patterns"));
     out.push(new DocBlock(DocKind.Paragraph, "A pattern is a phrase written once and played from any track. Each one is a file in patterns/, named by its file name (lowercase letters, digits and '_'). Edit them in the Patterns tab (Cmd+2): the list on the left adds, renames (F2 or double-click) and deletes them, and renaming updates every pattern(name: …) that calls it."));
     out.push(new DocBlock(DocKind.Paragraph, "A pattern is written exactly like a track: one row per line, with the song's rows per beat. Its length is its number of rows, trailing empty rows included, so a one-bar pattern in 4/4 at 4 rows per beat has 16 lines even if only the first holds a note."));
@@ -97,7 +120,13 @@ export function docBlocks(): Array<DocBlock> {
     out.push(new DocBlock(DocKind.Paragraph, "Each run starts from a copy of the calling track's settings (instrument, octave, velocity, length, vol…). Changes the pattern makes stay inside the run and never leak back to the track, and each repetition starts again from the call. So a track's ramp or LFO reaches only patterns called after it: put the automation before the call on the same row."));
     out.push(new DocBlock(DocKind.Paragraph, "Patterns can call patterns, up to 8 deep; a pattern that leads back to itself is reported and skipped. A pattern can set its own instrument with inst(…), or use the calling track's. Pitches written without an octave (C, Eb) use the octave set by oct(…), so one pattern plays in any register."));
     out.push(new DocBlock(DocKind.Paragraph, "In the Patterns tab, Play (or Cmd+Enter) plays only the selected pattern, on a loop, with the instrument of the first track that calls it. Edits are heard as you type."));
-    commands(out, "Pattern commands", "", ["pattern", "stop"]);
+    out.push(new DocBlock(DocKind.Heading, "Pattern variables", "variables"));
+    out.push(new DocBlock(DocKind.Paragraph, "A pattern can take values from its call: pattern(name: riff, root: F3, busy: true). Inside, $root and $busy stand for them in any argument, and args(root: C4, busy: false) on a row of the pattern gives defaults. Values pass through nested calls (pattern(name: inner, deg: $deg)). A variable with no value is reported where the pattern uses it. With degrees, one riff plays in any key; with if:, one groove plays sparse or busy."));
+    out.push(new DocBlock(DocKind.Code, "args(deg: 1, busy: false)\nnote(d: $deg, len: 2)\nnote(d: 5, if: $busy)"));
+    out.push(new DocBlock(DocKind.Heading, "Passes", "passes"));
+    out.push(new DocBlock(DocKind.Paragraph, "Any command in a track or pattern can play on some passes only. A pattern's pass is its repetition (pattern(times: 8) makes passes 1 to 8); a track row's pass is how many times the song has played it, jumps included. on: 3 plays on the third pass only, on: 4/4 on the fourth of every four, on: 1/2 on odd passes; except: does the opposite; if: false (or a variable) turns a command off. A fill every fourth bar: the fill's notes with on: 4/4, the regular ones with except: 4/4."));
+    out.push(new DocBlock(DocKind.Code, "note(p: C4, inst: snare, except: 4/4)\nnote(p: C4, inst: snare, vel: 0.9, on: 4/4)\nnote(p: C4, inst: hat_closed, if: $busy)"));
+    commands(out, "Pattern commands", "", ["pattern", "stop", "args"]);
     commands(out, "Conductor", "These go in the conductor, the first column, and act on the whole song.", ["bpm", "sig", "rpb", "swing", "master", "mark", "jump", "end"]);
     out.push(new DocBlock(DocKind.Heading, "Instrument files", "instruments"));
     out.push(new DocBlock(DocKind.Paragraph, "An instrument describes a sound. Each one is a file in instruments/, named by its file name, and a track selects it with inst(name: …) (or a single note with note(…, inst: …)). Edit them in the Instruments tab (Cmd+3): the list adds, renames and deletes them, and renaming updates every inst(…) that uses it. Play there loops a short example track (an arpeggio, a chord, a low line) on the selected instrument."));

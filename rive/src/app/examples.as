@@ -23,6 +23,8 @@ export function examples(): Array<ExampleInfo> {
         new ExampleInfo("empty", "Empty song", "A conductor and four empty channels", 120, "template"),
         new ExampleInfo("deep-house", "Late Night Deep House", "Four-on-the-floor, organ bass, minor-nine stabs with delay, a breakdown", 122, "deep house"),
         new ExampleInfo("lofi", "Rainy Lo-Fi", "Swung drums, e-piano chords strummed, vinyl noise", 84, "lo-fi hip hop"),
+        new ExampleInfo("variations", "Variations", "Musical abstractions: one set of patterns in three keys, scale degrees, chord progressions, pattern arguments for density, a fill every 4th pass", 112, "nu-soul"),
+        new ExampleInfo("pump", "Pump", "The mixer: bass and chords ducking under the kick, a drums bus, a space send bus, effects on tracks and a master filter sweep", 124, "house"),
         new ExampleInfo("chopped", "Chopped", "Samples: a sliced break, a drum kit with choked hats, a looped vocal melody, two-zone keys, a reversed crash", 90, "boom bap"),
         new ExampleInfo("techno", "Warehouse", "Acid bass under an LFO, long ramps, endless loop", 132, "techno"),
         new ExampleInfo("ambient", "Drift", "Long pads in reverb, slow glides", 70, "ambient"),

@@ -6,7 +6,7 @@
 
 import { SongFile } from "./bundle";
 import { CheckContext, CheckedFile, checkParsed, FileKind } from "./check";
-import { ChannelConfig, CONDUCTOR_PATH, parseSongConfig, SONG_YAML, SongConfig } from "./config";
+import { BusConfig, ChannelConfig, CONDUCTOR_PATH, parseSongConfig, SONG_YAML, SongConfig } from "./config";
 import { Diagnostic, Diagnostics } from "./diagnostics";
 import { ParsedFile, parseFile } from "./parser";
 import { isName } from "./types";
@@ -23,6 +23,14 @@ export function isBinaryPath(path: string): bool {
 
 export class ChannelSource {
     constructor(public config: ChannelConfig, public file: CheckedFile) {}
+
+    get name(): string {
+        return this.config.name;
+    }
+}
+
+export class BusSource {
+    constructor(public config: BusConfig, public file: CheckedFile) {}
 
     get name(): string {
         return this.config.name;
@@ -51,6 +59,7 @@ export class Song {
     songDiagnostics: Diagnostics = new Diagnostics(SONG_YAML);
     conductor: CheckedFile;
     channels: Array<ChannelSource> = [];
+    buses: Array<BusSource> = [];
     patterns: Map<string, CheckedFile> = new Map<string, CheckedFile>();
     patternNames: Array<string> = [];
     instruments: Map<string, CheckedFile> = new Map<string, CheckedFile>();
@@ -116,6 +125,9 @@ export class Song {
         for (let i = 0; i < this.channels.length; i++) {
             if (this.channels[i].file.path == path) return this.channels[i].file;
         }
+        for (let i = 0; i < this.buses.length; i++) {
+            if (this.buses[i].file.path == path) return this.buses[i].file;
+        }
         let pattern = nameIn(path, PATTERNS_DIR, ".pat");
         if (pattern.length > 0 && this.patterns.has(pattern)) return this.patterns.get(pattern);
         let inst = nameIn(path, INSTRUMENTS_DIR, ".inst");
@@ -129,6 +141,7 @@ export class Song {
         append(out, this.songDiagnostics);
         append(out, this.conductor.diagnostics);
         for (let i = 0; i < this.channels.length; i++) append(out, this.channels[i].file.diagnostics);
+        for (let i = 0; i < this.buses.length; i++) append(out, this.buses[i].file.diagnostics);
         for (let i = 0; i < this.patternNames.length; i++) append(out, this.patterns.get(this.patternNames[i]).diagnostics);
         for (let i = 0; i < this.instrumentNames.length; i++) append(out, this.instruments.get(this.instrumentNames[i]).diagnostics);
         return out;
@@ -145,6 +158,7 @@ export class Song {
     get rowCount(): i32 {
         let n = this.conductor.rowCount;
         for (let i = 0; i < this.channels.length; i++) n = max<i32>(n, this.channels[i].file.rowCount);
+        for (let i = 0; i < this.buses.length; i++) n = max<i32>(n, this.buses[i].file.rowCount);
         return n;
     }
 
@@ -163,7 +177,7 @@ export class Song {
     // nor the macros it may use have changed.
     private check(path: string, kind: FileKind, ctx: CheckContext): CheckedFile {
         let entry = this.parse(path);
-        let key = `${kind}:${ctx.macros.join(",")}`;
+        let key = `${kind}:${ctx.macros.join(",")}:${ctx.buses.join(",")}`;
         let hit = entry.checked;
         if (hit != null && entry.checkedWith == key) return hit;
         let checked = checkParsed(entry.file, kind, ctx);
@@ -191,6 +205,7 @@ export class Song {
         this.patterns = new Map<string, CheckedFile>();
         this.patternNames = [];
         let ctx = new CheckContext();
+        for (let i = 0; i < this.config.buses.length; i++) ctx.buses.push(this.config.buses[i].name);
         for (let i = 0; i < this.paths.length; i++) {
             let path = this.paths[i];
             let name = nameIn(path, INSTRUMENTS_DIR, ".inst");
@@ -253,6 +268,17 @@ export class Song {
                 continue;
             }
             this.channels.push(new ChannelSource(c, this.check(c.file, FileKind.Channel, ctx)));
+        }
+
+        // Buses: effects and automation, checked as bus files.
+        this.buses = [];
+        let buses = this.config.buses;
+        for (let i = 0; i < buses.length; i++) {
+            let b = buses[i];
+            if (!this.files.has(b.file)) {
+                this.songDiagnostics.error(b.line, 1, 1, "missing-file", `bus '${b.name}' reads '${b.file}', which the song does not have`);
+            }
+            this.buses.push(new BusSource(b, this.check(b.file, FileKind.Bus, ctx)));
         }
     }
 }

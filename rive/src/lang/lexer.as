@@ -41,8 +41,9 @@ function isLetter(c: i32): bool {
     return (c >= 65 && c <= 90) || (c >= 97 && c <= 122);
 }
 
+// '$' starts a pattern variable, as in $root (§8.1).
 function isWordStart(c: i32): bool {
-    return isLetter(c) || c == 95;
+    return isLetter(c) || c == 95 || c == 36;
 }
 
 function isWordPart(c: i32): bool {

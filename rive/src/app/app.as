@@ -475,6 +475,7 @@ export class Partition extends Layout {
             c.widthChars = ch.config.widthSet ? ch.config.width : autoWidth(c.doc, 26);
             columns.push(c);
         }
+        this.addBusColumns(columns, byPath);
         this.tracksView.setColumns(columns);
         for (let i = 0; i < columns.length; i++) if (columns[i].doc.path == focusPath) this.tracksView.focus = i;
         this.applyMix();
@@ -736,6 +737,25 @@ export class Partition extends Layout {
         this.refreshList(TAB_SAMPLES);
         this.showSample(this.recordName);
         this.say(`recorded ${path} (${Math.round(<f64>mono.length / 480) / 100} s)`);
+    }
+
+    // The song's buses (§7.5), after its tracks: their effects and automation.
+    addBusColumns(columns: Array<Column>, reuse: Map<string, Column>): void {
+        let buses = this.song.buses;
+        for (let i = 0; i < buses.length; i++) {
+            let path = buses[i].config.file;
+            let c: Column;
+            if (reuse.has(path)) {
+                c = reuse.get(path);
+            } else {
+                let doc = new Doc(path, this.song.text(path));
+                c = new Column(doc, "", autoWidth(doc, 26), false, false, false);
+            }
+            c.name = buses[i].name;
+            c.controls = false;
+            c.isBus = true;
+            columns.push(c);
+        }
     }
 
     // The tab and view that edit `path`.
@@ -1232,6 +1252,7 @@ export class Partition extends Layout {
             let width = ch.config.widthSet ? ch.config.width : autoWidth(doc, 26);
             columns.push(new Column(doc, ch.name, width, false, ch.config.mute, ch.config.solo));
         }
+        this.addBusColumns(columns, new Map<string, Column>());
         this.endAudition();
         let tracks = this.tracksView;
         tracks.setColumns(columns);
@@ -1571,7 +1592,7 @@ export class Partition extends Layout {
         }
         else if (action.startsWith("mute:") || action.startsWith("solo:")) {
             let index = <i32>parseInt(action.substring(5));
-            if (this.tab == 0 && index > 0 && index < this.tracksView.columns.length) {
+            if (this.tab == 0 && index > 0 && index < this.tracksView.columns.length && !this.tracksView.columns[index].isBus) {
                 let c = this.tracksView.columns[index];
                 if (action.startsWith("mute:")) c.mute = !c.mute;
                 else c.solo = !c.solo;
@@ -1918,6 +1939,12 @@ export class Partition extends Layout {
         if (score != null && row < score.grid.rows.length) meter = `${score.grid.rows[row].sigNum}/${score.grid.rows[row].sigDen}`;
         vm.setStr(t, "transport", "meter", meter);
         vm.setStr(t, "transport", "info", `${<i32>st.voices} voices`);
+        // Loudness of the output (§7.5): short-term and integrated, while it plays.
+        vm.setNum(t, "transport", "lufsShort", Math.round(st.lufsS * 10) / 10);
+        vm.setNum(t, "transport", "lufsIntegrated", Math.round(st.lufsI * 10) / 10);
+        let loud = "";
+        if (st.lufsS > -99) loud = `${lufsText(st.lufsS)} LUFS` + (st.lufsI > -99 ? `  ·  int ${lufsText(st.lufsI)}` : "");
+        vm.setStr(t, "transport", "loudness", loud);
 
         // Editor
         let e = vm.editor;
@@ -2183,4 +2210,10 @@ export function jsonString(text: string): string {
         start = i + 1;
     }
     return out + text.substring(start) + "\"";
+}
+
+// A loudness with one decimal: -14.2.
+function lufsText(v: f64): string {
+    let r = Math.round(v * 10) / 10;
+    return r == Math.floor(r) ? `${<i32>r}.0` : `${r}`;
 }

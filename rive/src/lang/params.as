@@ -1,17 +1,14 @@
 // Parameters that `set`, `ramp` and `lfo` address (docs/spec.md §7.2).
 
-export enum ParamKind {
-    Number,
-    Gain,
-    Freq,
-    Time, // seconds
-    Interval, // semitones
-}
+import { ParamKind } from "./paramkind";
+import { FX_BASE, fxParams, MAX_BUSES, SEND_BASE } from "./fx";
+export { ParamKind } from "./paramkind";
 
 export enum ParamScope {
     Channel, // the channel strip: vol, pan, sends
     Instrument, // the channel's current instrument
     Conductor, // song-wide: bpm, master
+    Strip, // a track's, bus's or the master's effects (lang/fx.as): tracks, buses and the conductor
 }
 
 export enum ParamId {
@@ -100,6 +97,11 @@ function table(): ParamTable {
         made.add(base + 2, prefix + "pw", ParamKind.Number, I, 0.01, 0.99, NaN);
         made.add(base + 3, prefix + "fm", ParamKind.Number, I, 0, 20, NaN);
     }
+    let fx = fxParams();
+    for (let i = 0; i < fx.length; i++) {
+        let f = fx[i];
+        made.add(FX_BASE + i, f.name, f.kind, ParamScope.Strip, f.min, f.max, f.defaultValue);
+    }
     TABLE = made;
     return made;
 }
@@ -116,7 +118,7 @@ export function paramById(id: i32): ParamInfo? {
     return t.byId.get(id);
 }
 
-// Names valid in a channel's `set`/`ramp`/`lfo` (channel strip and instrument).
+// Names valid in a channel's `set`/`ramp`/`lfo` (channel strip, instrument, effects).
 export function channelParamNames(): Array<string> {
     let out = new Array<string>();
     let list = table().list;
@@ -127,5 +129,14 @@ export function channelParamNames(): Array<string> {
 }
 
 export function conductorParamNames(): Array<string> {
-    return ["bpm", "master"];
+    let out: Array<string> = ["bpm", "master"];
+    let fx = fxParams();
+    for (let i = 0; i < fx.length; i++) out.push(fx[i].name);
+    return out;
+}
+
+// `send.<bus>`: a track's send to bus `index` of the song (lang/fx.as).
+export function sendParam(index: i32, bus: string): ParamInfo? {
+    if (index < 0 || index >= MAX_BUSES) return null;
+    return new ParamInfo(SEND_BASE + index, `send.${bus}`, ParamKind.Gain, ParamScope.Channel, 0, 1, 0);
 }

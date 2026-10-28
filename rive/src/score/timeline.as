@@ -5,6 +5,8 @@
 import { CheckedCommand } from "../lang/check";
 import { Diagnostics } from "../lang/diagnostics";
 import { ParamId } from "../lang/params";
+import { FILTER_MODES, FX_BASE, fxParams, fxTypeId } from "../lang/fx";
+import { MODES } from "../lang/commands";
 import { Song } from "../lang/song";
 import { DurUnit, Typed } from "../lang/types";
 import { curveFromName, curveValue, Curve } from "./curves";
@@ -156,6 +158,9 @@ export class Playback {
     rpb: Array<i32> = [];
     sigNum: Array<i32> = [];
     sigDen: Array<i32> = [];
+    // The song's key at each played row (§5.6): its root (0..11) and mode (lang/scales.as).
+    keyRoot: Array<i32> = [];
+    keyMode: Array<i32> = [];
     firstAudible: i32 = 0; // played rows before it only set state
     loopStart: i32 = -1; // the endless loop's last pass, as played rows [start, end)
     loopEnd: i32 = -1;
@@ -286,6 +291,18 @@ function eventFor(kind: EventKind, seq: i32): ScoreEvent {
     return e;
 }
 
+// A parameter event of the master (its volume or its effects).
+function masterParam(seq: i32, param: i32, value: f64, curve: i32, row: i32, played: i32): ScoreEvent {
+    let e = eventFor(EventKind.Param, seq);
+    e.channel = MASTER_CHANNEL;
+    e.param = param;
+    e.value = value;
+    e.curve = curve;
+    e.row = row;
+    e.played = played;
+    return e;
+}
+
 export function buildPlayback(song: Song, grid: Grid, options: PlaybackOptions, rowCount: i32, diagnostics: Map<string, Diagnostics>): Playback {
     let pb = new Playback();
     let config = song.config;
@@ -296,12 +313,15 @@ export function buildPlayback(song: Song, grid: Grid, options: PlaybackOptions, 
     let sigNum = config.sigNum;
     let sigDen = config.sigDen;
     let swing = config.swing;
+    let keyRoot = 0; // C major until the conductor says otherwise
+    let keyMode = 0;
     let ramp: TempoRamp? = null;
     let pending = new Array<PendingRamp>();
     let counters = new Map<i32, i32>();
     let lastVisit = new Map<i32, i32>();
     let reported = new Map<i32, bool>();
     let seq = 0;
+    let masterFx = 0; // effects on the master chain so far
     let t = 0.0;
     let startRow = min<i32>(max<i32>(options.startRow, 0), rowCount);
     // Rows before the start are played once each, in source order.
@@ -349,6 +369,50 @@ export function buildPlayback(song: Song, grid: Grid, options: PlaybackOptions, 
                     e.played = p;
                     pb.events.push(e);
                 }
+            } else if (n == "key") {
+                let root = c.get("root");
+                keyRoot = (((<i32>root.num) % 12) + 12) % 12;
+                keyMode = max<i32>(MODES.indexOf(c.str("mode", "major")), 0);
+            } else if (n == "fx") {
+                // An effect on the master chain, and its starting values.
+                let type = c.str("type", "");
+                let e = eventFor(EventKind.Fx, seq++);
+                e.channel = MASTER_CHANNEL;
+                e.note = masterFx++;
+                e.inst = fxTypeId(type);
+                e.param = -1;
+                e.curve = max<i32>(FILTER_MODES.indexOf(c.str("mode", "lowpass")), 0);
+                if (c.has("sidechain")) {
+                    let key = c.str("sidechain", "");
+                    for (let k = 0; k < song.channels.length; k++) if (song.channels[k].name == key) e.param = k;
+                    if (e.param < 0) {
+                        let v = c.get("sidechain");
+                        d.error(c.line, v.col, v.endCol, "unknown-track", `there is no track named '${key}' to key the compressor`);
+                    }
+                }
+                e.row = r;
+                e.played = p;
+                pb.events.push(e);
+                let all = fxParams();
+                for (let k = 0; k < all.length; k++) {
+                    let f = all[k];
+                    if (f.type != type) continue;
+                    let value = c.has(f.arg) ? c.num(f.arg, f.defaultValue) : f.defaultValue;
+                    if (type == "filter" && f.arg == "cutoff" && !c.has("cutoff") && e.curve == 1) value = 20;
+                    pb.events.push(masterParam(seq++, FX_BASE + k, value, Curve.Linear, r, p));
+                }
+            } else if (n == "set") {
+                for (let k = 0; k < c.params.length; k++) {
+                    let pa = c.params[k];
+                    if (pa.name == "bpm") {
+                        bpm = pa.value.num;
+                        ramp = null;
+                    } else if (pa.name == "master") {
+                        pb.events.push(masterParam(seq++, ParamId.Master, pa.value.num, Curve.Linear, r, p));
+                    } else if (pa.info != null && pa.info!.id >= FX_BASE) {
+                        pb.events.push(masterParam(seq++, pa.info!.id, pa.value.num, Curve.Linear, r, p));
+                    }
+                }
             } else if (n == "ramp") {
                 let over = c.get("over");
                 let curve = curveFromName(c.str("curve", "linear"));
@@ -361,14 +425,8 @@ export function buildPlayback(song: Song, grid: Grid, options: PlaybackOptions, 
                             : durationRows(over, rpb, sigNum, sigDen);
                         ramp = new TempoRamp(pos, rows, current, pa.value.num, curve);
                         bpm = pa.value.num;
-                    } else if (pa.name == "master") {
-                        let e = eventFor(EventKind.Param, seq++);
-                        e.channel = MASTER_CHANNEL;
-                        e.param = ParamId.Master;
-                        e.value = pa.value.num;
-                        e.curve = curve;
-                        e.row = r;
-                        e.played = p;
+                    } else if (pa.name == "master" || (pa.info != null && pa.info!.id >= FX_BASE)) {
+                        let e = masterParam(seq++, pa.name == "master" ? ParamId.Master : pa.info!.id, pa.value.num, curve, r, p);
                         pb.events.push(e);
                         pending.push(new PendingRamp(p, e, over));
                     }
@@ -391,6 +449,8 @@ export function buildPlayback(song: Song, grid: Grid, options: PlaybackOptions, 
         pb.rpb.push(rpb);
         pb.sigNum.push(sigNum);
         pb.sigDen.push(sigDen);
+        pb.keyRoot.push(keyRoot);
+        pb.keyMode.push(keyMode);
         lastVisit.set(r, p);
         t += dur;
 

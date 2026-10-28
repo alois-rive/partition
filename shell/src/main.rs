@@ -6,6 +6,7 @@ mod base64;
 mod bundle;
 mod host;
 mod import;
+mod loudness;
 mod project;
 mod render;
 mod rivecli;
@@ -156,7 +157,7 @@ fn run(cli: Cli) -> Result<u8> {
             for d in &report.diagnostics {
                 eprintln!("{d}");
             }
-            println!("wrote {} ({seconds:.1} s, {} Hz)", output.display(), rate);
+            println!("wrote {} ({seconds:.1} s, {} Hz, {})", output.display(), rate, render::loudness_text(report.lufs));
         }
         Cmd::Check { song } => {
             let report = render::check(&song_files(&song)?)?;

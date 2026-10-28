@@ -17,6 +17,12 @@ export enum EventKind {
     Cut = 7,
     RowMark = 8,
     End = 9,
+    // An effect (§7.5): `note` is its place in the chain, `inst` its type
+    // (lang/fx.as), `param` the sidechain's track (-1 for none), `curve` the
+    // filter mode. On the master when `channel` is -1.
+    Fx = 10,
+    // `channel` (a track) plays into bus `value` instead of the master.
+    Route = 11,
 }
 
 export const MASTER_CHANNEL: i32 = -1;
@@ -53,6 +59,8 @@ export class ScoreEvent {
             case EventKind.LfoOff: return `${t} lfo_off ch${this.channel} o${this.owner} #${this.param}`;
             case EventKind.Cut: return `${t} cut ch${this.channel} in ${this.seconds}`;
             case EventKind.RowMark: return `${t} row ${this.row}`;
+            case EventKind.Fx: return `${t} fx ch${this.channel} #${this.note} type${this.inst} key${this.param} mode${this.curve}`;
+            case EventKind.Route: return `${t} route ch${this.channel} bus${this.value}`;
             default: return `${t} end`;
         }
     }

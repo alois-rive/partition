@@ -19,6 +19,8 @@ export enum ArgType {
     Bool,
     Fraction,
     Phase, // 0..1, or `random`
+    Pass, // which passes: 3 (the third), 4/4 (the 4th of every 4)
+    Degrees, // a scale degree, or a list of them (§5.6)
 }
 
 export enum DurUnit {
@@ -93,6 +95,8 @@ export function typeName(type: ArgType): string {
         case ArgType.Bool: return "true or false";
         case ArgType.Fraction: return "a fraction (3/4)";
         case ArgType.Phase: return "a phase (0..1 or random)";
+        case ArgType.Pass: return "a pass (3, or 4/4 for the 4th of every 4)";
+        case ArgType.Degrees: return "a scale degree or a list of them (5, [1, 3, 5])";
         default: return "a value";
     }
 }
@@ -170,6 +174,18 @@ export function typeValue(v: ValueNode, type: ArgType): TypeResult {
 }
 
 function typeScalarOrList(v: ValueNode, type: ArgType): TypeResult {
+    if (v.kind == ValueKind.List && type == ArgType.Degrees) {
+        let degrees = new Typed();
+        degrees.type = ArgType.Degrees;
+        for (let i = 0; i < v.items.length; i++) {
+            let item = typeValue(v.items[i], ArgType.Degrees);
+            let value = item.value;
+            if (value == null) return item;
+            degrees.items.push(value);
+        }
+        if (degrees.items.length == 0) return TypeResult.fail("a degree list cannot be empty");
+        return TypeResult.ok(degrees);
+    }
     if (v.kind == ValueKind.List) {
         if (type != ArgType.Pitches) return TypeResult.fail(`a list is not allowed here; expected ${typeName(type)}`);
         let list = new Typed();
@@ -287,6 +303,27 @@ function typeScalarOrList(v: ValueNode, type: ArgType): TypeResult {
                 return TypeResult.ok(t);
             }
             return found(v, type);
+        }
+        case ArgType.Pass: {
+            if (v.kind == ValueKind.Fraction) {
+                if (v.num >= 1 && v.num <= v.den && v.num == Math.floor(v.num)) {
+                    let t = Typed.number(type, v.num);
+                    t.num2 = v.den;
+                    return TypeResult.ok(t);
+                }
+            } else if (isPlain(v) && plainNumber(v) >= 1 && plainNumber(v) == Math.floor(plainNumber(v))) {
+                let t = Typed.number(type, plainNumber(v));
+                t.num2 = 0;
+                return TypeResult.ok(t);
+            }
+            return TypeResult.fail(`expected ${typeName(type)}, a whole number from 1, or N/M with N from 1 to M`);
+        }
+        case ArgType.Degrees: {
+            if (isPlain(v) && plainNumber(v) == Math.floor(plainNumber(v)) && Math.abs(plainNumber(v)) <= 40) {
+                let t = Typed.number(type, plainNumber(v));
+                return TypeResult.ok(t);
+            }
+            return TypeResult.fail(`expected ${typeName(type)}: whole numbers, 1 for the key's root`);
         }
         case ArgType.Fraction: {
             if (v.kind == ValueKind.Fraction) {

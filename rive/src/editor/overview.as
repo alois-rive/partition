@@ -10,7 +10,8 @@ import { CheckedCommand, CheckedFile } from "../lang/check";
 import { ParamKind, paramByName } from "../lang/params";
 import { Song } from "../lang/song";
 import { DurUnit, Typed } from "../lang/types";
-import { chordIntervals } from "../lang/commands";
+import { chordIntervals, MODES } from "../lang/commands";
+import { degreeSemitones, parseNumeral, progressionTokens } from "../lang/scales";
 import { Grid, durationRows } from "../score/timeline";
 
 export enum Mark {
@@ -132,6 +133,8 @@ class State {
     delay: f64 = 0; // send levels, for the echo tail
     reverb: f64 = 0;
     lastPitch: f64 = 60;
+    keyRoot: i32 = 0; // the file's own key, for scale degrees (C major until it sets one)
+    keyMode: i32 = 0;
 
     get sends(): f64 {
         return Math.min(this.delay + this.reverb, 1.5);
@@ -143,6 +146,8 @@ class State {
         s.oct = this.oct;
         s.transpose = this.transpose;
         s.vel = this.vel;
+        s.keyRoot = this.keyRoot;
+        s.keyMode = this.keyMode;
         s.len = this.len;
         let keys = this.params.keys();
         for (let i = 0; i < keys.length; i++) s.params.set(keys[i], this.params.get(keys[i]));
@@ -215,19 +220,51 @@ class Builder {
         if (pitches.length > 0) s.lastPitch = pitches[pitches.length - 1];
     }
 
+    degree(d: i32, s: State): f64 {
+        return <f64>((<i32>s.oct + 1) * 12 + s.keyRoot + degreeSemitones(s.keyMode, d)) + s.transpose;
+    }
+
     command(c: CheckedCommand, row: f64, s: State, depth: i32): void {
         if (this.full()) return;
+        // Commands that wait for a pattern's variables have no values to draw.
+        if (c.deferred.length > 0) return;
         let n = c.name;
         if (n == "note") {
-            let items = c.get("p").items;
             let pitches = new Array<f64>();
-            for (let i = 0; i < items.length; i++) pitches.push(this.pitchOf(items[i], s));
+            if (c.has("d")) {
+                let d = c.get("d");
+                if (d.items.length == 0) pitches.push(this.degree(<i32>d.num, s));
+                for (let i = 0; i < d.items.length; i++) pitches.push(this.degree(<i32>d.items[i].num, s));
+            } else {
+                let items = c.get("p").items;
+                for (let i = 0; i < items.length; i++) pitches.push(this.pitchOf(items[i], s));
+            }
             this.note(c, row, s, pitches, pitches.length > 1 ? Mark.Chord : Mark.Note, depth);
+        } else if (n == "key") {
+            s.keyRoot = (((<i32>c.get("root").num) % 12) + 12) % 12;
+            s.keyMode = max<i32>(MODES.indexOf(c.str("mode", "major")), 0);
+        } else if (n == "prog") {
+            let tokens = progressionTokens(c.str("chords", ""));
+            let step = c.has("every") ? this.rows(c.get("every"), row) : this.rows(Typed.duration(DurUnit.Bars, 1), row);
+            for (let i = 0; i < tokens.length; i++) {
+                let num = parseNumeral(tokens[i], s.keyMode);
+                if (num.hold || num.rest || num.error.length > 0) continue;
+                let iv = chordIntervals(num.type);
+                let pitches = new Array<f64>();
+                for (let k = 0; k < iv.length; k++) pitches.push(<f64>((<i32>s.oct + 1) * 12 + s.keyRoot + num.root + iv[k]) + s.transpose);
+                this.note(c, row + <f64>i * step, s, pitches, Mark.Chord, depth);
+            }
         } else if (n == "chord") {
-            let root = this.pitchOf(c.get("root"), s);
-            let iv = chordIntervals(c.str("type", "maj"));
             let pitches = new Array<f64>();
-            for (let i = 0; i < iv.length; i++) pitches.push(root + <f64>iv[i]);
+            if (c.has("d") && !c.has("type")) {
+                let d = <i32>c.num("d", 1);
+                let size = <i32>c.num("size", 3);
+                for (let k = 0; k < size; k++) pitches.push(this.degree(d + 2 * k, s));
+            } else {
+                let root = c.has("d") ? this.degree(<i32>c.num("d", 1), s) : this.pitchOf(c.get("root"), s);
+                let iv = chordIntervals(c.str("type", "maj"));
+                for (let i = 0; i < iv.length; i++) pitches.push(root + <f64>iv[i]);
+            }
             let inv = <i32>c.num("inv", 0);
             for (let k = 0; k < inv; k++) pitches.push(pitches.shift() + 12);
             let spread = c.num("spread", 0);

@@ -2,6 +2,8 @@
 // may appear and the arguments it takes.
 
 import { ArgType } from "./types";
+import { FILTER_MODES, FX_TYPES, fxParams } from "./fx";
+import { ParamKind } from "./paramkind";
 
 export const SCOPE_CHANNEL: i32 = 1; // channels/*.ch and patterns/*.pat
 export const SCOPE_CONDUCTOR: i32 = 2; // conductor.ch
@@ -11,6 +13,11 @@ export const CURVES: Array<string> = ["linear", "exp", "log", "smooth"];
 export const LFO_SHAPES: Array<string> = ["sine", "tri", "saw", "square", "random"];
 export const WAVES: Array<string> = ["sine", "tri", "saw", "square", "pulse", "noise"];
 export const FILTER_TYPES: Array<string> = ["lowpass", "highpass", "bandpass", "notch", "off"];
+// Keys (§5.6), in the order lang/scales.as gives their intervals.
+export const MODES: Array<string> = [
+    "major", "minor", "dorian", "phrygian", "lydian", "mixolydian", "locrian",
+    "harmonic_minor", "melodic_minor", "pentatonic", "minor_pentatonic", "blues", "chromatic",
+];
 export const CHORD_TYPES: Array<string> = [
     "maj", "min", "dim", "aug", "sus2", "sus4", "maj7", "min7", "dom7", "m7b5",
     "dim7", "maj9", "min9", "dom9", "min11", "add9", "maj6", "m6",
@@ -56,6 +63,8 @@ export class CommandSpec {
     args: Array<ArgSpec> = [];
     // `set` and `ramp` also take any parameter name as an argument.
     open: bool = false;
+    // `pattern` and `args` also take any name: a pattern variable (§8.1).
+    vars: bool = false;
 
     constructor(
         public name: string,
@@ -77,14 +86,18 @@ export class CommandSpec {
     }
 
     // The signature shown in the editor's hint line: `note(p: pitch, len?: duration, ...)`.
+    // Leaves out on, except and if, which every track command takes (§8.2).
     signature(): string {
         let out = this.name + "(";
+        let shown = 0;
         for (let i = 0; i < this.args.length; i++) {
             let a = this.args[i];
-            if (i > 0) out += ", ";
+            if (a.name == "on" || a.name == "except" || a.name == "if") continue;
+            if (shown++ > 0) out += ", ";
             out += a.name + (a.required ? "" : "?");
         }
-        if (this.open) out += (this.args.length > 0 ? ", " : "") + "<param>: value, …";
+        if (this.open) out += (shown > 0 ? ", " : "") + "<param>: value, …";
+        if (this.vars) out += (shown > 0 ? ", " : "") + "<variable>: value, …";
         return out + ")";
     }
 }
@@ -104,6 +117,11 @@ class Builder {
 
     open(): Builder {
         this.current!.open = true;
+        return this;
+    }
+
+    variables(): Builder {
+        this.current!.vars = true;
         return this;
     }
 
@@ -161,15 +179,23 @@ export function registry(): Registry {
     let T = ArgType.Number;
 
     // Notes (§5.1)
-    b.cmd("note", CH, "play one note, or several from a list")
-        .req("p", ArgType.Pitches).opt("len", ArgType.Duration).opt("vel", ArgType.Gain, 0, 1)
+    b.cmd("note", CH, "play one note, or several from a list, by pitch (p) or scale degree (d)")
+        .opt("p", ArgType.Pitches).opt("d", ArgType.Degrees).opt("len", ArgType.Duration).opt("vel", ArgType.Gain, 0, 1)
         .opt("inst", ArgType.Name).opt("glide", ArgType.Duration).opt("at", ArgType.Duration);
-    b.cmd("chord", CH, "play a chord")
-        .req("root", ArgType.Pitch).req("type", ArgType.Ident).oneOf(CHORD_TYPES)
+    b.cmd("chord", CH, "play a chord on a root, or on a scale degree (d)")
+        .opt("root", ArgType.Pitch).opt("d", ArgType.Number, -28, 28).int().opt("size", ArgType.Number, 3, 5).int()
+        .opt("type", ArgType.Ident).oneOf(CHORD_TYPES)
         .opt("inv", T, 0, 8).int().opt("spread", T, 0, 3).int()
         .opt("len", ArgType.Duration).opt("vel", ArgType.Gain, 0, 1).opt("strum", ArgType.Duration)
         .opt("at", ArgType.Duration);
     b.cmd("cut", CH, "release every sounding note").opt("fade", ArgType.Duration);
+    b.cmd("prog", CH, "play a chord progression in the key, one chord per step")
+        .req("chords", ArgType.Text).opt("every", ArgType.Duration).opt("len", ArgType.Duration)
+        .opt("vel", ArgType.Gain, 0, 1).opt("inv", T, 0, 8).int().opt("spread", T, 0, 3).int().opt("strum", ArgType.Duration);
+
+    // Keys (§5.6): the track's, or (in the conductor) the song's.
+    b.cmd("key", CH | CO, "set the key that scale degrees and progressions use")
+        .req("root", ArgType.Pitch).opt("mode", ArgType.Ident).oneOf(MODES);
 
     // Modifiers (§5.2)
     b.cmd("inst", CH, "select an instrument").req("name", ArgType.Name);
@@ -179,7 +205,7 @@ export function registry(): Registry {
     b.cmd("len", CH, "default note length").req("v", ArgType.Duration);
     b.cmd("vol", CH, "channel volume").req("v", ArgType.Gain, 0, 4);
     b.cmd("pan", CH, "channel pan, -1..1").req("v", T, -1, 1);
-    b.cmd("set", CH, "set channel or instrument parameters").open();
+    b.cmd("set", CH | CO, "set channel, instrument or effect parameters").open();
 
     // Automation (§5.3); `ramp` is also a conductor command for bpm and master.
     b.cmd("ramp", CH | CO, "move parameters to a target over time").open()
@@ -191,9 +217,23 @@ export function registry(): Registry {
         .opt("shape", ArgType.Ident).oneOf(LFO_SHAPES).opt("id", ArgType.Ident);
     b.cmd("lfo_off", CH, "stop an LFO").req("param", ArgType.Ident).opt("id", ArgType.Ident);
 
+    // Mixer (§7.5): an effect on the track, bus or (in the conductor) master.
+    b.cmd("fx", CH | CO, "add an effect to the track, bus or master chain").req("type", ArgType.Ident).oneOf(FX_TYPES);
+    let fx = fxParams();
+    let seen = new Array<string>();
+    for (let i = 0; i < fx.length; i++) {
+        let f = fx[i];
+        if (seen.includes(f.arg)) continue;
+        seen.push(f.arg);
+        let type = f.kind == ParamKind.Gain ? ArgType.Gain : f.kind == ParamKind.Freq ? ArgType.Freq : f.kind == ParamKind.Time ? ArgType.Time : ArgType.Number;
+        b.opt(f.arg, type, f.min, f.max);
+    }
+    b.opt("sidechain", ArgType.Name).opt("mode", ArgType.Ident).oneOf(FILTER_MODES);
+
     // Patterns (§5.4)
     b.cmd("pattern", CH, "play a pattern from this row")
-        .req("name", ArgType.Name).opt("times", T, 1, 100000).int().opt("id", ArgType.Ident);
+        .req("name", ArgType.Name).opt("times", T, 1, 100000).int().opt("id", ArgType.Ident).variables();
+    b.cmd("args", CH, "a pattern's variables and their defaults").variables();
     b.cmd("stop", CH, "stop running patterns").opt("id", ArgType.Ident);
 
     // Conductor (§5.5)
@@ -243,6 +283,15 @@ export function registry(): Registry {
         .opt("choke", T, 0, 16).int();
     b.cmd("param", IN, "define a macro parameter")
         .req("name", ArgType.Ident).req("target", ArgType.Ident).opt("min", T).opt("max", T);
+
+    // Every track and pattern command can play on some passes only (§8.2).
+    for (let i = 0; i < b.names.length; i++) {
+        let spec = b.specs.get(b.names[i]);
+        if ((spec.scopes & CH) == 0) continue;
+        spec.args.push(new ArgSpec("on", ArgType.Pass, false, -Infinity, Infinity));
+        spec.args.push(new ArgSpec("except", ArgType.Pass, false, -Infinity, Infinity));
+        spec.args.push(new ArgSpec("if", ArgType.Bool, false, -Infinity, Infinity));
+    }
 
     let made = new Registry(b.specs, b.names);
     REGISTRY = made;

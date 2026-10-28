@@ -189,6 +189,10 @@ channels:
     solo: false
   - name: bass
     file: channels/bass.ch
+    bus: drums           # optional: plays into this bus instead of the master (§7.5)
+buses:                   # optional, at most 4 (§7.5)
+  - name: drums
+    file: buses/drums.ch
 ```
 
 - The order of `channels` is the column order. `conductor.ch` is implicit and
@@ -377,8 +381,8 @@ prefix (`pitch` → `p`).
 
 | Command | Arguments | Effect |
 |---|---|---|
-| `note` | `p: pitch \| list<pitch>`, `len?: duration`, `vel?: gain`, `inst?: ident`, `glide?: duration`, `at?: duration` | Plays one note, or several at once from a list. `at:` delays the start inside the row (micro-timing after swing, such as `at: 0.5` meaning half a row)¹. |
-| `chord` | `root: pitch`, `type: ident`, `inv?: number [0]`, `spread?: number [0]`, `len?`, `vel?`, `strum?: duration [0]`, `at?: duration` | Plays a chord. Types: `maj min dim aug sus2 sus4 maj7 min7 dom7 m7b5 dim7 maj9 min9 dom9 min11 add9 maj6 m6`. `inv` rotates the notes upward, `spread` moves alternate notes up an octave, and `strum` staggers the note starts. |
+| `note` | `p: pitch \| list<pitch>` or `d: degree \| list<degree>` (§5.6), `len?: duration`, `vel?: gain`, `inst?: ident`, `glide?: duration`, `at?: duration` | Plays one note, or several at once from a list. `at:` delays the start inside the row (micro-timing after swing, such as `at: 0.5` meaning half a row)¹. |
+| `chord` | `root: pitch` or `d: degree` (with `size?: 3..5` when it has no `type`, §5.6), `type?: ident`, `inv?: number [0]`, `spread?: number [0]`, `len?`, `vel?`, `strum?: duration [0]`, `at?: duration` | Plays a chord. Types: `maj min dim aug sus2 sus4 maj7 min7 dom7 m7b5 dim7 maj9 min9 dom9 min11 add9 maj6 m6`. `inv` rotates the notes upward, `spread` moves alternate notes up an octave, and `strum` staggers the note starts. |
 | `cut` | `fade?: duration [5ms]` | Releases every sounding note on the channel. |
 
 ¹ `at:` accepts a fraction of a row (`at: 0.5`) or any duration. It cannot
@@ -432,7 +436,53 @@ See §8 for semantics.
 | `end` | — | The song ends after this row. Running patterns stop and sounding notes release. |
 
 Channels cannot use conductor commands, and the conductor cannot play notes,
-change instruments or call patterns (`scope` diagnostic).
+change instruments or call patterns (`scope` diagnostic). `key` (§5.6),
+`set`, `ramp` and `fx` (§7.5) are allowed in both.
+
+### 5.6 Keys, degrees and progressions (M11)
+
+| Command | Arguments | Effect |
+|---|---|---|
+| `key` | `root: pitch`, `mode?: ident [major]` | Sets the key. In `conductor.ch` it is the song's key from that row on (C major before any). In a track it is that track's key, overriding the song's. |
+| `prog` | `chords: string`, `every?: duration [1bar]`, `len?`, `vel?`, `inv?`, `spread?`, `strum?` | Plays a progression in the key, one chord per step from its row. |
+
+**Modes**
+- The modes are `major minor dorian phrygian lydian mixolydian locrian
+  harmonic_minor melodic_minor pentatonic minor_pentatonic blues chromatic`.
+- Their intervals are in `rive/src/lang/scales.as`.
+
+**Degrees**
+- `d: 1` is the key's root, in the octave `oct` sets (`(oct + 1) × 12 +
+  root`). The degrees wrap through the mode: `d: 8` in a seven-note mode is
+  an octave up, `d: 0` is the degree under the root, and so on. `transpose`
+  applies after.
+- `note(d: [1, 3, 5])` plays several degrees at once.
+- `chord(d: n)` stacks every other scale note from degree *n* (`size` notes:
+  3 for triads, 4 for sevenths). `chord(d: n, type: t)` builds type *t* on
+  that degree.
+- `inv`, `spread` and `strum` work as for `chord`.
+
+**Progressions**
+- `chords` is a string of Roman numerals separated by spaces:
+  - **Case:** uppercase is major, lowercase minor.
+  - **Endings:** `7` (dominant on uppercase, minor seventh on lowercase), `9`
+    (likewise), `6`, `maj7`, `maj9`, `dim`/`o`, `dim7`/`o7`, `m7b5`,
+    `aug`/`+`, `sus2`, `sus4`, `add9`, `11` (`min11`).
+  - **Accidentals:** `b` or `#` before a numeral lowers or raises its root by
+    a semitone (`bVII`).
+  - **Holds and rests:** `-` holds the chord before for another step; `.`
+    rests.
+- In seven-note modes, numerals sit on the mode's own degrees (in A minor,
+  `III` is C major). Other modes use the major scale's degrees.
+- Chords are rooted in the octave `oct` sets and last up to the next chord,
+  or `len`.
+- The checker rejects unknown numerals and endings (`range`), naming the
+  token.
+
+The key comes from the row each command plays on, so a conductor key change
+moves every degree, chord and progression after it. Pitches written as
+pitches never move. The overview strip draws degrees in the track's own key
+(C major when the track sets none).
 
 ---
 
@@ -620,6 +670,101 @@ sample(file: name, root?: pitch, lo?: pitch, hi?: pitch, key?: pitch,
   "ah" with a seamless sustain loop played as a melody, two-zone keys, a
   looping vinyl bed and a reversed crash.
 
+### 7.5 Mixer (M10)
+
+Every track, every bus and the master has a chain of effects, and the mix
+runs in this order:
+
+1. Each note gets its volume, pan, and delay and reverb sends, as before (§5).
+2. The track's effects run.
+3. The track plays into its bus or the master, and sends to buses.
+4. Each bus runs its effects, then its `vol`, `pan`, and `delay`/`reverb`
+   sends.
+5. The delay and reverb returns are added.
+6. The master runs its effects, then `master` volume and the limiter.
+7. The loudness meter measures the result.
+
+```
+fx(type: eq,     low?, mid?, high?: gain, low_freq?, mid_freq?, high_freq?: freq)
+fx(type: comp,   threshold?: gain, ratio?: 1..20, attack?, release?: time, makeup?: gain, mix?: 0..1, sidechain?: track)
+fx(type: dist,   drive?: 0..1, tone?: freq, mix?: 0..1)
+fx(type: chorus, rate?: freq, depth?: 0..1, mix?: 0..1)
+fx(type: phaser, rate?: freq, depth?: 0..1, feedback?: 0..0.95, mix?: 0..1)
+fx(type: filter, mode?: lowpass|highpass|bandpass, cutoff?: freq, res?: 0..1)
+```
+
+**Chains**
+- **Where.** `fx` goes in track files, bus files and `conductor.ch` (the
+  master), but not in patterns. The checker refuses a type's foreign
+  arguments and a second effect of the same type in one file.
+- **Order.** The chain's order is the order of the `fx` commands. Effects
+  exist from the start; their arguments are starting values. The defaults
+  are in `rive/src/lang/fx.as`.
+- **Effects.**
+  - `eq`: a low shelf (120 Hz), a bell (1 kHz, Q 0.9) and a high shelf
+    (8 kHz).
+  - `comp`: feed-forward, peak-detecting. `sidechain` names a track whose
+    level, taken before that track's own effects, drives the compressor in
+    place of its input.
+  - `dist`: tanh saturation through a one-pole tone filter.
+  - `chorus`: a 12 ms delay swept by ±6 ms × depth, its two sides a quarter
+    turn apart.
+  - `phaser`: 6 all-pass stages swept from 200 Hz up 4 octaves × depth.
+  - `filter`: the state-variable filter of the instruments.
+
+**Automation**
+- Parameters are named `<type>.<arg>` (`comp.ratio`, `filter.cutoff`). They
+  take `set`, `ramp` and `lfo`, with frequencies moved in octaves and the
+  rest in their own units.
+- Effect parameters belong to the strip, so a pattern that moves one moves
+  it for the whole track. LFOs on them count only from the file's own rows.
+- In `conductor.ch`, `set` and `ramp` move the master's effects. `set`
+  there also takes `bpm` and `master`.
+
+**Buses**
+- `song.yaml` declares up to 4 under `buses:`, each with a `name` and a
+  `file`.
+- **Groups:** a channel's `bus:` routes its whole output into that bus
+  instead of the master.
+- **Sends:** `set(send.<bus>: amount)` sends the track's output, after its
+  effects, to a bus as well. Sends can be ramped like any parameter.
+- Bus files (`FileKind.Bus`) take `fx`, `vol` (default 1), `pan`, `set`,
+  `ramp`, `lfo`, and `delay`/`reverb` sends. Anything that plays notes is an
+  error there.
+- Buses compile like tracks, on channels `16 + b`, and show as columns after
+  the tracks, with a ring instead of a dot in the header.
+
+**Engine**
+- **Events.**
+  - `Fx` events (place, type, sidechain track, filter mode) build the chains.
+  - `Route` events set the groups.
+  - Parameter events with ids from 64 (effects) and 96 (sends) go to the
+    strip.
+  - All of them are replayed on every seek. A chain that is the same as
+    before keeps its state across seeks and loop seams, so the reverb tails
+    and compressor envelopes go on.
+- **Cost.** 16 tracks, each running all six effects with an LFO, render
+  within the test budget, and the output is bit-exact on every run (§14).
+
+**Metering**
+- The output is measured as in ITU-R BS.1770 / EBU R128: K-weighting, 400 ms
+  blocks every 100 ms, an absolute gate at −70 LUFS and a relative gate
+  −10 LU.
+- It gives momentary, short-term (3 s) and integrated loudness, published as
+  `transport/lufsShort`, `transport/lufsIntegrated` and the footer's
+  `transport/loudness` text while playing. Integrated loudness starts over at
+  each play from a position.
+- `partition render` prints the file's integrated loudness.
+
+**Example.** `pump` (`tools/gen_pump.py`):
+- the bass and chords duck under the kick;
+- the claps and hats play into a `drums` bus with an EQ and glue compression;
+- chords and lead send to a `space` bus with a high-pass, a chorus, reverb and
+  delay;
+- the bass's distortion ramps up, the chords' filter opens over the break,
+  and the lead's phaser speeds up;
+- the master filter opens over the intro and closes over the outro.
+
 ---
 
 ## 8. Patterns
@@ -646,6 +791,55 @@ sample(file: name, root?: pitch, lo?: pitch, hi?: pitch, key?: pitch,
 - Instances follow conductor jumps like everything else. If a jump lands
   before an instance's start, the instance keeps playing until it finishes or
   `stop()` ends it. A call row reached again starts a new instance.
+
+### 8.1 Pattern variables (M11)
+
+- **Giving values.** `pattern(name: riff, root: F3, busy: true)` gives the
+  instance its variables: any arguments other than `name`, `times` and `id`.
+  Inside the pattern, `$root` and `$busy` stand for those values in any
+  argument of any command, lists included (`note(d: [$a, 5])`).
+- **Defaults.** `args(root: C4, busy: false)` on a row of the pattern sets
+  defaults, and the call's values override them. `args` is only allowed in
+  patterns.
+- **Nesting.** A call inside a pattern may pass its own variables on:
+  `pattern(name: inner, deg: $deg)`.
+- **Checking.**
+  - An argument that uses a variable is checked when the instance plays: its
+    value is typed and range-checked like a written value, and errors name
+    the variable, as in "… (from $v)".
+  - A variable with no value is reported where it is used ("pattern 'riff'
+    has no value for $root").
+  - Variables outside patterns, and in `set`/`ramp` parameters, are errors.
+- **Overview.** The overview strip skips commands that wait for a variable,
+  since their values only exist when the pattern plays.
+
+### 8.2 Passes (M11)
+
+Every track and pattern command also takes `on:`, `except:` and `if:`
+(left out of signatures):
+
+- `on: n` plays on the n-th pass only. `on: n/m` plays on the n-th of every
+  m passes (`4/4` is passes 4, 8, …; `1/2` is the odd passes).
+- `except:` is the same set of passes, skipped instead of played.
+- `if: false` turns the command off. With a variable, `if: $busy` lets
+  one pattern play at several densities.
+
+A **pass** is counted differently in patterns and tracks:
+- In a pattern, it is the repetition of the instance: `pattern(times: 8)`
+  plays passes 1 to 8, and a new call starts again at 1.
+- In a track, it is how many times the song has played that row, jumps
+  included.
+
+A fill on every fourth bar puts the fill's notes `on: 4/4` and the regular
+notes `except: 4/4` in a one-bar pattern played `times: 8`.
+
+**Example.** `variations` (`tools/gen_variations.py`) plays one set of
+patterns in A minor, C major and D dorian:
+- conductor key changes;
+- `prog` chords;
+- a bass pattern taking its degree;
+- a motif taking `busy` and `octave`;
+- a groove with a fill `on: 4/4` and 16th hats `if: $busy`.
 
 ---
 
@@ -1201,6 +1395,7 @@ paths below are relative to it. "rw" means writable by the host.
 | `transport/masterVolume` | number | rw | |
 | `transport/load`, `transport/voices` | number | | Processor load (0..1, not measured yet) and voice count |
 | `transport/position`, `transport/playLabel`, `transport/info` | string | | Display text for the toolbar and status bar |
+| `transport/lufsShort`, `transport/lufsIntegrated`, `transport/loudness` | number / number / string | | The output's loudness while playing (§7.5); −100 before there is any |
 | `transport/toggle`, `transport/loopToggle` | trigger | rw | Play/pause, and loop on/off (the selection's rows, or the cursor's bar) |
 
 ### 11.5 `render` (offline export)
@@ -1466,6 +1661,8 @@ conductor with marks, and uses at least one pattern and one automation.
 | `tidal` | Tidal | 60 | patterns of 5, 7, 11 and 13 rows drifting in and out of phase |
 | `disco` | Mirrorball | 120 | octave bass, string stabs, a long filter sweep |
 | `reggae` | Island Drift | 76 | one-drop rhythm, offbeat skank, bubbling organ |
+| `variations` | Variations | 112 | keys and degrees (§5.6), progressions, pattern variables (§8.1), a fill every fourth pass (§8.2). Generated by `tools/gen_variations.py` |
+| `pump` | Pump | 124 | the mixer (§7.5): sidechained bass and chords, a drums group bus, a space send bus, automated distortion, filter and phaser, a master filter sweep. Generated by `tools/gen_pump.py` |
 | `chopped` | Chopped | 90 | samples (§7.4): a sliced break with reversed slices, a kit with choked hats, a looped vocal melody with vibrato, two-zone keys, a vinyl loop, a reversed crash. Generated by `tools/gen_chopped.py` |
 
 The toolbar's **Examples ▾** button opens a dropdown listing every example in
@@ -1626,8 +1823,8 @@ but M9 comes first because samples matter in the most genres. Each one ships:
 | # | Milestone | Scope | Done when |
 |---|---|---|---|
 | M9 ✅ | **Samples** (§7.4) | WAV files in `samples/`. `sample(…)` in instruments: zones across the keyboard, slices, loops, one-shots, reverse, choke groups. Background decoding into a sample bank shared with the processor and offline renders. Bundles and the shell carry samples as base64 | A sliced break, a drum kit and a multi-sampled instrument play in tune and in time, and real-time playback is bit-exact with offline render |
-| M10 | **Mixer** | Per-track insert effects (EQ, compressor, distortion, chorus/phaser, filter), with `fx(type: comp, sidechain: kick)` for sidechain compression. Group buses (`bus:` in `song.yaml`) and named send buses with their own effects. Master chain with metering (peak, LUFS). Every effect parameter can be automated | A pumping sidechain example; per-track effects are automatable; CPU stays within budget at 16 tracks |
-| M11 | **Musical abstractions** | Keys and scale degrees (`key(v: D dorian)`, `note(d: 5)`); chord progressions by function (`prog(v: "ii V I")`); patterns with arguments (`pattern(name: riff, root: F)`, used inside as `$root`); variation by pass (`every(n: 4) { … }`, or an `on:` argument) | One pattern reused in several keys and densities; a fill on every 4th pass |
+| M10 ✅ | **Mixer** (§7.5) | Per-track insert effects (EQ, compressor, distortion, chorus/phaser, filter), with `fx(type: comp, sidechain: kick)` for sidechain compression. Group buses (`bus:` in `song.yaml`) and named send buses with their own effects. Master chain with metering (peak, LUFS). Every effect parameter can be automated | A pumping sidechain example; per-track effects are automatable; CPU stays within budget at 16 tracks |
+| M11 ✅ | **Musical abstractions** (§5.6, §8.1, §8.2) | Keys and scale degrees (`key(v: D dorian)`, `note(d: 5)`); chord progressions by function (`prog(v: "ii V I")`); patterns with arguments (`pattern(name: riff, root: F)`, used inside as `$root`); variation by pass (`every(n: 4) { … }`, or an `on:` argument) | One pattern reused in several keys and densities; a fill on every 4th pass |
 | M12 | **Controlled randomness** | `prob:` on notes, `humanize(time:, vel:)`, `euclid(hits:, steps:, rot:)`, seeded choices (`pick(from: [...])`). A song-level `seed:` keeps playback, render and export repeatable | Same seed, same render bit for bit; a generative example that varies over a long loop |
 | M13 | **Sound design** | A modulation matrix (`mod(src: lfo2, dst: cutoff, amt:)` with envelopes, LFOs, velocity, key and random sources); wavetable oscillators (`osc(wave: table, file:, pos:)`); stereo voices (stereo samples, per-voice width); per-note expression (`bend:`, `press:`); other tunings (`tuning(v: just)` or Scala files) | An evolving wavetable pad and an expressive lead example |
 

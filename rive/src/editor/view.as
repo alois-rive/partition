@@ -51,6 +51,7 @@ export class Column {
     diagnostics: Array<Diagnostic> = [];
     meter: f64 = 0;
     controls: bool = true; // M and S buttons (tracks only)
+    isBus: bool = false; // a bus's file (§7.5), after the tracks
     collapsed: bool = false; // collapsed by the user
     folded: bool = false; // collapsed by the layout to make room (narrow windows)
     extraW: f64 = 0; // width the layout gives the selected column beyond its own
@@ -979,7 +980,8 @@ export class EditorView {
                 this.rect(renderer, x0 + w - 1, 0, 1, h, k.divider);
                 let selected = ci == this.focus;
                 this.drawChevron(renderer, x0 + 11, h * 0.5, c.shut);
-                this.dot(renderer, x0 + 24, h * 0.5, 3.5, c.color, false);
+                // A bus (§7.5) has a ring where a track has a dot.
+                this.dot(renderer, x0 + 24, h * 0.5, 3.5, c.color, c.isBus);
                 let name = c.shut && c.name.length > 4 ? c.name.substring(0, 4) : c.name;
                 let style = selected ? this.boldStyle : this.nameStyle;
                 this.drawText(renderer, this.labelIn(name, style, selected ? "n1:" : "n0:"), x0 + 32, (h - 16) * 0.5);
@@ -1619,11 +1621,17 @@ export function summaryAt(text: string, ch: i32): string {
         return a != null ? a.value.text : "";
     };
     let n = pick.name;
-    if (n == "chord") return `${arg("root", pick)} ${arg("type", pick)}`.trim();
+    if (n == "chord") {
+        let root = arg("root", pick);
+        return `${root.length > 0 ? root : "degree " + arg("d", pick)} ${arg("type", pick)}`.trim();
+    }
     if (n == "note") {
         let len = arg("len", pick);
-        return arg("p", pick) + (len.length > 0 ? ` · ${len}` : "");
+        let p = arg("p", pick);
+        return (p.length > 0 ? p : "degree " + arg("d", pick)) + (len.length > 0 ? ` · ${len}` : "");
     }
+    if (n == "prog") return arg("chords", pick);
+    if (n == "key") return `key ${arg("root", pick)} ${arg("mode", pick).length > 0 ? arg("mode", pick) : "major"}`;
     if (n == "pattern") {
         let times = arg("times", pick);
         return `pattern ${arg("name", pick)}${times.length > 0 ? " ×" + times : ""}`;

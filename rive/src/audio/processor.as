@@ -39,6 +39,9 @@ export class PlayStatus {
     peakR: f64 = 0;
     generation: f64 = 0; // the score it is playing
     playFrame: f64 = -1; // the output frame the last play started at (renders align on it)
+    lufsM: f64 = -100; // the master's loudness: momentary, short-term, integrated (-100: none yet)
+    lufsS: f64 = -100;
+    lufsI: f64 = -100;
     channelPeaks: StaticArray<f64> = new StaticArray<f64>(MAX_CHANNELS);
 }
 
@@ -110,7 +113,10 @@ export class PartitionProcessor extends AudioProcessor<EngineIO> {
     apply(engine: Engine, c: Control): void {
         let kind = <i32>c.kind;
         if (kind == CTRL_PLAY) {
-            if (c.a >= 0) engine.seek(c.a);
+            if (c.a >= 0) {
+                engine.seek(c.a);
+                engine.loudness.reset(); // a new pass: integrated loudness starts over
+            }
             engine.play();
             this.playFrame = this.blockFrame;
         } else if (kind == CTRL_STOP) {
@@ -146,6 +152,9 @@ export class PartitionProcessor extends AudioProcessor<EngineIO> {
         s.peakR = e.peakR;
         s.generation = this.generation;
         s.playFrame = this.playFrame;
+        s.lufsM = isFinite(e.lufsM) ? e.lufsM : -100;
+        s.lufsS = isFinite(e.lufsS) ? e.lufsS : -100;
+        s.lufsI = isFinite(e.lufsI) ? e.lufsI : -100;
         for (let i = 0; i < MAX_CHANNELS; i++) s.channelPeaks[i] = e.channelPeaks[i];
         io.status.publish(s);
     }

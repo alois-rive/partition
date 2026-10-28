@@ -5,7 +5,10 @@
 import { ArgNode, CommandNode } from "./ast";
 import { ArgSpec, CommandSpec, registry, SCOPE_CHANNEL, SCOPE_CONDUCTOR, SCOPE_INSTRUMENT } from "./commands";
 import { Diagnostics, didYouMean } from "./diagnostics";
-import { channelParamNames, conductorParamNames, ParamInfo, ParamKind, paramByName, ParamScope } from "./params";
+import { channelParamNames, conductorParamNames, ParamInfo, ParamKind, paramByName, ParamScope, sendParam } from "./params";
+import { fxArgs } from "./fx";
+import { parseNumeral, progressionTokens } from "./scales";
+import { ArgNode as Arg, ValueKind, ValueNode } from "./ast";
 import { ParsedFile, parseFile } from "./parser";
 import { ArgType, Typed, typeValue } from "./types";
 
@@ -14,7 +17,11 @@ export enum FileKind {
     Conductor,
     Pattern,
     Instrument,
+    Bus, // buses/*.ch: effects and automation, no notes (§7.5)
 }
+
+// What a bus file may not do: anything that plays notes.
+const SOUNDING: Array<string> = ["note", "chord", "cut", "inst", "glide", "pattern", "stop", "oct", "transpose", "vel", "len"];
 
 export function scopeOf(kind: FileKind): i32 {
     if (kind == FileKind.Conductor) return SCOPE_CONDUCTOR;
@@ -42,11 +49,21 @@ export class ParamArg {
 export class CheckedCommand {
     args: Map<string, Typed> = new Map<string, Typed>();
     params: Array<ParamArg> = [];
+    // `pattern` and `args`: the variables they give, as written (§8.1).
+    vars: Map<string, ValueNode> = new Map<string, ValueNode>();
+    // Arguments whose values use variables: typed when a pattern runs.
+    deferred: Array<Arg> = [];
 
     constructor(public spec: CommandSpec, public node: CommandNode) {}
 
     get name(): string {
         return this.spec.name;
+    }
+
+    // Whether `name` waits for a variable's value.
+    isDeferred(name: string): bool {
+        for (let i = 0; i < this.deferred.length; i++) if (this.deferred[i].name == name) return true;
+        return false;
     }
 
     get line(): i32 {
@@ -78,6 +95,8 @@ export class CheckContext {
     // Macro parameter names declared by the song's instruments; they are valid
     // in `set`, `ramp` and `lfo` of channels.
     macros: Array<string> = [];
+    // The song's buses, in song.yaml order: `send.<bus>` names them.
+    buses: Array<string> = [];
 }
 
 export class CheckedFile {
@@ -115,6 +134,42 @@ export class CheckedFile {
     }
 }
 
+// Whether a value names a variable ($root), itself or in a list.
+export function usesVariable(v: ValueNode): bool {
+    if (v.kind == ValueKind.Word && v.text.startsWith("$")) return true;
+    if (v.kind == ValueKind.List) for (let i = 0; i < v.items.length; i++) if (usesVariable(v.items[i])) return true;
+    return false;
+}
+
+export class ArgCheck {
+    value: Typed? = null;
+    error: string = "";
+}
+
+// Types one argument's value as `spec` says: what the checker does, and what
+// the compiler does once variables have values.
+export function checkArgValue(spec: ArgSpec, name: string, v: ValueNode): ArgCheck {
+    let out = new ArgCheck();
+    let r = typeValue(v, spec.type);
+    let value = r.value;
+    if (value == null) {
+        out.error = `'${name}': ${r.error}`;
+        return out;
+    }
+    if (spec.choices.length > 0 && !spec.choices.includes(value.str)) {
+        out.error = `'${name}' must be one of ${spec.choices.join(", ")}${didYouMean(value.str, spec.choices)}`;
+        return out;
+    }
+    let t = value.type;
+    let numeric = t == ArgType.Number || t == ArgType.Gain || t == ArgType.Freq || t == ArgType.Interval || t == ArgType.Time || t == ArgType.Phase;
+    if (numeric && ((spec.integer && value.num != Math.floor(value.num)) || value.num < spec.min || value.num > spec.max)) {
+        out.error = `'${name}' ${rangeText(spec.min, spec.max, spec.integer)}`;
+        return out;
+    }
+    out.value = value;
+    return out;
+}
+
 export function paramArgType(kind: ParamKind): ArgType {
     if (kind == ParamKind.Gain) return ArgType.Gain;
     if (kind == ParamKind.Freq) return ArgType.Freq;
@@ -125,6 +180,7 @@ export function paramArgType(kind: ParamKind): ArgType {
 
 class Checker {
     scope: i32;
+    fxTypes: Array<string> = []; // effects this file declared, to refuse a second of a type
 
     constructor(public kind: FileKind, public ctx: CheckContext, public diagnostics: Diagnostics) {
         this.scope = scopeOf(kind);
@@ -144,11 +200,45 @@ class Checker {
             this.diagnostics.error(line, node.col, node.nameEndCol, "scope", `'${node.name}' is not allowed in ${scopeName(this.scope)}; it belongs in ${where}`);
             return null;
         }
+        if (this.kind == FileKind.Bus && SOUNDING.includes(node.name)) {
+            this.diagnostics.error(line, node.col, node.nameEndCol, "scope", `'${node.name}' plays notes, which a bus does not; buses take fx, vol, pan, set, ramp and lfo`);
+            return null;
+        }
+        if (this.kind == FileKind.Pattern && node.name == "fx") {
+            this.diagnostics.error(line, node.col, node.nameEndCol, "scope", "effects belong to tracks, buses and the master; put fx in the track's file");
+            return null;
+        }
+        if (node.name == "args" && this.kind != FileKind.Pattern) {
+            this.diagnostics.error(line, node.col, node.nameEndCol, "scope", "args gives a pattern's variables their defaults; it belongs in pattern files");
+            return null;
+        }
         let checked = new CheckedCommand(spec, node);
         let ok = true;
         for (let i = 0; i < node.args.length; i++) {
             let arg = node.args[i];
             let argSpec = spec.arg(arg.name);
+            if (argSpec == null && spec.vars) {
+                // A variable for the pattern (pattern) or its default (args).
+                if (usesVariable(arg.value) && this.kind != FileKind.Pattern) {
+                    this.diagnostics.error(line, arg.value.col, arg.value.endCol, "variable", "variables ($name) only have values inside patterns");
+                    ok = false;
+                    continue;
+                }
+                checked.vars.set(arg.name, arg.value);
+                continue;
+            }
+            if (usesVariable(arg.value)) {
+                if (this.kind != FileKind.Pattern) {
+                    this.diagnostics.error(line, arg.value.col, arg.value.endCol, "variable", "variables ($name) only have values inside patterns; pattern(name: …, root: F) gives them");
+                    ok = false;
+                } else if (argSpec == null) {
+                    this.diagnostics.error(line, arg.value.col, arg.value.endCol, "variable", `variables are not supported in ${node.name}'s parameters yet`);
+                    ok = false;
+                } else {
+                    checked.deferred.push(arg);
+                }
+                continue;
+            }
             if (argSpec == null) {
                 if (spec.open) {
                     if (!this.checkParam(checked, arg)) ok = false;
@@ -177,6 +267,9 @@ class Checker {
             this.diagnostics.error(line, node.col, node.endCol, "missing-arg", `'${node.name}' needs at least one parameter, such as ${node.name}(cutoff: 800${node.name == "ramp" ? ", over: 1bar" : ""})`);
             ok = false;
         }
+        if (ok && node.name == "fx") ok = this.checkFx(checked);
+        if (node.name == "note" || node.name == "chord") ok = this.checkOneOf(checked, node.name == "note" ? "p" : "root", "d") && ok;
+        if (ok && node.name == "prog" && checked.has("chords")) ok = this.checkProg(checked);
         if (ok && node.name == "lfo") ok = this.checkLfoParam(checked);
         if (ok && node.name == "lfo_off") ok = this.checkLfoParam(checked);
         if (ok && node.name == "sig") ok = this.checkSignature(checked);
@@ -212,9 +305,14 @@ class Checker {
     }
 
     resolveParam(name: string): ParamInfo? {
+        if (name.startsWith("send.") && this.scope == SCOPE_CHANNEL) {
+            return sendParam(this.ctx.buses.indexOf(name.substring(5)), name.substring(5));
+        }
         let info = paramByName(name);
         if (info == null) return null;
-        let allowed = this.scope == SCOPE_CONDUCTOR ? info.scope == ParamScope.Conductor : info.scope != ParamScope.Conductor;
+        let allowed = this.scope == SCOPE_CONDUCTOR
+            ? info.scope == ParamScope.Conductor || info.scope == ParamScope.Strip
+            : info.scope != ParamScope.Conductor;
         return allowed ? info : null;
     }
 
@@ -222,7 +320,56 @@ class Checker {
         if (this.scope == SCOPE_CONDUCTOR) return conductorParamNames();
         let names = channelParamNames();
         for (let i = 0; i < this.ctx.macros.length; i++) names.push(this.ctx.macros[i]);
+        for (let i = 0; i < this.ctx.buses.length; i++) names.push("send." + this.ctx.buses[i]);
         return names;
+    }
+
+    // Exactly one of two arguments (given, or waiting for a variable).
+    checkOneOf(checked: CheckedCommand, a: string, b: string): bool {
+        let node = checked.node;
+        let hasA = node.arg(a) != null;
+        let hasB = node.arg(b) != null;
+        if (hasA == hasB) {
+            this.diagnostics.error(node.line, node.col, node.endCol, "missing-arg", hasA ? `'${node.name}' takes '${a}' or '${b}', not both` : `'${node.name}' needs '${a}' (a pitch) or '${b}' (a scale degree)`);
+            return false;
+        }
+        return true;
+    }
+
+    checkProg(checked: CheckedCommand): bool {
+        let v = checked.get("chords");
+        let tokens = progressionTokens(v.str);
+        if (tokens.length == 0) {
+            this.diagnostics.error(checked.line, v.col, v.endCol, "range", "a progression needs at least one chord, such as \"ii V I\"");
+            return false;
+        }
+        for (let i = 0; i < tokens.length; i++) {
+            let n = parseNumeral(tokens[i], 0);
+            if (n.error.length > 0) {
+                this.diagnostics.error(checked.line, v.col, v.endCol, "range", n.error);
+                return false;
+            }
+        }
+        return true;
+    }
+
+    // fx(type: …) takes only that type's arguments, once per file.
+    checkFx(checked: CheckedCommand): bool {
+        let type = checked.str("type", "");
+        let allowed = fxArgs(type);
+        let node = checked.node;
+        for (let i = 0; i < node.args.length; i++) {
+            let arg = node.args[i];
+            if (arg.name == "type" || allowed.includes(arg.name)) continue;
+            this.diagnostics.error(node.line, arg.col, arg.endCol, "unknown-arg", `fx(type: ${type}) has no argument '${arg.name}' (it takes ${allowed.join(", ")})`);
+            return false;
+        }
+        if (this.fxTypes.includes(type)) {
+            this.diagnostics.error(node.line, node.col, node.endCol, "duplicate", `this file already has a ${type}; set or ramp its parameters (${type}.…) instead`);
+            return false;
+        }
+        this.fxTypes.push(type);
+        return true;
     }
 
     checkParam(checked: CheckedCommand, arg: ArgNode): bool {

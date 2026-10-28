@@ -79,6 +79,7 @@ VIEW_MODELS = [
                    ("number", "load", "0"), ("number", "voices", "0"), ("string", "position", "001.1"),
                    ("string", "playLabel", "Play"), ("trigger", "toggle", ""), ("trigger", "loopToggle", ""),
                    ("string", "info", ""), ("number", "playDisplay", "0"), ("number", "pauseDisplay", "1"),
+                   ("string", "loudness", ""), ("number", "lufsShort", "-100"), ("number", "lufsIntegrated", "-100"),
                    ("color", "loopColor", CONTROL), ("string", "time", "00:00.0"), ("string", "tempo", "120"),
                    ("string", "meter", "4/4")]),
     ("Render", [("number", "sampleRate", "48000"), ("enum:RenderFormat", "format", "pcm16"), ("number", "loops", "1"),
@@ -398,6 +399,8 @@ def transport_bar():
 def footer():
     return bar("Footer", 24, [
         text("Breadcrumb", "", 12, SECONDARY, bind=path("Editor", "hint"), width="fill"),
+        text("Loudness", "", 12, SUBDUED, bind=path("Transport", "loudness")),
+        divider(display=path("App", "wideDisplay")),
         text("Voices", "0 voices", 12, SUBDUED, bind=path("Transport", "info")),
         divider(display=path("App", "wideDisplay")),
         group("Rate Group", [text("Rate", "48 kHz", 12, SUBDUED, bind=path("App", "sampleRate"))], display=path("App", "wideDisplay")),
