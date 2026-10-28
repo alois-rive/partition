@@ -1,0 +1,38 @@
+<Rive version="1" kind="fragment">
+    <Artboard defaultStateMachineId="0:7" viewModelId="0:40" clip="true" width="400" height="300" styleId="0:5" name="Main" id="0:2">
+        <LayoutComponentStyle name="Artboard Style" id="0:5"/>
+        <LayoutComponent width="400" height="300" styleId="0:11" name="Root" id="0:10">
+            <LayoutComponentStyle layoutWidthScaleType="fill" layoutHeightScaleType="fill" widthUnitsValue="auto" heightUnitsValue="auto" name="Root Style" id="0:11"/>
+            <ScriptedLayout scriptAssetId="0:80" name="Spike" id="0:12">
+                <FocusData name="Focus" id="0:13"/>
+            </ScriptedLayout>
+        </LayoutComponent>
+        <StateMachine name="SM" id="0:7">
+            <StateMachineLayer name="Layer" id="0:8">
+                <AnyState x="200" y="-120"/>
+                <ExitState x="400" y="-120"/>
+                <EntryState/>
+            </StateMachineLayer>
+        </StateMachine>
+    </Artboard>
+
+    <ViewModel defaultInstanceId="0:41" name="Root" id="0:40">
+        <ViewModelPropertyString name="status" id="0:42"/>
+        <ViewModelPropertyString name="keys" id="0:43"/>
+        <ViewModelPropertyTrigger name="go" id="0:44"/>
+        <ViewModelPropertyAssetBlob name="wav" id="0:45"/>
+        <ViewModelPropertyNumber name="wavBytes" id="0:46"/>
+        <ViewModelPropertyNumber name="voices" id="0:47"/>
+        <ViewModelInstance exports="true" name="Instance" id="0:41">
+            <ViewModelInstanceString propertyValue="" viewModelPropertyId="0:42"/>
+            <ViewModelInstanceString propertyValue="" viewModelPropertyId="0:43"/>
+            <ViewModelInstanceTrigger viewModelPropertyId="0:44"/>
+            <ViewModelInstanceAssetBlob viewModelPropertyId="0:45"/>
+            <ViewModelInstanceNumber propertyValue="0" viewModelPropertyId="0:46"/>
+            <ViewModelInstanceNumber propertyValue="0" viewModelPropertyId="0:47"/>
+        </ViewModelInstance>
+    </ViewModel>
+
+    <ScriptAsset file="spike.as" name="spike" id="0:80"/>
+    <BlobAsset file="songs/example-a.song" name="example-a" id="0:90"/>
+</Rive>

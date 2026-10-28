@@ -1,0 +1,561 @@
+<Rive version="1" kind="fragment">
+    <Artboard defaultStateMachineId="0:7" viewModelId="0:2019" clip="true" width="1280" height="800" styleId="0:5" name="Partition" id="0:2">
+        <Fill name="Background">
+            <SolidColor colorValue="FF14161A" name="Color"/>
+        </Fill>
+        <LayoutComponentStyle name="Artboard Style" id="0:5"/>
+        <LayoutComponent clip="true" width="1280" height="800" styleId="0:11" name="Root" id="0:10">
+            <LayoutComponentStyle flexDirectionValue="column" layoutWidthScaleType="fill" layoutHeightScaleType="fill" widthUnitsValue="auto" heightUnitsValue="auto" name="Root Style" id="0:11"/>
+            <LayoutComponent clip="true" width="616" height="100" styleId="0:9736" name="Examples Panel" id="0:9735">
+                <LayoutComponentStyle positionTypeValue="absolute" positionRight="10" positionRightUnitsValue="points" positionTop="40" positionTopUnitsValue="points" flexDirectionValue="row" flexWrapValue="wrap" layoutWidthScaleType="fixed" layoutHeightScaleType="hug" gapHorizontal="4" gapHorizontalUnitsValue="points" gapVertical="4" gapVerticalUnitsValue="points" paddingLeft="6" paddingLeftUnitsValue="points" paddingRight="6" paddingRightUnitsValue="points" paddingTop="6" paddingTopUnitsValue="points" paddingBottom="6" paddingBottomUnitsValue="points" cornerRadiusTL="6" displayValue="none" name="Examples Panel Style" id="0:9736">
+                    <DataBindContext sourcePathIds="0:2019-0:2104-0:9706" propertyKey="596"/>
+                </LayoutComponentStyle>
+                <Fill name="Fill"><SolidColor colorValue="FF181B21" name="Color"/></Fill>
+                <Stroke thickness="1" name="Border"><SolidColor colorValue="FF323844" name="Color"/></Stroke>
+                <ArtboardComponentList name="Examples" id="0:9737">
+                    <DataBindContext sourcePathIds="0:2019-0:2104-0:2046" propertyKey="800"/>
+                </ArtboardComponentList>
+            </LayoutComponent>
+            <LayoutComponent clip="true" width="1280" height="40" styleId="0:2180" name="Toolbar" id="0:2179">
+            <LayoutComponentStyle flexDirectionValue="row" layoutWidthScaleType="fill" layoutHeightScaleType="fixed" layoutAlignmentType="centerLeft" gapHorizontal="6" gapHorizontalUnitsValue="points" paddingLeft="10" paddingLeftUnitsValue="points" paddingRight="10" paddingRightUnitsValue="points" name="Toolbar Style" id="0:2180"/>
+            <Fill name="Fill"><SolidColor colorValue="FF1B1E24" name="Color"/></Fill>
+            <LayoutComponent clip="true" width="60" height="24" styleId="0:2109" name="Play" id="0:2108">
+                <LayoutComponentStyle layoutWidthScaleType="hug" layoutHeightScaleType="fixed" layoutAlignmentType="center" paddingLeft="10" paddingLeftUnitsValue="points" paddingRight="10" paddingRightUnitsValue="points" cornerRadiusTL="4" name="Play Style" id="0:2109"/>
+                <Fill name="Fill"><SolidColor colorValue="FF3B5E8C" name="Color"/></Fill>
+                <Text sizingValue="autoWidth" name="Play Label" id="0:2110">
+                    <LayoutParticipant layoutWidthScaleType="hug" layoutHeightScaleType="hug" name="Label Layout"/>
+                    <TextStylePaint fontSize="12" fontAssetId="0:90" name="Label Style" id="0:2111">
+                        <Fill name="Fill"><SolidColor colorValue="FFE5E9F0" name="Color"/></Fill>
+                    </TextStylePaint>
+                    <TextValueRun styleId="0:2111" text="Play" name="Run">
+                        <DataBindContext sourcePathIds="0:2019-0:2106-0:2081" propertyKey="268"/>
+                    </TextValueRun>
+                </Text>
+            </LayoutComponent>
+            <LayoutComponent clip="true" width="60" height="24" styleId="0:2114" name="Stop" id="0:2113">
+                <LayoutComponentStyle layoutWidthScaleType="hug" layoutHeightScaleType="fixed" layoutAlignmentType="center" paddingLeft="10" paddingLeftUnitsValue="points" paddingRight="10" paddingRightUnitsValue="points" cornerRadiusTL="4" name="Stop Style" id="0:2114"/>
+                <Fill name="Fill"><SolidColor colorValue="FF2B303B" name="Color"/></Fill>
+                <Text sizingValue="autoWidth" name="Stop Label" id="0:2115">
+                    <LayoutParticipant layoutWidthScaleType="hug" layoutHeightScaleType="hug" name="Label Layout"/>
+                    <TextStylePaint fontSize="12" fontAssetId="0:90" name="Label Style" id="0:2116">
+                        <Fill name="Fill"><SolidColor colorValue="FFE5E9F0" name="Color"/></Fill>
+                    </TextStylePaint>
+                    <TextValueRun styleId="0:2116" text="Stop" name="Run">
+                    </TextValueRun>
+                </Text>
+            </LayoutComponent>
+            <LayoutComponent clip="true" width="60" height="24" styleId="0:2119" name="Loop" id="0:2118">
+                <LayoutComponentStyle layoutWidthScaleType="hug" layoutHeightScaleType="fixed" layoutAlignmentType="center" paddingLeft="10" paddingLeftUnitsValue="points" paddingRight="10" paddingRightUnitsValue="points" cornerRadiusTL="4" name="Loop Style" id="0:2119"/>
+                <Fill name="Fill"><SolidColor colorValue="FF2B303B" name="Color"/></Fill>
+                <Text sizingValue="autoWidth" name="Loop Label" id="0:2120">
+                    <LayoutParticipant layoutWidthScaleType="hug" layoutHeightScaleType="hug" name="Label Layout"/>
+                    <TextStylePaint fontSize="12" fontAssetId="0:90" name="Label Style" id="0:2121">
+                        <Fill name="Fill"><SolidColor colorValue="FFE5E9F0" name="Color"/></Fill>
+                    </TextStylePaint>
+                    <TextValueRun styleId="0:2121" text="Loop" name="Run">
+                    </TextValueRun>
+                </Text>
+            </LayoutComponent>
+            <LayoutComponent clip="true" width="60" height="24" styleId="0:2124" name="Follow" id="0:2123">
+                <LayoutComponentStyle layoutWidthScaleType="hug" layoutHeightScaleType="fixed" layoutAlignmentType="center" paddingLeft="10" paddingLeftUnitsValue="points" paddingRight="10" paddingRightUnitsValue="points" cornerRadiusTL="4" name="Follow Style" id="0:2124"/>
+                <Fill name="Fill"><SolidColor colorValue="FF2B303B" name="Color"/></Fill>
+                <Text sizingValue="autoWidth" name="Follow Label" id="0:2125">
+                    <LayoutParticipant layoutWidthScaleType="hug" layoutHeightScaleType="hug" name="Label Layout"/>
+                    <TextStylePaint fontSize="12" fontAssetId="0:90" name="Label Style" id="0:2126">
+                        <Fill name="Fill"><SolidColor colorValue="FFE5E9F0" name="Color"/></Fill>
+                    </TextStylePaint>
+                    <TextValueRun styleId="0:2126" text="Follow" name="Run">
+                    </TextValueRun>
+                </Text>
+            </LayoutComponent>
+            <LayoutComponent width="8" height="1" styleId="0:2129" name="Gap" id="0:2128">
+                <LayoutComponentStyle layoutWidthScaleType="fixed" layoutHeightScaleType="fixed" name="Gap Style" id="0:2129"/>
+            </LayoutComponent>
+            <Text sizingValue="autoWidth" name="Position" id="0:2130">
+                <LayoutParticipant layoutWidthScaleType="hug" layoutHeightScaleType="hug" name="Position Layout"/>
+                <TextStylePaint fontSize="13" fontAssetId="0:90" name="Position Style" id="0:2131">
+                    <Fill name="Fill"><SolidColor colorValue="FFEBCB8B" name="Color"/></Fill>
+                </TextStylePaint>
+                <TextValueRun styleId="0:2131" text="1.1  0:00.0" name="Run">
+                    <DataBindContext sourcePathIds="0:2019-0:2106-0:2080" propertyKey="268"/>
+                </TextValueRun>
+            </Text>
+            <LayoutComponent width="12" height="1" styleId="0:2133" name="Gap" id="0:2132">
+                <LayoutComponentStyle layoutWidthScaleType="fixed" layoutHeightScaleType="fixed" name="Gap Style" id="0:2133"/>
+            </LayoutComponent>
+            <Text sizingValue="autoWidth" name="Title" id="0:2134">
+                <LayoutParticipant layoutWidthScaleType="hug" layoutHeightScaleType="hug" name="Title Layout"/>
+                <TextStylePaint fontSize="13" fontAssetId="0:90" name="Title Style" id="0:2135">
+                    <Fill name="Fill"><SolidColor colorValue="FFD8DEE9" name="Color"/></Fill>
+                </TextStylePaint>
+                <TextValueRun styleId="0:2135" text="" name="Run">
+                    <DataBindContext sourcePathIds="0:2019-0:2104-0:2047" propertyKey="268"/>
+                </TextValueRun>
+            </Text>
+            <LayoutComponent width="0" height="1" styleId="0:2137" name="Spring" id="0:2136">
+                <LayoutComponentStyle layoutWidthScaleType="fill" layoutHeightScaleType="fixed" name="Spring Style" id="0:2137"/>
+            </LayoutComponent>
+            <LayoutComponent clip="true" width="60" height="24" styleId="0:9709" name="New Song" id="0:9708">
+                <LayoutComponentStyle layoutWidthScaleType="hug" layoutHeightScaleType="fixed" layoutAlignmentType="center" paddingLeft="10" paddingLeftUnitsValue="points" paddingRight="10" paddingRightUnitsValue="points" cornerRadiusTL="4" name="New Song Style" id="0:9709"/>
+                <Fill name="Fill"><SolidColor colorValue="FF242833" name="Color"/></Fill>
+                <Text sizingValue="autoWidth" name="New Song Label" id="0:9710">
+                    <LayoutParticipant layoutWidthScaleType="hug" layoutHeightScaleType="hug" name="Label Layout"/>
+                    <TextStylePaint fontSize="12" fontAssetId="0:90" name="Label Style" id="0:9711">
+                        <Fill name="Fill"><SolidColor colorValue="FFE5E9F0" name="Color"/></Fill>
+                    </TextStylePaint>
+                    <TextValueRun styleId="0:9711" text="New" name="Run">
+                    </TextValueRun>
+                </Text>
+            </LayoutComponent>
+            <LayoutComponent clip="true" width="60" height="24" styleId="0:9714" name="Examples" id="0:9713">
+                <LayoutComponentStyle layoutWidthScaleType="hug" layoutHeightScaleType="fixed" layoutAlignmentType="center" paddingLeft="10" paddingLeftUnitsValue="points" paddingRight="10" paddingRightUnitsValue="points" cornerRadiusTL="4" name="Examples Style" id="0:9714"/>
+                <Fill name="Fill"><SolidColor colorValue="FF2E3A50" name="Color"/></Fill>
+                <Text sizingValue="autoWidth" name="Examples Label" id="0:9715">
+                    <LayoutParticipant layoutWidthScaleType="hug" layoutHeightScaleType="hug" name="Label Layout"/>
+                    <TextStylePaint fontSize="12" fontAssetId="0:90" name="Label Style" id="0:9716">
+                        <Fill name="Fill"><SolidColor colorValue="FFE5E9F0" name="Color"/></Fill>
+                    </TextStylePaint>
+                    <TextValueRun styleId="0:9716" text="Examples ▾" name="Run">
+                        <DataBindContext sourcePathIds="0:2019-0:2104-0:9707" propertyKey="268"/>
+                    </TextValueRun>
+                </Text>
+            </LayoutComponent>
+            <LayoutComponent width="8" height="1" styleId="0:2169" name="Gap" id="0:2168">
+                <LayoutComponentStyle layoutWidthScaleType="fixed" layoutHeightScaleType="fixed" name="Gap Style" id="0:2169"/>
+            </LayoutComponent>
+            <LayoutComponent clip="true" width="60" height="24" styleId="0:2171" name="Export" id="0:2170">
+                <LayoutComponentStyle layoutWidthScaleType="hug" layoutHeightScaleType="fixed" layoutAlignmentType="center" paddingLeft="10" paddingLeftUnitsValue="points" paddingRight="10" paddingRightUnitsValue="points" cornerRadiusTL="4" name="Export Style" id="0:2171"/>
+                <Fill name="Fill"><SolidColor colorValue="FF4C566A" name="Color"/></Fill>
+                <Text sizingValue="autoWidth" name="Export Label" id="0:2172">
+                    <LayoutParticipant layoutWidthScaleType="hug" layoutHeightScaleType="hug" name="Label Layout"/>
+                    <TextStylePaint fontSize="12" fontAssetId="0:90" name="Label Style" id="0:2173">
+                        <Fill name="Fill"><SolidColor colorValue="FFE5E9F0" name="Color"/></Fill>
+                    </TextStylePaint>
+                    <TextValueRun styleId="0:2173" text="Export WAV" name="Run">
+                        <DataBindContext sourcePathIds="0:2019-0:2107-0:2102" propertyKey="268"/>
+                    </TextValueRun>
+                </Text>
+            </LayoutComponent>
+        </LayoutComponent>
+            <LayoutComponent clip="true" width="1280" height="700" styleId="0:15" name="Editor" id="0:14">
+                <LayoutComponentStyle layoutWidthScaleType="fill" layoutHeightScaleType="fill" name="Editor Style" id="0:15"/>
+                <ScriptedLayout scriptAssetId="0:80" name="App" id="0:12">
+                    <FocusData name="Focus" id="0:13"/>
+                </ScriptedLayout>
+            </LayoutComponent>
+        <LayoutComponent clip="true" width="1280" height="24" styleId="0:2182" name="Status" id="0:2181">
+            <LayoutComponentStyle flexDirectionValue="row" layoutWidthScaleType="fill" layoutHeightScaleType="fixed" layoutAlignmentType="centerLeft" gapHorizontal="6" gapHorizontalUnitsValue="points" paddingLeft="10" paddingLeftUnitsValue="points" paddingRight="10" paddingRightUnitsValue="points" name="Status Style" id="0:2182"/>
+            <Fill name="Fill"><SolidColor colorValue="FF101215" name="Color"/></Fill>
+            <Text sizingValue="autoWidth" name="Hint" id="0:2175">
+                <LayoutParticipant layoutWidthScaleType="fill" layoutHeightScaleType="hug" name="Hint Layout"/>
+                <TextStylePaint fontSize="12" fontAssetId="0:90" name="Hint Style" id="0:2176">
+                    <Fill name="Fill"><SolidColor colorValue="FF97A1B3" name="Color"/></Fill>
+                </TextStylePaint>
+                <TextValueRun styleId="0:2176" text="" name="Run">
+                    <DataBindContext sourcePathIds="0:2019-0:2105-0:2062" propertyKey="268"/>
+                </TextValueRun>
+            </Text>
+            <Text sizingValue="autoWidth" name="Info" id="0:2177">
+                <LayoutParticipant layoutWidthScaleType="hug" layoutHeightScaleType="hug" name="Info Layout"/>
+                <TextStylePaint fontSize="12" fontAssetId="0:90" name="Info Style" id="0:2178">
+                    <Fill name="Fill"><SolidColor colorValue="FF5D6675" name="Color"/></Fill>
+                </TextStylePaint>
+                <TextValueRun styleId="0:2178" text="" name="Run">
+                    <DataBindContext sourcePathIds="0:2019-0:2106-0:2084" propertyKey="268"/>
+                </TextValueRun>
+            </Text>
+        </LayoutComponent>
+        </LayoutComponent>
+        <StateMachine name="Main" id="0:7">
+            <StateMachineLayer name="Layer" id="0:8">
+                <AnyState x="200" y="-120"/>
+                <ExitState x="400" y="-120"/>
+                <EntryState/>
+            </StateMachineLayer>
+        <StateMachineListenerSingle targetId="0:9708" listenerTypeValue="click" name="New Song Click" id="0:9712">
+            <ListenerViewModelChange>
+                <BindablePropertyTrigger propertyValue="1">
+                    <DataBindContext sourcePathIds="0:2019-0:2104-0:2042" propertyKey="686" direction="true"/>
+                </BindablePropertyTrigger>
+            </ListenerViewModelChange>
+        </StateMachineListenerSingle>
+        <StateMachineListenerSingle targetId="0:9713" listenerTypeValue="click" name="Examples Click" id="0:9717">
+            <ListenerViewModelChange>
+                <BindablePropertyTrigger propertyValue="1">
+                    <DataBindContext sourcePathIds="0:2019-0:2104-0:9705" propertyKey="686" direction="true"/>
+                </BindablePropertyTrigger>
+            </ListenerViewModelChange>
+        </StateMachineListenerSingle>
+        <StateMachineListenerSingle targetId="0:2108" listenerTypeValue="click" name="Play Click" id="0:2112">
+            <ListenerViewModelChange>
+                <BindablePropertyTrigger propertyValue="1">
+                    <DataBindContext sourcePathIds="0:2019-0:2106-0:2082" propertyKey="686" direction="true"/>
+                </BindablePropertyTrigger>
+            </ListenerViewModelChange>
+        </StateMachineListenerSingle>
+        <StateMachineListenerSingle targetId="0:2113" listenerTypeValue="click" name="Stop Click" id="0:2117">
+            <ListenerViewModelChange>
+                <BindablePropertyTrigger propertyValue="1">
+                    <DataBindContext sourcePathIds="0:2019-0:2106-0:2066" propertyKey="686" direction="true"/>
+                </BindablePropertyTrigger>
+            </ListenerViewModelChange>
+        </StateMachineListenerSingle>
+        <StateMachineListenerSingle targetId="0:2118" listenerTypeValue="click" name="Loop Click" id="0:2122">
+            <ListenerViewModelChange>
+                <BindablePropertyTrigger propertyValue="1">
+                    <DataBindContext sourcePathIds="0:2019-0:2106-0:2083" propertyKey="686" direction="true"/>
+                </BindablePropertyTrigger>
+            </ListenerViewModelChange>
+        </StateMachineListenerSingle>
+        <StateMachineListenerSingle targetId="0:2123" listenerTypeValue="click" name="Follow Click" id="0:2127">
+            <ListenerViewModelChange>
+                <BindablePropertyTrigger propertyValue="1">
+                    <DataBindContext sourcePathIds="0:2019-0:2105-0:2063" propertyKey="686" direction="true"/>
+                </BindablePropertyTrigger>
+            </ListenerViewModelChange>
+        </StateMachineListenerSingle>
+        <StateMachineListenerSingle targetId="0:2170" listenerTypeValue="click" name="Export Click" id="0:2174">
+            <ListenerViewModelChange>
+                <BindablePropertyTrigger propertyValue="1">
+                    <DataBindContext sourcePathIds="0:2019-0:2107-0:2091" propertyKey="686" direction="true"/>
+                </BindablePropertyTrigger>
+            </ListenerViewModelChange>
+        </StateMachineListenerSingle>
+        </StateMachine>
+    </Artboard>
+
+    <Artboard isComponent="true" defaultStateMachineId="0:9720" viewModelId="0:2007" clip="true" x="1400" y="0" width="300" height="30" styleId="0:9719" name="ExampleRow" id="0:9718">
+        <LayoutComponentStyle layoutAlignmentType="centerLeft" name="Row Artboard Style" id="0:9719"/>
+        <LayoutComponent clip="true" width="300" height="30" styleId="0:9725" name="Hover" id="0:9724">
+            <DataBindContext sourcePathIds="0:2007-0:9703" propertyKey="18"/>
+            <LayoutComponentStyle positionTypeValue="absolute" positionLeft="0" positionLeftUnitsValue="points" positionTop="0" positionTopUnitsValue="points" layoutWidthScaleType="fill" layoutHeightScaleType="fill" cornerRadiusTL="4" name="Hover Style" id="0:9725"/>
+            <Fill name="Fill"><SolidColor colorValue="2E5E81AC" name="Color"/></Fill>
+        </LayoutComponent>
+        <LayoutComponent clip="true" width="300" height="30" styleId="0:9723" name="Row" id="0:9722">
+            <LayoutComponentStyle flexDirectionValue="row" layoutWidthScaleType="fill" layoutHeightScaleType="fill" layoutAlignmentType="centerLeft" gapHorizontal="8" gapHorizontalUnitsValue="points" paddingLeft="10" paddingLeftUnitsValue="points" paddingRight="10" paddingRightUnitsValue="points" cornerRadiusTL="4" name="Row Style" id="0:9723"/>
+            <Fill name="Fill"><SolidColor colorValue="FF20242C" name="Color"/></Fill>
+            <LayoutComponent width="3" height="16" styleId="0:9727" name="Current" id="0:9726">
+                <DataBindContext sourcePathIds="0:2007-0:9704" propertyKey="18"/>
+                <LayoutComponentStyle layoutWidthScaleType="fixed" layoutHeightScaleType="fixed" name="Current Style" id="0:9727"/>
+                <Fill name="Fill"><SolidColor colorValue="FFEBCB8B" name="Color"/></Fill>
+            </LayoutComponent>
+            <Text sizingValue="autoWidth" name="Title" id="0:9728">
+                <LayoutParticipant layoutWidthScaleType="fill" layoutHeightScaleType="hug" name="Title Layout"/>
+                <TextStylePaint fontSize="12" fontAssetId="0:90" name="Title Style" id="0:9729">
+                    <Fill name="Fill"><SolidColor colorValue="FFE5E9F0" name="Color"/></Fill>
+                </TextStylePaint>
+                <TextValueRun styleId="0:9729" text="Title" name="Run">
+                    <DataBindContext sourcePathIds="0:2007-0:2029" propertyKey="268"/>
+                </TextValueRun>
+            </Text>
+            <Text sizingValue="autoWidth" name="Subtitle" id="0:9730">
+                <LayoutParticipant layoutWidthScaleType="hug" layoutHeightScaleType="hug" name="Subtitle Layout"/>
+                <TextStylePaint fontSize="11" fontAssetId="0:90" name="Subtitle Style" id="0:9731">
+                    <Fill name="Fill"><SolidColor colorValue="FF7B8698" name="Color"/></Fill>
+                </TextStylePaint>
+                <TextValueRun styleId="0:9731" text="genre" name="Run">
+                    <DataBindContext sourcePathIds="0:2007-0:9702" propertyKey="268"/>
+                </TextValueRun>
+            </Text>
+        </LayoutComponent>
+        <StateMachine name="Row" id="0:9720">
+            <StateMachineLayer name="Layer" id="0:9721">
+                <AnyState x="200" y="-120"/>
+                <ExitState x="400" y="-120"/>
+                <EntryState/>
+            </StateMachineLayer>
+            <StateMachineListenerSingle targetId="0:9722" listenerTypeValue="click" name="Select" id="0:9732">
+                <ListenerViewModelChange>
+                    <BindablePropertyTrigger propertyValue="1">
+                        <DataBindContext sourcePathIds="0:2007-0:9701" propertyKey="686" direction="true"/>
+                    </BindablePropertyTrigger>
+                </ListenerViewModelChange>
+            </StateMachineListenerSingle>
+            <StateMachineListenerSingle targetId="0:9722" listenerTypeValue="enter" name="Hover In" id="0:9733">
+                <ListenerViewModelChange>
+                    <BindablePropertyNumber propertyValue="1">
+                        <DataBindContext sourcePathIds="0:2007-0:9703" propertyKey="636" direction="true"/>
+                    </BindablePropertyNumber>
+                </ListenerViewModelChange>
+            </StateMachineListenerSingle>
+            <StateMachineListenerSingle targetId="0:9722" listenerTypeValue="exit" name="Hover Out" id="0:9734">
+                <ListenerViewModelChange>
+                    <BindablePropertyNumber propertyValue="0">
+                        <DataBindContext sourcePathIds="0:2007-0:9703" propertyKey="636" direction="true"/>
+                    </BindablePropertyNumber>
+                </ListenerViewModelChange>
+            </StateMachineListenerSingle>
+        </StateMachine>
+    </Artboard>
+
+    <ComponentAsset artboardId="0:9718" name="ExampleRow"/>
+
+    <DataEnumCustom name="TransportState" id="0:2000">
+        <DataEnumValue key="stopped" value="stopped" id="0:9501"/>
+        <DataEnumValue key="playing" value="playing" id="0:9502"/>
+        <DataEnumValue key="paused" value="paused" id="0:9503"/>
+    </DataEnumCustom>
+    <DataEnumCustom name="RenderFormat" id="0:2001">
+        <DataEnumValue key="pcm16" value="pcm16" id="0:9504"/>
+        <DataEnumValue key="float32" value="float32" id="0:9505"/>
+    </DataEnumCustom>
+    <DataEnumCustom name="RenderState" id="0:2002">
+        <DataEnumValue key="idle" value="idle" id="0:9506"/>
+        <DataEnumValue key="rendering" value="rendering" id="0:9507"/>
+        <DataEnumValue key="streaming" value="streaming" id="0:9508"/>
+        <DataEnumValue key="done" value="done" id="0:9509"/>
+        <DataEnumValue key="failed" value="failed" id="0:9510"/>
+        <DataEnumValue key="cancelled" value="cancelled" id="0:9511"/>
+    </DataEnumCustom>
+
+    <ViewModel defaultInstanceId="0:2004" name="App" id="0:2003">
+        <ViewModelPropertyBoolean name="hosted" id="0:2021"/>
+        <ViewModelPropertyString name="version" id="0:2022"/>
+        <ViewModelPropertyString name="platformMod" id="0:2023"/>
+        <ViewModelInstance exports="true" name="Instance" id="0:2004">
+            <ViewModelInstanceBoolean propertyValue="false" viewModelPropertyId="0:2021"/>
+            <ViewModelInstanceString propertyValue="0.1.0" viewModelPropertyId="0:2022"/>
+            <ViewModelInstanceString propertyValue="cmd" viewModelPropertyId="0:2023"/>
+        </ViewModelInstance>
+    </ViewModel>
+    <ViewModel defaultInstanceId="0:2006" name="SongFile" id="0:2005">
+        <ViewModelPropertyString name="path" id="0:2024"/>
+        <ViewModelPropertyString name="text" id="0:2025"/>
+        <ViewModelPropertyNumber name="revision" id="0:2026"/>
+        <ViewModelPropertyBoolean name="dirty" id="0:2027"/>
+        <ViewModelInstance exports="true" name="Instance" id="0:2006">
+            <ViewModelInstanceString propertyValue="" viewModelPropertyId="0:2024"/>
+            <ViewModelInstanceString propertyValue="" viewModelPropertyId="0:2025"/>
+            <ViewModelInstanceNumber propertyValue="0" viewModelPropertyId="0:2026"/>
+            <ViewModelInstanceBoolean propertyValue="false" viewModelPropertyId="0:2027"/>
+        </ViewModelInstance>
+    </ViewModel>
+    <ViewModel defaultInstanceId="0:2008" name="ExampleInfo" id="0:2007">
+        <ViewModelPropertyString name="id" id="0:2028"/>
+        <ViewModelPropertyString name="title" id="0:2029"/>
+        <ViewModelPropertyString name="description" id="0:2030"/>
+        <ViewModelPropertyNumber name="bpm" id="0:2031"/>
+        <ViewModelPropertyString name="genre" id="0:2032"/>
+        <ViewModelPropertyTrigger name="select" id="0:9701"/>
+        <ViewModelPropertyString name="subtitle" id="0:9702"/>
+        <ViewModelPropertyNumber name="hover" id="0:9703"/>
+        <ViewModelPropertyNumber name="current" id="0:9704"/>
+        <ViewModelInstance exports="true" name="Instance" id="0:2008">
+            <ViewModelInstanceTrigger viewModelPropertyId="0:9701"/>
+            <ViewModelInstanceString propertyValue="" viewModelPropertyId="0:9702"/>
+            <ViewModelInstanceNumber propertyValue="0" viewModelPropertyId="0:9703"/>
+            <ViewModelInstanceNumber propertyValue="0" viewModelPropertyId="0:9704"/>
+            <ViewModelInstanceString propertyValue="" viewModelPropertyId="0:2028"/>
+            <ViewModelInstanceString propertyValue="" viewModelPropertyId="0:2029"/>
+            <ViewModelInstanceString propertyValue="" viewModelPropertyId="0:2030"/>
+            <ViewModelInstanceNumber propertyValue="0" viewModelPropertyId="0:2031"/>
+            <ViewModelInstanceString propertyValue="" viewModelPropertyId="0:2032"/>
+        </ViewModelInstance>
+    </ViewModel>
+    <ViewModel defaultInstanceId="0:2010" name="Diagnostic" id="0:2009">
+        <ViewModelPropertyString name="path" id="0:2033"/>
+        <ViewModelPropertyNumber name="line" id="0:2034"/>
+        <ViewModelPropertyNumber name="col" id="0:2035"/>
+        <ViewModelPropertyNumber name="endCol" id="0:2036"/>
+        <ViewModelPropertyString name="severity" id="0:2037"/>
+        <ViewModelPropertyString name="code" id="0:2038"/>
+        <ViewModelPropertyString name="message" id="0:2039"/>
+        <ViewModelInstance exports="true" name="Instance" id="0:2010">
+            <ViewModelInstanceString propertyValue="" viewModelPropertyId="0:2033"/>
+            <ViewModelInstanceNumber propertyValue="0" viewModelPropertyId="0:2034"/>
+            <ViewModelInstanceNumber propertyValue="0" viewModelPropertyId="0:2035"/>
+            <ViewModelInstanceNumber propertyValue="0" viewModelPropertyId="0:2036"/>
+            <ViewModelInstanceString propertyValue="" viewModelPropertyId="0:2037"/>
+            <ViewModelInstanceString propertyValue="" viewModelPropertyId="0:2038"/>
+            <ViewModelInstanceString propertyValue="" viewModelPropertyId="0:2039"/>
+        </ViewModelInstance>
+    </ViewModel>
+    <ViewModel defaultInstanceId="0:2012" name="Song" id="0:2011">
+        <ViewModelPropertyList name="files" id="0:2040"/>
+        <ViewModelPropertyTrigger name="load" id="0:2041"/>
+        <ViewModelPropertyTrigger name="new" id="0:2042"/>
+        <ViewModelPropertyString name="exampleId" id="0:2043"/>
+        <ViewModelPropertyTrigger name="loadExample" id="0:2044"/>
+        <ViewModelPropertyBoolean name="autoplay" id="0:2045"/>
+        <ViewModelPropertyList name="examples" id="0:2046"/>
+        <ViewModelPropertyString name="title" id="0:2047"/>
+        <ViewModelPropertyNumber name="durationSeconds" id="0:2048"/>
+        <ViewModelPropertyNumber name="rows" id="0:2049"/>
+        <ViewModelPropertyList name="diagnostics" id="0:2050"/>
+        <ViewModelPropertyNumber name="errorCount" id="0:2051"/>
+        <ViewModelPropertyTrigger name="examplesToggle" id="0:9705"/>
+        <ViewModelPropertyNumber name="examplesDisplay" id="0:9706"/>
+        <ViewModelPropertyString name="examplesLabel" id="0:9707"/>
+        <ViewModelInstance exports="true" name="Instance" id="0:2012">
+            <ViewModelInstanceTrigger viewModelPropertyId="0:9705"/>
+            <ViewModelInstanceNumber propertyValue="1" viewModelPropertyId="0:9706"/>
+            <ViewModelInstanceString propertyValue="Examples ▾" viewModelPropertyId="0:9707"/>
+            <ViewModelInstanceList viewModelPropertyId="0:2040"/>
+            <ViewModelInstanceTrigger viewModelPropertyId="0:2041"/>
+            <ViewModelInstanceTrigger viewModelPropertyId="0:2042"/>
+            <ViewModelInstanceString propertyValue="deep-house" viewModelPropertyId="0:2043"/>
+            <ViewModelInstanceTrigger viewModelPropertyId="0:2044"/>
+            <ViewModelInstanceBoolean propertyValue="false" viewModelPropertyId="0:2045"/>
+            <ViewModelInstanceList viewModelPropertyId="0:2046"/>
+            <ViewModelInstanceString propertyValue="" viewModelPropertyId="0:2047"/>
+            <ViewModelInstanceNumber propertyValue="0" viewModelPropertyId="0:2048"/>
+            <ViewModelInstanceNumber propertyValue="0" viewModelPropertyId="0:2049"/>
+            <ViewModelInstanceList viewModelPropertyId="0:2050"/>
+            <ViewModelInstanceNumber propertyValue="0" viewModelPropertyId="0:2051"/>
+        </ViewModelInstance>
+    </ViewModel>
+    <ViewModel defaultInstanceId="0:2014" name="Editor" id="0:2013">
+        <ViewModelPropertyTrigger name="changed" id="0:2052"/>
+        <ViewModelPropertyString name="lastChangedPath" id="0:2053"/>
+        <ViewModelPropertyTrigger name="saveRequested" id="0:2054"/>
+        <ViewModelPropertyString name="clipboard" id="0:2055"/>
+        <ViewModelPropertyTrigger name="copied" id="0:2056"/>
+        <ViewModelPropertyTrigger name="pasteRequested" id="0:2057"/>
+        <ViewModelPropertyString name="cursorPath" id="0:2058"/>
+        <ViewModelPropertyNumber name="cursorRow" id="0:2059"/>
+        <ViewModelPropertyNumber name="cursorCol" id="0:2060"/>
+        <ViewModelPropertyBoolean name="follow" id="0:2061"/>
+        <ViewModelPropertyString name="hint" id="0:2062"/>
+        <ViewModelPropertyTrigger name="followToggle" id="0:2063"/>
+        <ViewModelInstance exports="true" name="Instance" id="0:2014">
+            <ViewModelInstanceTrigger viewModelPropertyId="0:2052"/>
+            <ViewModelInstanceString propertyValue="" viewModelPropertyId="0:2053"/>
+            <ViewModelInstanceTrigger viewModelPropertyId="0:2054"/>
+            <ViewModelInstanceString propertyValue="" viewModelPropertyId="0:2055"/>
+            <ViewModelInstanceTrigger viewModelPropertyId="0:2056"/>
+            <ViewModelInstanceTrigger viewModelPropertyId="0:2057"/>
+            <ViewModelInstanceString propertyValue="" viewModelPropertyId="0:2058"/>
+            <ViewModelInstanceNumber propertyValue="0" viewModelPropertyId="0:2059"/>
+            <ViewModelInstanceNumber propertyValue="0" viewModelPropertyId="0:2060"/>
+            <ViewModelInstanceBoolean propertyValue="true" viewModelPropertyId="0:2061"/>
+            <ViewModelInstanceString propertyValue="" viewModelPropertyId="0:2062"/>
+            <ViewModelInstanceTrigger viewModelPropertyId="0:2063"/>
+        </ViewModelInstance>
+    </ViewModel>
+    <ViewModel defaultInstanceId="0:2016" name="Transport" id="0:2015">
+        <ViewModelPropertyTrigger name="play" id="0:2064"/>
+        <ViewModelPropertyTrigger name="pause" id="0:2065"/>
+        <ViewModelPropertyTrigger name="stop" id="0:2066"/>
+        <ViewModelPropertyTrigger name="playFromCursor" id="0:2067"/>
+        <ViewModelPropertyEnumCustom enumId="0:2000" name="state" id="0:2068"/>
+        <ViewModelPropertyNumber name="row" id="0:2069"/>
+        <ViewModelPropertyNumber name="bar" id="0:2070"/>
+        <ViewModelPropertyNumber name="beat" id="0:2071"/>
+        <ViewModelPropertyNumber name="seconds" id="0:2072"/>
+        <ViewModelPropertyNumber name="bpm" id="0:2073"/>
+        <ViewModelPropertyBoolean name="loopEnabled" id="0:2074"/>
+        <ViewModelPropertyNumber name="loopStartRow" id="0:2075"/>
+        <ViewModelPropertyNumber name="loopEndRow" id="0:2076"/>
+        <ViewModelPropertyNumber name="masterVolume" id="0:2077"/>
+        <ViewModelPropertyNumber name="load" id="0:2078"/>
+        <ViewModelPropertyNumber name="voices" id="0:2079"/>
+        <ViewModelPropertyString name="position" id="0:2080"/>
+        <ViewModelPropertyString name="playLabel" id="0:2081"/>
+        <ViewModelPropertyTrigger name="toggle" id="0:2082"/>
+        <ViewModelPropertyTrigger name="loopToggle" id="0:2083"/>
+        <ViewModelPropertyString name="info" id="0:2084"/>
+        <ViewModelInstance exports="true" name="Instance" id="0:2016">
+            <ViewModelInstanceTrigger viewModelPropertyId="0:2064"/>
+            <ViewModelInstanceTrigger viewModelPropertyId="0:2065"/>
+            <ViewModelInstanceTrigger viewModelPropertyId="0:2066"/>
+            <ViewModelInstanceTrigger viewModelPropertyId="0:2067"/>
+            <ViewModelInstanceEnum propertyValue="0:9501" viewModelPropertyId="0:2068"/>
+            <ViewModelInstanceNumber propertyValue="0" viewModelPropertyId="0:2069"/>
+            <ViewModelInstanceNumber propertyValue="1" viewModelPropertyId="0:2070"/>
+            <ViewModelInstanceNumber propertyValue="1" viewModelPropertyId="0:2071"/>
+            <ViewModelInstanceNumber propertyValue="0" viewModelPropertyId="0:2072"/>
+            <ViewModelInstanceNumber propertyValue="120" viewModelPropertyId="0:2073"/>
+            <ViewModelInstanceBoolean propertyValue="false" viewModelPropertyId="0:2074"/>
+            <ViewModelInstanceNumber propertyValue="0" viewModelPropertyId="0:2075"/>
+            <ViewModelInstanceNumber propertyValue="0" viewModelPropertyId="0:2076"/>
+            <ViewModelInstanceNumber propertyValue="1" viewModelPropertyId="0:2077"/>
+            <ViewModelInstanceNumber propertyValue="0" viewModelPropertyId="0:2078"/>
+            <ViewModelInstanceNumber propertyValue="0" viewModelPropertyId="0:2079"/>
+            <ViewModelInstanceString propertyValue="1.1  0:00.0" viewModelPropertyId="0:2080"/>
+            <ViewModelInstanceString propertyValue="Play" viewModelPropertyId="0:2081"/>
+            <ViewModelInstanceTrigger viewModelPropertyId="0:2082"/>
+            <ViewModelInstanceTrigger viewModelPropertyId="0:2083"/>
+            <ViewModelInstanceString propertyValue="" viewModelPropertyId="0:2084"/>
+        </ViewModelInstance>
+    </ViewModel>
+    <ViewModel defaultInstanceId="0:2018" name="Render" id="0:2017">
+        <ViewModelPropertyNumber name="sampleRate" id="0:2085"/>
+        <ViewModelPropertyEnumCustom enumId="0:2001" name="format" id="0:2086"/>
+        <ViewModelPropertyNumber name="loops" id="0:2087"/>
+        <ViewModelPropertyNumber name="fromRow" id="0:2088"/>
+        <ViewModelPropertyNumber name="toRow" id="0:2089"/>
+        <ViewModelPropertyNumber name="maxTail" id="0:2090"/>
+        <ViewModelPropertyTrigger name="start" id="0:2091"/>
+        <ViewModelPropertyTrigger name="cancel" id="0:2092"/>
+        <ViewModelPropertyEnumCustom enumId="0:2002" name="state" id="0:2093"/>
+        <ViewModelPropertyNumber name="progress" id="0:2094"/>
+        <ViewModelPropertyString name="error" id="0:2095"/>
+        <ViewModelPropertyNumber name="totalBytes" id="0:2096"/>
+        <ViewModelPropertyAssetBlob name="chunk" id="0:2097"/>
+        <ViewModelPropertyNumber name="chunkIndex" id="0:2098"/>
+        <ViewModelPropertyNumber name="chunkCount" id="0:2099"/>
+        <ViewModelPropertyTrigger name="chunkReady" id="0:2100"/>
+        <ViewModelPropertyTrigger name="ack" id="0:2101"/>
+        <ViewModelPropertyString name="label" id="0:2102"/>
+        <ViewModelInstance exports="true" name="Instance" id="0:2018">
+            <ViewModelInstanceNumber propertyValue="48000" viewModelPropertyId="0:2085"/>
+            <ViewModelInstanceEnum propertyValue="0:9504" viewModelPropertyId="0:2086"/>
+            <ViewModelInstanceNumber propertyValue="1" viewModelPropertyId="0:2087"/>
+            <ViewModelInstanceNumber propertyValue="0" viewModelPropertyId="0:2088"/>
+            <ViewModelInstanceNumber propertyValue="0" viewModelPropertyId="0:2089"/>
+            <ViewModelInstanceNumber propertyValue="8" viewModelPropertyId="0:2090"/>
+            <ViewModelInstanceTrigger viewModelPropertyId="0:2091"/>
+            <ViewModelInstanceTrigger viewModelPropertyId="0:2092"/>
+            <ViewModelInstanceEnum propertyValue="0:9506" viewModelPropertyId="0:2093"/>
+            <ViewModelInstanceNumber propertyValue="0" viewModelPropertyId="0:2094"/>
+            <ViewModelInstanceString propertyValue="" viewModelPropertyId="0:2095"/>
+            <ViewModelInstanceNumber propertyValue="0" viewModelPropertyId="0:2096"/>
+            <ViewModelInstanceAssetBlob viewModelPropertyId="0:2097"/>
+            <ViewModelInstanceNumber propertyValue="0" viewModelPropertyId="0:2098"/>
+            <ViewModelInstanceNumber propertyValue="0" viewModelPropertyId="0:2099"/>
+            <ViewModelInstanceTrigger viewModelPropertyId="0:2100"/>
+            <ViewModelInstanceTrigger viewModelPropertyId="0:2101"/>
+            <ViewModelInstanceString propertyValue="Export WAV" viewModelPropertyId="0:2102"/>
+        </ViewModelInstance>
+    </ViewModel>
+    <ViewModel defaultInstanceId="0:2020" name="Partition" id="0:2019">
+        <ViewModelPropertyViewModel viewModelReferenceId="0:2003" name="app" id="0:2103"/>
+        <ViewModelPropertyViewModel viewModelReferenceId="0:2011" name="song" id="0:2104"/>
+        <ViewModelPropertyViewModel viewModelReferenceId="0:2013" name="editor" id="0:2105"/>
+        <ViewModelPropertyViewModel viewModelReferenceId="0:2015" name="transport" id="0:2106"/>
+        <ViewModelPropertyViewModel viewModelReferenceId="0:2017" name="render" id="0:2107"/>
+        <ViewModelInstance exports="true" name="Instance" id="0:2020">
+            <ViewModelInstanceViewModel propertyValue="0:2004" viewModelPropertyId="0:2103"/>
+            <ViewModelInstanceViewModel propertyValue="0:2012" viewModelPropertyId="0:2104"/>
+            <ViewModelInstanceViewModel propertyValue="0:2014" viewModelPropertyId="0:2105"/>
+            <ViewModelInstanceViewModel propertyValue="0:2016" viewModelPropertyId="0:2106"/>
+            <ViewModelInstanceViewModel propertyValue="0:2018" viewModelPropertyId="0:2107"/>
+        </ViewModelInstance>
+    </ViewModel>
+
+    <ScriptAsset file="src/app/app.as" name="app" id="0:80"/>
+    <FontAsset file="assets/fonts/JetBrainsMono-Regular.ttf" name="mono" id="0:90"/>
+    <FontAsset file="assets/fonts/JetBrainsMono-Bold.ttf" name="mono-bold" id="0:91"/>
+    <BlobAsset file="assets/examples/example-empty.song" name="example-empty" id="0:100"/>
+    <BlobAsset file="assets/examples/example-deep-house.song" name="example-deep-house" id="0:101"/>
+    <BlobAsset file="assets/examples/example-lofi.song" name="example-lofi" id="0:102"/>
+    <BlobAsset file="assets/examples/example-techno.song" name="example-techno" id="0:103"/>
+    <BlobAsset file="assets/examples/example-ambient.song" name="example-ambient" id="0:104"/>
+    <BlobAsset file="assets/examples/example-chiptune.song" name="example-chiptune" id="0:105"/>
+    <BlobAsset file="assets/examples/example-jazz.song" name="example-jazz" id="0:106"/>
+    <BlobAsset file="assets/examples/example-bossa.song" name="example-bossa" id="0:107"/>
+    <BlobAsset file="assets/examples/example-dnb.song" name="example-dnb" id="0:108"/>
+    <BlobAsset file="assets/examples/example-synthwave.song" name="example-synthwave" id="0:109"/>
+    <BlobAsset file="assets/examples/example-trance.song" name="example-trance" id="0:110"/>
+    <BlobAsset file="assets/examples/example-dub-techno.song" name="example-dub-techno" id="0:111"/>
+    <BlobAsset file="assets/examples/example-invention.song" name="example-invention" id="0:112"/>
+    <BlobAsset file="assets/examples/example-waltz.song" name="example-waltz" id="0:113"/>
+    <BlobAsset file="assets/examples/example-seven-steps.song" name="example-seven-steps" id="0:114"/>
+    <BlobAsset file="assets/examples/example-funk.song" name="example-funk" id="0:115"/>
+    <BlobAsset file="assets/examples/example-trap.song" name="example-trap" id="0:116"/>
+    <BlobAsset file="assets/examples/example-garage.song" name="example-garage" id="0:117"/>
+    <BlobAsset file="assets/examples/example-boss-battle.song" name="example-boss-battle" id="0:118"/>
+    <BlobAsset file="assets/examples/example-tidal.song" name="example-tidal" id="0:119"/>
+    <BlobAsset file="assets/examples/example-disco.song" name="example-disco" id="0:120"/>
+    <BlobAsset file="assets/examples/example-reggae.song" name="example-reggae" id="0:121"/>
+</Rive>

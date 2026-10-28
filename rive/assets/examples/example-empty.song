@@ -1,0 +1,25 @@
+%partition-bundle 1
+=== song.yaml
+title: Untitled
+bpm: 120
+signature: 4/4
+rows_per_beat: 4
+channels:
+  - name: drums
+    file: channels/drums.ch
+  - name: bass
+    file: channels/bass.ch
+  - name: keys
+    file: channels/keys.ch
+  - name: lead
+    file: channels/lead.ch
+=== conductor.ch
+mark(name: start)
+=== channels/drums.ch
+inst(name: kick)
+=== channels/bass.ch
+inst(name: deep_bass)
+=== channels/keys.ch
+inst(name: epiano)
+=== channels/lead.ch
+inst(name: lead)

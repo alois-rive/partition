@@ -1,0 +1,2595 @@
+%partition-bundle 1
+=== song.yaml
+title: Blue Hour
+author: Partition examples
+bpm: 140
+signature: 4/4
+rows_per_beat: 2
+master_volume: -1dB
+swing: 0.6
+channels:
+  - name: drums
+    file: channels/drums.ch
+  - name: bass
+    file: channels/bass.ch
+  - name: piano
+    file: channels/piano.ch
+  - name: vibes
+    file: channels/vibes.ch
+=== conductor.ch
+mark(name: intro)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+mark(name: head_a)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+jump(to: head_a, times: 1)
+mark(name: head_b)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+mark(name: head_a3)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+mark(name: solo_a)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+jump(to: solo_a, times: 1)
+mark(name: solo_b)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+mark(name: solo_a3)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+mark(name: out_a)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+mark(name: tag)
+	ramp(bpm: 112, over: 4bar, curve: smooth)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+end()
+=== instruments/upright.inst
+base(preset: sub_bass)
+osc(wave: tri, level: 0.7)
+osc(wave: sine, level: 0.6)
+osc(wave: saw, level: 0.08)
+filter(type: lowpass, cutoff: 900, env: 0.35, keytrack: 0.4)
+filter_env(a: 1ms, d: 180ms, s: 0.1, r: 100ms)
+env(a: 4ms, d: 700ms, s: 0.2, r: 120ms)
+param(name: tone, target: cutoff, min: 400, max: 1.8k)
+voice(poly: 2)
+=== instruments/ride.inst
+base(preset: hat_open)
+filter(type: bandpass, cutoff: 6.5k, res: 0.25)
+env(a: 1ms, d: 650ms, s: 0, r: 300ms)
+=== instruments/brush.inst
+osc(wave: noise, level: 0.6)
+filter(type: bandpass, cutoff: 3.2k, res: 0.1)
+env(a: 25ms, d: 160ms, s: 0, r: 120ms)
+voice(fixed: C4)
+=== instruments/vibes.inst
+base(preset: bell)
+osc(wave: sine, ratio: 4, level: 0)
+osc(wave: sine, fm: 0.6, level: 0.6)
+osc(wave: sine, oct: 2, level: 0.08)
+env(a: 2ms, d: 1.6s, s: 0.15, r: 500ms)
+=== patterns/kit.pat
+note(p: C4, inst: ride, vel: 0.5)
+	note(p: C1, inst: kick, vel: 0.22)
+
+note(p: C4, inst: ride, vel: 0.62)
+	note(p: C4, inst: brush, vel: 0.5)
+	note(p: C1, inst: kick, vel: 0.15)
+note(p: C4, inst: ride, vel: 0.35)
+note(p: C4, inst: ride, vel: 0.5)
+	note(p: C1, inst: kick, vel: 0.2)
+
+note(p: C4, inst: ride, vel: 0.62)
+	note(p: C4, inst: brush, vel: 0.55)
+	note(p: C1, inst: kick, vel: 0.15)
+note(p: C4, inst: ride, vel: 0.35)
+note(p: C4, inst: ride, vel: 0.5)
+	note(p: C1, inst: kick, vel: 0.22)
+
+note(p: C4, inst: ride, vel: 0.62)
+	note(p: C4, inst: brush, vel: 0.5)
+	note(p: C1, inst: kick, vel: 0.15)
+note(p: C4, inst: ride, vel: 0.35)
+note(p: C4, inst: ride, vel: 0.5)
+	note(p: C1, inst: kick, vel: 0.2)
+
+note(p: C4, inst: ride, vel: 0.62)
+	note(p: C4, inst: brush, vel: 0.55)
+	note(p: C1, inst: kick, vel: 0.15)
+note(p: C4, inst: ride, vel: 0.35)
+	note(p: C4, inst: rim, vel: 0.3)
+=== channels/drums.ch
+inst(name: ride); vol(v: 0.62)
+	pattern(name: kit, times: 2)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+vol(v: 0.62); pattern(name: kit, times: 4)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+vol(v: 0.62); pattern(name: kit, times: 4)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+vol(v: 0.62); pattern(name: kit, times: 4)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+vol(v: 0.62); pattern(name: kit, times: 4)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+vol(v: 0.62); pattern(name: kit, times: 4)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+vol(v: 0.62); pattern(name: kit, times: 4)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+vol(v: 0.62); pattern(name: kit, times: 4)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+note(p: C4, inst: brush, vel: 0.6)
+note(p: C4, inst: ride, len: 2bar, vel: 0.5)
+=== channels/bass.ch
+inst(name: upright); vol(v: 0.62); set(tone: 0.45)
+	note(p: C3, len: 2, vel: 0.85)
+
+note(p: G2, len: 2, vel: 0.7)
+
+note(p: G2, len: 2, vel: 0.61)
+
+note(p: Gb2, len: 2, vel: 0.68)
+
+note(p: F2, len: 2, vel: 0.85)
+
+note(p: C3, len: 2, vel: 0.74)
+
+note(p: D3, len: 2, vel: 0.63)
+
+note(p: A2, len: 2, vel: 0.61)
+
+note(p: Bb2, len: 2, vel: 0.85)
+
+note(p: F2, len: 2, vel: 0.61)
+
+note(p: F2, len: 2, vel: 0.66)
+
+note(p: B2, len: 2, vel: 0.72)
+
+note(p: C3, len: 2, vel: 0.85)
+
+note(p: E2, len: 2, vel: 0.74)
+
+note(p: F2, len: 2, vel: 0.85)
+
+note(p: B2, len: 2, vel: 0.69)
+
+note(p: C3, len: 2, vel: 0.85)
+	vol(v: 0.62); set(tone: 0.45)
+
+note(p: G2, len: 2, vel: 0.61)
+
+note(p: G2, len: 2, vel: 0.73)
+
+note(p: E2, len: 2, vel: 0.64)
+
+note(p: F2, len: 2, vel: 0.85)
+
+note(p: A2, len: 2, vel: 0.69)
+
+note(p: D3, len: 2, vel: 0.68)
+
+note(p: A2, len: 2, vel: 0.7)
+
+note(p: Bb2, len: 2, vel: 0.85)
+
+note(p: D3, len: 2, vel: 0.66)
+
+note(p: G2, len: 2, vel: 0.68)
+
+note(p: Gb2, len: 2, vel: 0.61)
+
+note(p: G2, len: 2, vel: 0.85)
+
+note(p: Bb2, len: 2, vel: 0.67)
+
+note(p: E2, len: 2, vel: 0.68)
+
+note(p: B2, len: 2, vel: 0.72)
+
+note(p: C3, len: 2, vel: 0.85)
+
+note(p: G2, len: 2, vel: 0.65)
+
+note(p: A2, len: 2, vel: 0.64)
+
+note(p: Gb2, len: 2, vel: 0.63)
+
+note(p: F2, len: 2, vel: 0.85)
+
+note(p: A2, len: 2, vel: 0.68)
+
+note(p: C3, len: 2, vel: 0.73)
+
+note(p: B2, len: 2, vel: 0.71)
+
+note(p: Bb2, len: 2, vel: 0.85)
+
+note(p: F2, len: 2, vel: 0.62)
+
+note(p: G2, len: 2, vel: 0.66)
+
+note(p: B2, len: 2, vel: 0.71)
+
+note(p: C3, len: 2, vel: 0.85)
+
+note(p: E2, len: 2, vel: 0.74)
+
+note(p: F2, len: 2, vel: 0.85)
+
+note(p: C3, len: 2, vel: 0.66)
+
+note(p: F2, len: 2, vel: 0.85)
+	vol(v: 0.62); set(tone: 0.45)
+
+note(p: Ab2, len: 2, vel: 0.65)
+
+note(p: D3, len: 2, vel: 0.65)
+
+note(p: B2, len: 2, vel: 0.67)
+
+note(p: Bb2, len: 2, vel: 0.85)
+
+note(p: F2, len: 2, vel: 0.74)
+
+note(p: F2, len: 2, vel: 0.67)
+
+note(p: D2, len: 2, vel: 0.7)
+
+note(p: Eb2, len: 2, vel: 0.85)
+
+note(p: G2, len: 2, vel: 0.71)
+
+note(p: C3, len: 2, vel: 0.7)
+
+note(p: Bb2, len: 2, vel: 0.75)
+
+note(p: Eb2, len: 2, vel: 0.85)
+
+note(p: Bb2, len: 2, vel: 0.73)
+
+note(p: D3, len: 2, vel: 0.65)
+
+note(p: Bb2, len: 2, vel: 0.74)
+
+note(p: A2, len: 2, vel: 0.85)
+
+note(p: Eb2, len: 2, vel: 0.67)
+
+note(p: Eb2, len: 2, vel: 0.63)
+
+note(p: Db2, len: 2, vel: 0.64)
+
+note(p: D2, len: 2, vel: 0.85)
+
+note(p: Gb2, len: 2, vel: 0.74)
+
+note(p: C3, len: 2, vel: 0.67)
+
+note(p: Ab2, len: 2, vel: 0.62)
+
+note(p: G2, len: 2, vel: 0.85)
+
+note(p: D3, len: 2, vel: 0.73)
+
+note(p: E2, len: 2, vel: 0.72)
+
+note(p: Db3, len: 2, vel: 0.73)
+
+note(p: C3, len: 2, vel: 0.85)
+
+note(p: Gb2, len: 2, vel: 0.71)
+
+note(p: F2, len: 2, vel: 0.85)
+
+note(p: Db3, len: 2, vel: 0.7)
+
+note(p: C3, len: 2, vel: 0.85)
+	vol(v: 0.62); set(tone: 0.45)
+
+note(p: G2, len: 2, vel: 0.61)
+
+note(p: G2, len: 2, vel: 0.62)
+
+note(p: E2, len: 2, vel: 0.7)
+
+note(p: F2, len: 2, vel: 0.85)
+
+note(p: A2, len: 2, vel: 0.64)
+
+note(p: Eb2, len: 2, vel: 0.6)
+
+note(p: A2, len: 2, vel: 0.66)
+
+note(p: Bb2, len: 2, vel: 0.85)
+
+note(p: F2, len: 2, vel: 0.74)
+
+note(p: G2, len: 2, vel: 0.7)
+
+note(p: Ab2, len: 2, vel: 0.68)
+
+note(p: G2, len: 2, vel: 0.85)
+
+note(p: Bb2, len: 2, vel: 0.66)
+
+note(p: F2, len: 2, vel: 0.66)
+
+note(p: Db3, len: 2, vel: 0.67)
+
+note(p: C3, len: 2, vel: 0.85)
+
+note(p: G2, len: 2, vel: 0.61)
+
+note(p: G2, len: 2, vel: 0.63)
+
+note(p: E2, len: 2, vel: 0.62)
+
+note(p: F2, len: 2, vel: 0.85)
+
+note(p: C3, len: 2, vel: 0.62)
+
+note(p: D3, len: 2, vel: 0.69)
+
+note(p: A2, len: 2, vel: 0.68)
+
+note(p: Bb2, len: 2, vel: 0.85)
+
+note(p: F2, len: 2, vel: 0.6)
+
+note(p: G2, len: 2, vel: 0.73)
+
+note(p: F2, len: 2, vel: 0.69)
+
+note(p: Bb2, len: 2, vel: 0.85)
+
+note(p: D3, len: 2, vel: 0.74)
+
+note(p: G2, len: 2, vel: 0.69)
+
+note(p: Db3, len: 2, vel: 0.67)
+
+note(p: C3, len: 2, vel: 0.85)
+	vol(v: 0.62); set(tone: 0.45)
+
+note(p: Eb2, len: 2, vel: 0.67)
+
+note(p: Bb2, len: 2, vel: 0.65)
+
+note(p: Gb2, len: 2, vel: 0.62)
+
+note(p: F2, len: 2, vel: 0.85)
+
+note(p: C3, len: 2, vel: 0.67)
+
+note(p: D3, len: 2, vel: 0.7)
+
+note(p: B2, len: 2, vel: 0.68)
+
+note(p: Bb2, len: 2, vel: 0.85)
+
+note(p: D3, len: 2, vel: 0.62)
+
+note(p: G2, len: 2, vel: 0.68)
+
+note(p: Ab2, len: 2, vel: 0.6)
+
+note(p: G2, len: 2, vel: 0.85)
+
+note(p: D3, len: 2, vel: 0.7)
+
+note(p: E2, len: 2, vel: 0.64)
+
+note(p: B2, len: 2, vel: 0.66)
+
+note(p: C3, len: 2, vel: 0.85)
+
+note(p: Eb2, len: 2, vel: 0.68)
+
+note(p: Bb2, len: 2, vel: 0.72)
+
+note(p: E2, len: 2, vel: 0.65)
+
+note(p: F2, len: 2, vel: 0.85)
+
+note(p: A2, len: 2, vel: 0.72)
+
+note(p: D3, len: 2, vel: 0.72)
+
+note(p: A2, len: 2, vel: 0.71)
+
+note(p: Bb2, len: 2, vel: 0.85)
+
+note(p: D3, len: 2, vel: 0.65)
+
+note(p: F2, len: 2, vel: 0.6)
+
+note(p: Db3, len: 2, vel: 0.6)
+
+note(p: C3, len: 2, vel: 0.85)
+
+note(p: Gb2, len: 2, vel: 0.67)
+
+note(p: F2, len: 2, vel: 0.85)
+
+note(p: C3, len: 2, vel: 0.63)
+
+note(p: F2, len: 2, vel: 0.85)
+	vol(v: 0.62); set(tone: 0.45)
+
+note(p: C3, len: 2, vel: 0.74)
+
+note(p: Eb2, len: 2, vel: 0.65)
+
+note(p: B2, len: 2, vel: 0.63)
+
+note(p: Bb2, len: 2, vel: 0.85)
+
+note(p: D3, len: 2, vel: 0.65)
+
+note(p: Ab2, len: 2, vel: 0.67)
+
+note(p: D2, len: 2, vel: 0.75)
+
+note(p: Eb2, len: 2, vel: 0.85)
+
+note(p: G2, len: 2, vel: 0.74)
+
+note(p: D3, len: 2, vel: 0.65)
+
+note(p: Bb2, len: 2, vel: 0.7)
+
+note(p: Eb2, len: 2, vel: 0.85)
+
+note(p: G2, len: 2, vel: 0.67)
+
+note(p: D3, len: 2, vel: 0.63)
+
+note(p: Ab2, len: 2, vel: 0.72)
+
+note(p: A2, len: 2, vel: 0.85)
+
+note(p: Eb2, len: 2, vel: 0.67)
+
+note(p: Eb2, len: 2, vel: 0.71)
+
+note(p: Eb2, len: 2, vel: 0.61)
+
+note(p: D2, len: 2, vel: 0.85)
+
+note(p: Gb2, len: 2, vel: 0.6)
+
+note(p: A2, len: 2, vel: 0.69)
+
+note(p: Gb2, len: 2, vel: 0.67)
+
+note(p: G2, len: 2, vel: 0.85)
+
+note(p: Bb2, len: 2, vel: 0.7)
+
+note(p: E2, len: 2, vel: 0.65)
+
+note(p: Db3, len: 2, vel: 0.68)
+
+note(p: C3, len: 2, vel: 0.85)
+
+note(p: E2, len: 2, vel: 0.6)
+
+note(p: F2, len: 2, vel: 0.85)
+
+note(p: B2, len: 2, vel: 0.68)
+
+note(p: C3, len: 2, vel: 0.85)
+	vol(v: 0.62); set(tone: 0.45)
+
+note(p: Eb2, len: 2, vel: 0.72)
+
+note(p: Bb2, len: 2, vel: 0.63)
+
+note(p: E2, len: 2, vel: 0.64)
+
+note(p: F2, len: 2, vel: 0.85)
+
+note(p: C3, len: 2, vel: 0.71)
+
+note(p: D3, len: 2, vel: 0.65)
+
+note(p: A2, len: 2, vel: 0.68)
+
+note(p: Bb2, len: 2, vel: 0.85)
+
+note(p: D3, len: 2, vel: 0.73)
+
+note(p: F2, len: 2, vel: 0.7)
+
+note(p: Ab2, len: 2, vel: 0.72)
+
+note(p: G2, len: 2, vel: 0.85)
+
+note(p: D3, len: 2, vel: 0.68)
+
+note(p: E2, len: 2, vel: 0.68)
+
+note(p: B2, len: 2, vel: 0.6)
+
+note(p: C3, len: 2, vel: 0.85)
+
+note(p: G2, len: 2, vel: 0.72)
+
+note(p: G2, len: 2, vel: 0.62)
+
+note(p: E2, len: 2, vel: 0.62)
+
+note(p: F2, len: 2, vel: 0.85)
+
+note(p: A2, len: 2, vel: 0.65)
+
+note(p: D3, len: 2, vel: 0.68)
+
+note(p: A2, len: 2, vel: 0.68)
+
+note(p: Bb2, len: 2, vel: 0.85)
+
+note(p: D3, len: 2, vel: 0.61)
+
+note(p: G2, len: 2, vel: 0.63)
+
+note(p: F2, len: 2, vel: 0.61)
+
+note(p: Bb2, len: 2, vel: 0.85)
+
+note(p: D3, len: 2, vel: 0.68)
+
+note(p: G2, len: 2, vel: 0.71)
+
+note(p: Db3, len: 2, vel: 0.74)
+
+note(p: C3, len: 2, vel: 0.85)
+	vol(v: 0.62); set(tone: 0.45)
+
+note(p: G2, len: 2, vel: 0.7)
+
+note(p: Bb2, len: 2, vel: 0.67)
+
+note(p: E2, len: 2, vel: 0.68)
+
+note(p: F2, len: 2, vel: 0.85)
+
+note(p: C3, len: 2, vel: 0.7)
+
+note(p: D3, len: 2, vel: 0.73)
+
+note(p: A2, len: 2, vel: 0.74)
+
+note(p: Bb2, len: 2, vel: 0.85)
+
+note(p: F2, len: 2, vel: 0.73)
+
+note(p: G2, len: 2, vel: 0.62)
+
+note(p: Gb2, len: 2, vel: 0.62)
+
+note(p: G2, len: 2, vel: 0.85)
+
+note(p: D3, len: 2, vel: 0.7)
+
+note(p: F2, len: 2, vel: 0.66)
+
+note(p: B2, len: 2, vel: 0.63)
+
+note(p: C3, len: 2, vel: 0.85)
+
+note(p: G2, len: 2, vel: 0.74)
+
+note(p: G2, len: 2, vel: 0.7)
+
+note(p: E2, len: 2, vel: 0.65)
+
+note(p: F2, len: 2, vel: 0.85)
+
+note(p: C3, len: 2, vel: 0.63)
+
+note(p: C3, len: 2, vel: 0.74)
+
+note(p: B2, len: 2, vel: 0.66)
+
+note(p: Bb2, len: 2, vel: 0.85)
+
+note(p: F2, len: 2, vel: 0.75)
+
+note(p: F2, len: 2, vel: 0.72)
+
+note(p: F2, len: 2, vel: 0.62)
+
+note(p: Bb2, len: 2, vel: 0.85)
+
+note(p: F2, len: 2, vel: 0.66)
+
+note(p: G2, len: 2, vel: 0.66)
+
+note(p: F2, len: 2, vel: 0.65)
+
+note(p: Bb2, len: 2, vel: 0.85)
+
+note(p: D3, len: 2, vel: 0.65)
+
+note(p: G2, len: 2, vel: 0.65)
+
+note(p: F2, len: 2, vel: 0.67)
+
+note(p: Bb2, len: 2, vel: 0.85)
+
+note(p: D3, len: 2, vel: 0.65)
+
+note(p: C3, len: 2, vel: 0.69)
+
+note(p: F2, len: 2, vel: 0.68)
+
+note(p: Bb2, len: 2, vel: 0.85)
+	ramp(vol: 0.35, over: 2bar)
+
+note(p: D3, len: 2, vel: 0.75)
+
+note(p: F2, len: 2, vel: 0.72)
+
+note(p: F2, len: 2, vel: 0.75)
+
+note(p: Bb2, len: 2, vel: 0.85)
+
+note(p: D3, len: 2, vel: 0.64)
+
+note(p: F2, len: 2, vel: 0.61)
+
+note(p: F2, len: 2, vel: 0.72)
+=== channels/piano.ch
+inst(name: epiano); vol(v: 0.36); set(reverb: 0.18)
+	pan(v: 0.25)
+	chord(root: C3, type: min7, inv: 2, len: 2, vel: 0.6, strum: 20ms)
+
+
+
+
+chord(root: C3, type: min7, inv: 2, len: 3, vel: 0.55, strum: 12ms)
+
+
+chord(root: F3, type: dom7, inv: 2, len: 2, vel: 0.56, strum: 20ms)
+
+
+
+
+chord(root: F3, type: dom7, inv: 2, len: 3, vel: 0.52, strum: 20ms)
+
+
+chord(root: Bb2, type: maj7, inv: 2, len: 3, vel: 0.53, strum: 20ms)
+
+
+chord(root: Bb2, type: maj7, inv: 2, len: 2, vel: 0.47, strum: 8ms)
+
+
+
+
+
+chord(root: C3, type: min7, inv: 2, len: 2, vel: 0.53, strum: 12ms)
+
+
+
+chord(root: F3, type: dom7, inv: 1, len: 2, vel: 0.48, strum: 12ms)
+
+
+chord(root: C3, type: min7, inv: 1, len: 6, vel: 0.5, strum: 20ms)
+	vol(v: 0.36); set(reverb: 0.18); pan(v: 0.25)
+
+
+
+
+
+
+
+
+chord(root: F3, type: dom7, inv: 2, len: 2, vel: 0.52, strum: 8ms)
+
+
+chord(root: F3, type: dom7, inv: 2, len: 3, vel: 0.56, strum: 8ms)
+
+
+
+chord(root: Bb2, type: maj7, inv: 1, len: 2, vel: 0.53, strum: 8ms)
+
+
+
+
+chord(root: Bb2, type: maj7, inv: 1, len: 3, vel: 0.47, strum: 12ms)
+
+
+chord(root: G3, type: min7, inv: 2, len: 2, vel: 0.53, strum: 20ms)
+
+
+
+
+chord(root: G3, type: min7, inv: 2, len: 3, vel: 0.53, strum: 12ms)
+
+
+chord(root: C3, type: min7, inv: 2, len: 3, vel: 0.62, strum: 8ms)
+
+
+chord(root: C3, type: min7, inv: 2, len: 2, vel: 0.45, strum: 20ms)
+
+
+
+
+chord(root: F3, type: dom7, inv: 1, len: 6, vel: 0.53, strum: 12ms)
+
+
+
+
+
+
+
+chord(root: Bb2, type: maj7, inv: 1, len: 6, vel: 0.58, strum: 20ms)
+
+
+
+
+
+
+
+
+chord(root: C3, type: min7, inv: 2, len: 2, vel: 0.49, strum: 8ms)
+
+
+chord(root: F3, type: dom7, inv: 1, len: 3, vel: 0.6, strum: 20ms)
+
+
+
+chord(root: F3, type: min7, inv: 1, len: 6, vel: 0.62, strum: 8ms)
+	vol(v: 0.36); set(reverb: 0.18); pan(v: 0.25)
+
+
+
+
+
+
+
+chord(root: Bb2, type: dom7, inv: 1, len: 3, vel: 0.51, strum: 20ms)
+
+
+chord(root: Bb2, type: dom7, inv: 1, len: 2, vel: 0.56, strum: 12ms)
+
+
+
+
+chord(root: Eb3, type: maj7, inv: 1, len: 3, vel: 0.51, strum: 12ms)
+
+
+chord(root: Eb3, type: maj7, inv: 1, len: 2, vel: 0.55, strum: 20ms)
+
+
+
+
+chord(root: Eb3, type: maj7, inv: 2, len: 2, vel: 0.58, strum: 8ms)
+
+
+
+
+chord(root: Eb3, type: maj7, inv: 2, len: 3, vel: 0.51, strum: 8ms)
+
+
+chord(root: A3, type: m7b5, inv: 2, len: 6, vel: 0.5, strum: 12ms)
+
+
+
+
+
+
+
+
+chord(root: D3, type: dom7, inv: 2, len: 2, vel: 0.48, strum: 12ms)
+
+
+chord(root: D3, type: dom7, inv: 2, len: 3, vel: 0.53, strum: 8ms)
+
+
+
+
+chord(root: G3, type: min7, inv: 1, len: 2, vel: 0.5, strum: 12ms)
+
+
+chord(root: G3, type: min7, inv: 1, len: 3, vel: 0.53, strum: 20ms)
+
+
+
+chord(root: C3, type: dom7, inv: 1, len: 3, vel: 0.59, strum: 8ms)
+
+
+
+
+chord(root: F3, type: dom7, inv: 2, len: 2, vel: 0.47, strum: 20ms)
+
+
+chord(root: C3, type: min7, inv: 1, len: 6, vel: 0.5, strum: 12ms)
+	vol(v: 0.36); set(reverb: 0.18); pan(v: 0.25)
+
+
+
+
+
+
+
+chord(root: F3, type: dom7, inv: 1, len: 3, vel: 0.57, strum: 20ms)
+
+
+chord(root: F3, type: dom7, inv: 1, len: 2, vel: 0.55, strum: 8ms)
+
+
+
+
+
+chord(root: Bb2, type: maj7, inv: 2, len: 2, vel: 0.54, strum: 12ms)
+
+
+chord(root: Bb2, type: maj7, inv: 2, len: 3, vel: 0.52, strum: 20ms)
+
+
+
+chord(root: G3, type: min7, inv: 1, len: 3, vel: 0.6, strum: 20ms)
+
+
+chord(root: G3, type: min7, inv: 1, len: 2, vel: 0.56, strum: 20ms)
+
+
+
+
+chord(root: C3, type: min7, inv: 2, len: 2, vel: 0.61, strum: 20ms)
+
+
+
+
+chord(root: C3, type: min7, inv: 2, len: 3, vel: 0.52, strum: 8ms)
+
+
+chord(root: F3, type: dom7, inv: 1, len: 3, vel: 0.5, strum: 8ms)
+
+
+chord(root: F3, type: dom7, inv: 1, len: 2, vel: 0.53, strum: 8ms)
+
+
+
+
+chord(root: Bb2, type: maj7, inv: 2, len: 6, vel: 0.57, strum: 20ms)
+
+
+
+
+
+
+
+chord(root: Bb2, type: add9, inv: 1, len: 2, vel: 0.56, strum: 8ms)
+
+
+
+
+chord(root: Bb2, type: add9, inv: 1, len: 3, vel: 0.5, strum: 8ms)
+
+
+chord(root: C3, type: min7, inv: 1, len: 3, vel: 0.51, strum: 12ms)
+	vol(v: 0.36); set(reverb: 0.18); pan(v: 0.25)
+
+
+chord(root: C3, type: min7, inv: 1, len: 2, vel: 0.4, strum: 8ms)
+
+
+
+
+chord(root: F3, type: dom7, inv: 2, len: 2, vel: 0.51, strum: 8ms)
+
+
+
+
+chord(root: F3, type: dom7, inv: 2, len: 3, vel: 0.4, strum: 20ms)
+
+
+chord(root: Bb2, type: maj7, inv: 2, len: 6, vel: 0.52, strum: 8ms)
+
+
+
+
+
+
+
+
+chord(root: G3, type: min7, inv: 2, len: 2, vel: 0.46, strum: 20ms)
+
+
+chord(root: G3, type: min7, inv: 2, len: 3, vel: 0.5, strum: 8ms)
+
+
+
+chord(root: C3, type: min7, inv: 1, len: 2, vel: 0.46, strum: 20ms)
+
+
+
+
+chord(root: C3, type: min7, inv: 1, len: 3, vel: 0.46, strum: 12ms)
+
+
+chord(root: F3, type: dom7, inv: 1, len: 3, vel: 0.48, strum: 12ms)
+
+
+chord(root: F3, type: dom7, inv: 1, len: 2, vel: 0.4, strum: 20ms)
+
+
+
+
+chord(root: Bb2, type: maj7, inv: 1, len: 2, vel: 0.5, strum: 12ms)
+
+
+
+
+chord(root: Bb2, type: maj7, inv: 1, len: 3, vel: 0.46, strum: 12ms)
+
+
+chord(root: C3, type: min7, inv: 2, len: 3, vel: 0.51, strum: 20ms)
+
+
+
+chord(root: F3, type: dom7, inv: 1, len: 3, vel: 0.43, strum: 12ms)
+
+
+
+vol(v: 0.36); set(reverb: 0.18); pan(v: 0.25)
+chord(root: F3, type: min7, inv: 1, len: 2, vel: 0.43, strum: 20ms)
+
+
+chord(root: F3, type: min7, inv: 1, len: 3, vel: 0.54, strum: 12ms)
+
+
+
+chord(root: Bb2, type: dom7, inv: 2, len: 6, vel: 0.45, strum: 8ms)
+
+
+
+
+
+
+
+chord(root: Eb3, type: maj7, inv: 1, len: 3, vel: 0.44, strum: 20ms)
+
+
+chord(root: Eb3, type: maj7, inv: 1, len: 2, vel: 0.4, strum: 12ms)
+
+
+
+
+
+chord(root: Eb3, type: maj7, inv: 1, len: 2, vel: 0.48, strum: 20ms)
+
+
+chord(root: Eb3, type: maj7, inv: 1, len: 3, vel: 0.46, strum: 12ms)
+
+
+
+chord(root: A3, type: m7b5, inv: 2, len: 6, vel: 0.42, strum: 8ms)
+
+
+
+
+
+
+
+chord(root: D3, type: dom7, inv: 2, len: 6, vel: 0.47, strum: 20ms)
+
+
+
+
+
+
+
+chord(root: G3, type: min7, inv: 1, len: 6, vel: 0.46, strum: 12ms)
+
+
+
+
+
+
+
+
+chord(root: C3, type: dom7, inv: 1, len: 2, vel: 0.37, strum: 12ms)
+
+
+chord(root: F3, type: dom7, inv: 2, len: 3, vel: 0.53, strum: 20ms)
+
+
+
+vol(v: 0.36); set(reverb: 0.18); pan(v: 0.25)
+chord(root: C3, type: min7, inv: 1, len: 2, vel: 0.4, strum: 8ms)
+
+
+chord(root: C3, type: min7, inv: 1, len: 3, vel: 0.47, strum: 20ms)
+
+
+
+
+chord(root: F3, type: dom7, inv: 1, len: 2, vel: 0.48, strum: 12ms)
+
+
+chord(root: F3, type: dom7, inv: 1, len: 3, vel: 0.52, strum: 12ms)
+
+
+
+chord(root: Bb2, type: maj7, inv: 1, len: 3, vel: 0.52, strum: 12ms)
+
+
+chord(root: Bb2, type: maj7, inv: 1, len: 2, vel: 0.45, strum: 8ms)
+
+
+
+
+
+chord(root: G3, type: min7, inv: 1, len: 2, vel: 0.42, strum: 12ms)
+
+
+chord(root: G3, type: min7, inv: 1, len: 3, vel: 0.44, strum: 12ms)
+
+
+
+chord(root: C3, type: min7, inv: 2, len: 3, vel: 0.52, strum: 20ms)
+
+
+chord(root: C3, type: min7, inv: 2, len: 2, vel: 0.42, strum: 20ms)
+
+
+
+
+chord(root: F3, type: dom7, inv: 1, len: 3, vel: 0.43, strum: 20ms)
+
+
+chord(root: F3, type: dom7, inv: 1, len: 2, vel: 0.42, strum: 20ms)
+
+
+
+
+
+chord(root: Bb2, type: maj7, inv: 1, len: 2, vel: 0.43, strum: 20ms)
+
+
+chord(root: Bb2, type: maj7, inv: 1, len: 3, vel: 0.44, strum: 12ms)
+
+
+
+
+chord(root: Bb2, type: add9, inv: 2, len: 2, vel: 0.4, strum: 12ms)
+
+
+chord(root: Bb2, type: add9, inv: 2, len: 3, vel: 0.51, strum: 20ms)
+
+
+
+chord(root: C3, type: min7, inv: 2, len: 6, vel: 0.58, strum: 12ms)
+	vol(v: 0.36); set(reverb: 0.18); pan(v: 0.25)
+
+
+
+
+
+
+
+chord(root: F3, type: dom7, inv: 2, len: 6, vel: 0.51, strum: 20ms)
+
+
+
+
+
+
+
+chord(root: Bb2, type: maj7, inv: 1, len: 3, vel: 0.52, strum: 12ms)
+
+
+chord(root: Bb2, type: maj7, inv: 1, len: 2, vel: 0.52, strum: 12ms)
+
+
+
+
+chord(root: G3, type: min7, inv: 2, len: 6, vel: 0.55, strum: 20ms)
+
+
+
+
+
+
+
+chord(root: C3, type: min7, inv: 1, len: 2, vel: 0.51, strum: 12ms)
+
+
+
+
+chord(root: C3, type: min7, inv: 1, len: 3, vel: 0.52, strum: 12ms)
+
+
+
+chord(root: F3, type: dom7, inv: 1, len: 2, vel: 0.48, strum: 20ms)
+
+
+chord(root: F3, type: dom7, inv: 1, len: 3, vel: 0.52, strum: 8ms)
+
+
+
+chord(root: Bb2, type: maj7, inv: 2, len: 6, vel: 0.55, strum: 20ms)
+
+
+
+
+
+
+
+chord(root: Bb2, type: add9, inv: 1, len: 6, vel: 0.53, strum: 8ms)
+
+
+
+
+
+
+
+
+chord(root: Bb2, type: add9, inv: 2, len: 2, vel: 0.52, strum: 12ms)
+
+
+chord(root: Bb2, type: add9, inv: 2, len: 3, vel: 0.52, strum: 20ms)
+
+
+
+chord(root: Bb2, type: add9, inv: 1, len: 3, vel: 0.53, strum: 8ms)
+
+
+chord(root: Bb2, type: add9, inv: 1, len: 2, vel: 0.5, strum: 20ms)
+
+
+
+
+chord(root: Bb2, type: add9, inv: 2, len: 6, vel: 0.61, strum: 8ms)
+
+
+
+
+
+
+
+chord(root: Bb2, type: add9, inv: 1, len: 3, vel: 0.55, strum: 12ms)
+	chord(root: Bb3, type: maj7, inv: 1, spread: 1, len: 2bar, vel: 0.5, strum: 60ms)
+
+
+chord(root: Bb2, type: add9, inv: 1, len: 2, vel: 0.57, strum: 12ms)
+=== channels/vibes.ch
+inst(name: vibes); vol(v: 0.5); set(reverb: 0.3, delay: 0.08)
+	lfo(param: vol, rate: 1/8, depth: 0.05)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+vol(v: 0.5); set(reverb: 0.3, delay: 0.08)
+note(p: G4, len: 1)
+note(p: Bb4, len: 2)
+
+note(p: D5, len: 3)
+
+
+note(p: C5, len: 1)
+note(p: A4, len: 3, vel: 0.7)
+
+
+note(p: F4, len: 1)
+note(p: Eb4, len: 4)
+
+
+
+
+note(p: F4, len: 1)
+note(p: G4, len: 1)
+note(p: A4, len: 1)
+note(p: Bb4, len: 2)
+
+note(p: D5, len: 2)
+
+note(p: C5, len: 6)
+
+
+
+
+
+
+
+
+note(p: G4, len: 1)
+note(p: Bb4, len: 2)
+
+note(p: Eb5, len: 3)
+
+
+note(p: D5, len: 1)
+note(p: C5, len: 2)
+
+note(p: A4, len: 2)
+
+note(p: F4, len: 2)
+
+note(p: G4, len: 2)
+
+note(p: A4, len: 1)
+note(p: Bb4, len: 1)
+note(p: C5, len: 2)
+
+note(p: Bb4, len: 4)
+
+
+
+
+
+
+
+
+
+
+
+note(p: Ab4, len: 2)
+	vol(v: 0.5); set(reverb: 0.3, delay: 0.08)
+
+note(p: C5, len: 2)
+
+note(p: Eb5, len: 3)
+
+
+note(p: D5, len: 1)
+note(p: Ab4, len: 4)
+
+
+
+
+
+note(p: F4, len: 2)
+
+note(p: G4, len: 2)
+
+note(p: Bb4, len: 2)
+
+note(p: D5, len: 4)
+
+
+
+note(p: C5, len: 6)
+
+
+
+
+
+
+
+note(p: Eb5, len: 3)
+
+
+note(p: C5, len: 1)
+note(p: A4, len: 2)
+
+note(p: Eb4, len: 2)
+
+note(p: D4, len: 2)
+
+note(p: F#4, len: 2)
+
+note(p: A4, len: 2)
+
+note(p: C5, len: 2)
+
+note(p: Bb4, len: 3)
+
+
+note(p: G4, len: 1)
+note(p: D4, len: 4)
+
+
+
+note(p: E4, len: 2)
+
+note(p: G4, len: 2)
+
+note(p: A4, len: 2)
+
+note(p: C5, len: 2)
+
+vol(v: 0.5); set(reverb: 0.3, delay: 0.08)
+note(p: G4, len: 1)
+note(p: Bb4, len: 2)
+
+note(p: D5, len: 3)
+
+
+note(p: C5, len: 1)
+note(p: A4, len: 3, vel: 0.7)
+
+
+note(p: F4, len: 1)
+note(p: Eb4, len: 4)
+
+
+
+
+note(p: F4, len: 1)
+note(p: G4, len: 1)
+note(p: A4, len: 1)
+note(p: Bb4, len: 2)
+
+note(p: D5, len: 2)
+
+note(p: C5, len: 6)
+
+
+
+
+
+
+
+
+note(p: G4, len: 1)
+note(p: Bb4, len: 2)
+
+note(p: Eb5, len: 3)
+
+
+note(p: D5, len: 1)
+note(p: C5, len: 2)
+
+note(p: A4, len: 2)
+
+note(p: F4, len: 2)
+
+note(p: G4, len: 2)
+
+note(p: A4, len: 1)
+note(p: Bb4, len: 1)
+note(p: C5, len: 2)
+
+note(p: Bb4, len: 4)
+
+
+
+
+
+
+
+
+
+
+
+vol(v: 0.5); set(reverb: 0.3, delay: 0.08)
+note(p: G4, len: 2, vel: 0.52)
+
+note(p: F4, len: 2, vel: 0.57)
+
+note(p: C4, len: 1, vel: 0.58, glide: 1/32)
+note(p: Bb3, len: 1, vel: 0.68)
+note(p: Bb3, len: 1, vel: 0.53)
+note(p: D4, len: 1, vel: 0.71, glide: 1/32)
+note(p: F4, len: 1, vel: 0.59)
+note(p: G4, len: 1, vel: 0.69, at: 0.12)
+note(p: D5, len: 1, vel: 0.52)
+note(p: G4, len: 1, vel: 0.68)
+note(p: A4, len: 1, vel: 0.55)
+note(p: C5, len: 1, vel: 0.67)
+note(p: A4, len: 2, vel: 0.55)
+note(p: D5, len: 2, vel: 0.66)
+
+
+
+note(p: F5, len: 1, vel: 0.66)
+note(p: Eb5, len: 2, vel: 0.59)
+
+note(p: Bb4, len: 1, vel: 0.57)
+note(p: D5, len: 1, vel: 0.66, at: 0.12)
+note(p: C5, len: 1, vel: 0.58)
+note(p: D5, len: 2, vel: 0.69, glide: 1/32)
+
+note(p: A4, len: 1, vel: 0.69, at: 0.12)
+note(p: D5, len: 1, vel: 0.5)
+note(p: F5, len: 1, vel: 0.66)
+note(p: C5, len: 1, vel: 0.57)
+note(p: G4, len: 1, vel: 0.71)
+
+note(p: F4, len: 1, vel: 0.75)
+note(p: C5, len: 2, vel: 0.51)
+
+
+note(p: D5, len: 2, vel: 0.73)
+
+note(p: F5, len: 1, vel: 0.71)
+note(p: F5, len: 1, vel: 0.5)
+note(p: F5, len: 2, vel: 0.75, at: 0.12)
+
+
+note(p: C5, len: 1, vel: 0.51)
+note(p: D5, len: 1, vel: 0.73, at: 0.12)
+note(p: Eb5, len: 1, vel: 0.53)
+note(p: Bb4, len: 1, vel: 0.67)
+note(p: D5, len: 1, vel: 0.53)
+note(p: C5, len: 1, vel: 0.75)
+note(p: F4, len: 2, vel: 0.5)
+
+
+note(p: A4, len: 2, vel: 0.69)
+
+note(p: F4, len: 1, vel: 0.71, at: 0.12)
+note(p: Eb4, len: 1, vel: 0.6, glide: 1/32)
+note(p: F4, len: 2, vel: 0.73)
+
+note(p: Eb4, len: 1, vel: 0.73, at: 0.12)
+
+note(p: D4, len: 1, vel: 0.66)
+note(p: Eb4, len: 1, vel: 0.54, glide: 1/32)
+note(p: G4, len: 1, vel: 0.65)
+	vol(v: 0.5); set(reverb: 0.3, delay: 0.08)
+note(p: C5, len: 1, vel: 0.52, glide: 1/32)
+note(p: F5, len: 1, vel: 0.66)
+note(p: Eb5, len: 1, vel: 0.56)
+note(p: C5, len: 1, vel: 0.74, at: 0.12)
+note(p: Bb4, len: 1, vel: 0.59)
+note(p: C5, len: 1, vel: 0.73, glide: 1/32)
+note(p: F5, len: 1, vel: 0.57)
+note(p: F5, len: 1, vel: 0.71)
+note(p: C5, len: 1, vel: 0.55)
+note(p: D5, len: 2, vel: 0.73)
+
+note(p: Bb4, len: 1, vel: 0.68)
+note(p: C5, len: 1, vel: 0.53)
+note(p: F5, len: 1, vel: 0.69, glide: 1/32)
+note(p: F5, len: 1, vel: 0.56)
+note(p: Bb4, len: 1, vel: 0.66)
+note(p: G4, len: 1, vel: 0.51)
+note(p: F4, len: 1, vel: 0.7)
+note(p: Eb4, len: 2, vel: 0.57)
+
+note(p: Bb3, len: 1, vel: 0.58)
+note(p: D4, len: 1, vel: 0.69, at: 0.12)
+note(p: Eb4, len: 2, vel: 0.55)
+note(p: Bb3, len: 1, vel: 0.68)
+
+note(p: Bb3, len: 1, vel: 0.68)
+note(p: D4, len: 1, vel: 0.55)
+note(p: Bb3, len: 1, vel: 0.71, at: 0.12)
+note(p: F4, len: 1, vel: 0.54)
+note(p: Eb4, len: 1, vel: 0.73, at: 0.12)
+note(p: Bb3, len: 1, vel: 0.55)
+note(p: D4, len: 1, vel: 0.72)
+note(p: A4, len: 1, vel: 0.59)
+note(p: Eb4, len: 1, vel: 0.65, at: 0.12)
+note(p: G4, len: 1, vel: 0.53)
+note(p: C4, len: 1, vel: 0.65)
+note(p: B3, len: 1, vel: 0.59)
+note(p: C4, len: 2, vel: 0.66)
+
+note(p: B3, len: 1, vel: 0.7, at: 0.12)
+
+
+
+note(p: B3, len: 1, vel: 0.73, glide: 1/32)
+note(p: B3, len: 1, vel: 0.55)
+note(p: E4, len: 2, vel: 0.67)
+
+
+note(p: Bb3, len: 1, vel: 0.5)
+note(p: Bb3, len: 1, vel: 0.72)
+note(p: Bb3, len: 1, vel: 0.59)
+note(p: C4, len: 1, vel: 0.68)
+note(p: D4, len: 1, vel: 0.59)
+
+note(p: C4, len: 1, vel: 0.52)
+note(p: E4, len: 1, vel: 0.69)
+note(p: Bb3, len: 1, vel: 0.55, glide: 1/32)
+
+note(p: C4, len: 1, vel: 0.53)
+note(p: C4, len: 1, vel: 0.67, glide: 1/32, at: 0.12)
+note(p: C4, len: 1, vel: 0.51, glide: 1/32)
+
+note(p: C4, len: 1, vel: 0.57)
+note(p: Eb4, len: 1, vel: 0.75)
+	vol(v: 0.5); set(reverb: 0.3, delay: 0.08)
+note(p: Bb4, len: 1, vel: 0.52)
+
+note(p: G4, len: 2, vel: 0.56)
+
+
+
+note(p: Bb4, len: 1, vel: 0.53)
+note(p: C5, len: 1, vel: 0.73)
+note(p: F4, len: 2, vel: 0.56, glide: 1/32)
+
+note(p: C5, len: 1, vel: 0.51)
+
+note(p: A4, len: 1, vel: 0.53)
+note(p: C5, len: 1, vel: 0.75, glide: 1/32)
+note(p: A4, len: 2, vel: 0.56)
+note(p: F4, len: 1, vel: 0.67)
+
+note(p: Eb4, len: 1, vel: 0.75, at: 0.12)
+note(p: D4, len: 1, vel: 0.54)
+
+note(p: Bb3, len: 1, vel: 0.53)
+note(p: Bb3, len: 1, vel: 0.74)
+note(p: Bb3, len: 1, vel: 0.53)
+note(p: D4, len: 1, vel: 0.69)
+note(p: Bb3, len: 1, vel: 0.57)
+note(p: Bb3, len: 1, vel: 0.75)
+note(p: C4, len: 1, vel: 0.52)
+note(p: Bb3, len: 1, vel: 0.72, at: 0.12)
+note(p: C4, len: 1, vel: 0.54)
+note(p: Bb3, len: 1, vel: 0.74, at: 0.12)
+note(p: F4, len: 1, vel: 0.55)
+note(p: Eb4, len: 1, vel: 0.72, glide: 1/32, at: 0.12)
+note(p: Bb4, len: 2, vel: 0.57)
+
+note(p: C5, len: 1, vel: 0.56)
+note(p: Bb4, len: 2, vel: 0.67)
+
+note(p: Eb5, len: 1, vel: 0.65)
+note(p: D5, len: 2, vel: 0.53, glide: 1/32)
+note(p: C5, len: 1, vel: 0.7)
+note(p: Eb5, len: 1, vel: 0.56)
+note(p: C5, len: 1, vel: 0.73)
+note(p: D5, len: 2, vel: 0.52)
+
+note(p: F5, len: 1, vel: 0.53)
+
+
+note(p: F5, len: 1, vel: 0.66)
+note(p: F5, len: 2, vel: 0.6)
+
+note(p: Eb5, len: 2, vel: 0.56)
+
+note(p: F5, len: 2, vel: 0.51)
+
+note(p: F5, len: 1, vel: 0.53)
+note(p: C5, len: 1, vel: 0.74)
+note(p: F5, len: 1, vel: 0.55)
+note(p: F5, len: 1, vel: 0.68)
+note(p: F5, len: 1, vel: 0.53)
+
+note(p: F5, len: 1, vel: 0.51)
+note(p: D5, len: 1, vel: 0.67)
+note(p: C5, len: 2, vel: 0.52)
+vol(v: 0.5); set(reverb: 0.3, delay: 0.08)
+note(p: G4, len: 1)
+note(p: Bb4, len: 2)
+
+note(p: D5, len: 3)
+
+
+note(p: C5, len: 1)
+note(p: A4, len: 3, vel: 0.7)
+
+
+note(p: F4, len: 1)
+note(p: Eb4, len: 4)
+
+
+
+
+note(p: F4, len: 1)
+note(p: G4, len: 1)
+note(p: A4, len: 1)
+note(p: Bb4, len: 2)
+
+note(p: D5, len: 2)
+
+note(p: C5, len: 6)
+
+
+
+
+
+
+
+
+note(p: G4, len: 1)
+note(p: Bb4, len: 2)
+
+note(p: Eb5, len: 3)
+
+
+note(p: D5, len: 1)
+note(p: C5, len: 2)
+
+note(p: A4, len: 2)
+
+note(p: F4, len: 2)
+
+note(p: G4, len: 2)
+
+note(p: A4, len: 1)
+note(p: Bb4, len: 1)
+note(p: C5, len: 2)
+
+note(p: Bb4, len: 4)
+
+
+
+
+
+
+
+
+
+
+
+note(p: D5, len: 3bar, vel: 0.55)

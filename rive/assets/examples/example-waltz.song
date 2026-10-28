@@ -1,0 +1,1796 @@
+%partition-bundle 1
+=== song.yaml
+title: Paper Lanterns
+author: Partition examples
+bpm: 156
+signature: 3/4
+rows_per_beat: 2
+master_volume: -1dB
+channels:
+  - name: bass
+    file: channels/bass.ch
+  - name: pizz
+    file: channels/pizz.ch
+  - name: strings
+    file: channels/strings.ch
+  - name: bells
+    file: channels/bells.ch
+=== conductor.ch
+mark(name: intro)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+mark(name: a)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+jump(to: a, times: 1)
+mark(name: b)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+mark(name: a2)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+mark(name: coda)
+	ramp(bpm: 120, over: 6bar, curve: smooth)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+end()
+=== instruments/pizz.inst
+base(preset: pluck)
+osc(wave: tri, level: 0.5)
+osc(wave: saw, level: 0.15)
+filter(type: lowpass, cutoff: 1.4k, env: 0.35, keytrack: 0.3)
+filter_env(a: 1ms, d: 120ms, s: 0, r: 80ms)
+env(a: 2ms, d: 260ms, s: 0, r: 120ms)
+=== instruments/pizzbass.inst
+base(preset: sub_bass)
+osc(wave: sine)
+osc(wave: tri, level: 0.35)
+env(a: 3ms, d: 350ms, s: 0, r: 120ms)
+=== instruments/violins.inst
+base(preset: strings)
+osc(wave: saw, level: 0.35, unison: 5, spread: 14c)
+osc(wave: pulse, pw: 0.3, level: 0.1)
+filter(type: lowpass, cutoff: 2.6k, res: 0.08, keytrack: 0.3)
+env(a: 90ms, d: 400ms, s: 0.85, r: 350ms)
+voice(mono: true, glide: 30ms)
+=== instruments/musicbox.inst
+base(preset: bell)
+osc(wave: sine, ratio: 5, level: 0)
+osc(wave: sine, fm: 0.9, level: 0.6)
+env(a: 1ms, d: 900ms, s: 0, r: 400ms)
+param(name: sparkle, target: decay, min: 0.3, max: 1.5)
+=== patterns/arp_maj.pat
+note(p: F5, len: 2)
+note(p: A5, len: 2)
+note(p: C6, len: 2)
+note(p: A5, len: 2)
+note(p: F6, len: 2)
+note(p: C6, len: 2)
+=== patterns/arp_min.pat
+note(p: D5, len: 2)
+note(p: F5, len: 2)
+note(p: A5, len: 2)
+note(p: F5, len: 2)
+note(p: D6, len: 2)
+note(p: A5, len: 2)
+=== channels/bass.ch
+inst(name: pizzbass); vol(v: 0.72)
+	note(p: F1, len: 2, vel: 0.81)
+
+
+
+
+
+note(p: F2, len: 2, vel: 0.84)
+
+
+
+
+
+note(p: F1, len: 2, vel: 0.75)
+
+
+
+
+
+note(p: G2, len: 2, vel: 0.81)
+
+
+
+
+
+vol(v: 0.72)
+	note(p: F1, len: 2, vel: 0.8)
+
+
+
+
+
+note(p: C2, len: 2, vel: 0.81)
+
+
+
+
+
+note(p: C2, len: 2, vel: 0.78)
+
+
+
+
+
+note(p: G2, len: 2, vel: 0.77)
+
+
+
+
+
+note(p: C2, len: 2, vel: 0.81)
+
+
+
+
+
+note(p: G2, len: 2, vel: 0.84)
+
+
+
+
+
+note(p: F1, len: 2, vel: 0.85)
+
+
+
+
+
+note(p: C2, len: 2, vel: 0.85)
+
+
+
+
+
+note(p: F1, len: 2, vel: 0.77)
+
+
+
+
+
+note(p: C2, len: 2, vel: 0.85)
+
+
+
+
+
+note(p: Bb1, len: 2, vel: 0.79)
+
+
+
+
+
+note(p: F2, len: 2, vel: 0.76)
+
+
+
+
+
+note(p: F1, len: 2, vel: 0.75)
+
+
+
+
+
+note(p: G2, len: 2, vel: 0.78)
+
+
+
+
+
+note(p: F1, len: 2, vel: 0.78)
+
+
+
+
+
+note(p: C2, len: 2, vel: 0.76)
+
+
+
+
+
+vol(v: 0.72)
+	note(p: D2, len: 2, vel: 0.82)
+
+
+
+
+
+note(p: A2, len: 2, vel: 0.83)
+
+
+
+
+
+note(p: A1, len: 2, vel: 0.75)
+
+
+
+
+
+note(p: E2, len: 2, vel: 0.85)
+
+
+
+
+
+note(p: A1, len: 2, vel: 0.84)
+
+
+
+
+
+note(p: E2, len: 2, vel: 0.79)
+
+
+
+
+
+note(p: D2, len: 2, vel: 0.76)
+
+
+
+
+
+note(p: A2, len: 2, vel: 0.84)
+
+
+
+
+
+note(p: G1, len: 2, vel: 0.76)
+
+
+
+
+
+note(p: D2, len: 2, vel: 0.84)
+
+
+
+
+
+note(p: D2, len: 2, vel: 0.8)
+
+
+
+
+
+note(p: A2, len: 2, vel: 0.77)
+
+
+
+
+
+note(p: Bb1, len: 2, vel: 0.82)
+
+
+
+
+
+note(p: E2, len: 2, vel: 0.75)
+
+
+
+
+
+note(p: D2, len: 2, vel: 0.79)
+
+
+
+
+
+note(p: G2, len: 2, vel: 0.83)
+
+
+
+
+
+vol(v: 0.72)
+	note(p: F1, len: 2, vel: 0.76)
+
+
+
+
+
+note(p: C2, len: 2, vel: 0.8)
+
+
+
+
+
+note(p: C2, len: 2, vel: 0.82)
+
+
+
+
+
+note(p: G2, len: 2, vel: 0.83)
+
+
+
+
+
+note(p: C2, len: 2, vel: 0.76)
+
+
+
+
+
+note(p: G2, len: 2, vel: 0.8)
+
+
+
+
+
+note(p: F1, len: 2, vel: 0.85)
+
+
+
+
+
+note(p: C2, len: 2, vel: 0.82)
+
+
+
+
+
+note(p: F1, len: 2, vel: 0.79)
+
+
+
+
+
+note(p: C2, len: 2, vel: 0.85)
+
+
+
+
+
+note(p: Bb1, len: 2, vel: 0.8)
+
+
+
+
+
+note(p: F2, len: 2, vel: 0.78)
+
+
+
+
+
+note(p: F1, len: 2, vel: 0.79)
+
+
+
+
+
+note(p: G2, len: 2, vel: 0.82)
+
+
+
+
+
+note(p: F1, len: 2, vel: 0.79)
+
+
+
+
+
+note(p: C2, len: 2, vel: 0.8)
+
+
+
+
+
+vol(v: 0.72)
+	note(p: F1, len: 2, vel: 0.78)
+
+
+
+
+
+note(p: F2, len: 2, vel: 0.81)
+
+
+
+
+
+note(p: Bb1, len: 2, vel: 0.78)
+
+
+
+
+
+note(p: C2, len: 2, vel: 0.83)
+
+
+
+
+
+note(p: C2, len: 2, vel: 0.78)
+
+
+
+
+
+note(p: F1, len: 6, vel: 0.8)
+=== channels/pizz.ch
+inst(name: pizz); vol(v: 0.62); set(reverb: 0.25)
+	pan(v: -0.25)
+
+chord(root: F3, type: maj, inv: 2, len: 1, vel: 0.48)
+
+chord(root: F3, type: maj, inv: 2, len: 1, vel: 0.42)
+
+
+
+chord(root: Bb2, type: maj, inv: 1, len: 1, vel: 0.48)
+
+chord(root: Bb2, type: maj, inv: 1, len: 1, vel: 0.43)
+
+
+
+chord(root: F3, type: maj, inv: 2, len: 1, vel: 0.46)
+
+chord(root: F3, type: maj, inv: 2, len: 1, vel: 0.44)
+
+
+
+chord(root: C3, type: dom7, inv: 1, len: 1, vel: 0.49)
+
+chord(root: C3, type: dom7, inv: 1, len: 1, vel: 0.37)
+
+vol(v: 0.62); set(reverb: 0.25); pan(v: -0.25)
+
+chord(root: F3, type: maj, inv: 2, len: 1, vel: 0.44)
+
+chord(root: F3, type: maj, inv: 2, len: 1, vel: 0.4)
+
+
+
+chord(root: F3, type: maj, inv: 2, len: 1, vel: 0.42)
+
+chord(root: F3, type: maj, inv: 2, len: 1, vel: 0.38)
+
+
+
+chord(root: C3, type: dom7, inv: 1, len: 1, vel: 0.49)
+
+chord(root: C3, type: dom7, inv: 1, len: 1, vel: 0.42)
+
+
+
+chord(root: C3, type: dom7, inv: 1, len: 1, vel: 0.48)
+
+chord(root: C3, type: dom7, inv: 1, len: 1, vel: 0.37)
+
+
+
+chord(root: C3, type: dom7, inv: 1, len: 1, vel: 0.43)
+
+chord(root: C3, type: dom7, inv: 1, len: 1, vel: 0.36)
+
+
+
+chord(root: C3, type: dom7, inv: 1, len: 1, vel: 0.44)
+
+chord(root: C3, type: dom7, inv: 1, len: 1, vel: 0.38)
+
+
+
+chord(root: F3, type: maj, inv: 2, len: 1, vel: 0.49)
+
+chord(root: F3, type: maj, inv: 2, len: 1, vel: 0.38)
+
+
+
+chord(root: F3, type: maj, inv: 2, len: 1, vel: 0.46)
+
+chord(root: F3, type: maj, inv: 2, len: 1, vel: 0.41)
+
+
+
+chord(root: F3, type: maj, inv: 2, len: 1, vel: 0.5)
+
+chord(root: F3, type: maj, inv: 2, len: 1, vel: 0.42)
+
+
+
+chord(root: F3, type: dom7, inv: 2, len: 1, vel: 0.49)
+
+chord(root: F3, type: dom7, inv: 2, len: 1, vel: 0.38)
+
+
+
+chord(root: Bb2, type: maj, inv: 1, len: 1, vel: 0.43)
+
+chord(root: Bb2, type: maj, inv: 1, len: 1, vel: 0.37)
+
+
+
+chord(root: Bb2, type: min, inv: 1, len: 1, vel: 0.44)
+
+chord(root: Bb2, type: min, inv: 1, len: 1, vel: 0.41)
+
+
+
+chord(root: F3, type: maj, inv: 2, len: 1, vel: 0.47)
+
+chord(root: F3, type: maj, inv: 2, len: 1, vel: 0.39)
+
+
+
+chord(root: C3, type: dom7, inv: 1, len: 1, vel: 0.49)
+
+chord(root: C3, type: dom7, inv: 1, len: 1, vel: 0.4)
+
+
+
+chord(root: F3, type: maj, inv: 2, len: 1, vel: 0.46)
+
+chord(root: F3, type: maj, inv: 2, len: 1, vel: 0.42)
+
+
+
+chord(root: F3, type: maj, inv: 2, len: 1, vel: 0.5)
+
+chord(root: F3, type: maj, inv: 2, len: 1, vel: 0.36)
+
+vol(v: 0.62); set(reverb: 0.25); pan(v: -0.25)
+
+chord(root: D3, type: min, inv: 1, len: 1, vel: 0.49)
+
+chord(root: D3, type: min, inv: 1, len: 1, vel: 0.36)
+
+
+
+chord(root: D3, type: min, inv: 1, len: 1, vel: 0.45)
+
+chord(root: D3, type: min, inv: 1, len: 1, vel: 0.41)
+
+
+
+chord(root: A2, type: dom7, inv: 1, len: 1, vel: 0.42)
+
+chord(root: A2, type: dom7, inv: 1, len: 1, vel: 0.37)
+
+
+
+chord(root: A2, type: dom7, inv: 1, len: 1, vel: 0.44)
+
+chord(root: A2, type: dom7, inv: 1, len: 1, vel: 0.42)
+
+
+
+chord(root: A2, type: dom7, inv: 1, len: 1, vel: 0.5)
+
+chord(root: A2, type: dom7, inv: 1, len: 1, vel: 0.39)
+
+
+
+chord(root: A2, type: dom7, inv: 1, len: 1, vel: 0.46)
+
+chord(root: A2, type: dom7, inv: 1, len: 1, vel: 0.42)
+
+
+
+chord(root: D3, type: min, inv: 1, len: 1, vel: 0.48)
+
+chord(root: D3, type: min, inv: 1, len: 1, vel: 0.42)
+
+
+
+chord(root: D3, type: min, inv: 1, len: 1, vel: 0.42)
+
+chord(root: D3, type: min, inv: 1, len: 1, vel: 0.44)
+
+
+
+chord(root: G3, type: min, inv: 2, len: 1, vel: 0.45)
+
+chord(root: G3, type: min, inv: 2, len: 1, vel: 0.41)
+
+
+
+chord(root: G3, type: min, inv: 2, len: 1, vel: 0.45)
+
+chord(root: G3, type: min, inv: 2, len: 1, vel: 0.43)
+
+
+
+chord(root: D3, type: min, inv: 1, len: 1, vel: 0.44)
+
+chord(root: D3, type: min, inv: 1, len: 1, vel: 0.39)
+
+
+
+chord(root: D3, type: min, inv: 1, len: 1, vel: 0.43)
+
+chord(root: D3, type: min, inv: 1, len: 1, vel: 0.37)
+
+
+
+chord(root: Bb2, type: maj, inv: 1, len: 1, vel: 0.5)
+
+chord(root: Bb2, type: maj, inv: 1, len: 1, vel: 0.37)
+
+
+
+chord(root: A2, type: dom7, inv: 1, len: 1, vel: 0.5)
+
+chord(root: A2, type: dom7, inv: 1, len: 1, vel: 0.4)
+
+
+
+chord(root: D3, type: min, inv: 1, len: 1, vel: 0.44)
+
+chord(root: D3, type: min, inv: 1, len: 1, vel: 0.41)
+
+
+
+chord(root: C3, type: dom7, inv: 1, len: 1, vel: 0.46)
+
+chord(root: C3, type: dom7, inv: 1, len: 1, vel: 0.39)
+
+vol(v: 0.62); set(reverb: 0.25); pan(v: -0.25)
+
+chord(root: F3, type: maj, inv: 2, len: 1, vel: 0.49)
+
+chord(root: F3, type: maj, inv: 2, len: 1, vel: 0.36)
+
+
+
+chord(root: F3, type: maj, inv: 2, len: 1, vel: 0.49)
+
+chord(root: F3, type: maj, inv: 2, len: 1, vel: 0.37)
+
+
+
+chord(root: C3, type: dom7, inv: 1, len: 1, vel: 0.5)
+
+chord(root: C3, type: dom7, inv: 1, len: 1, vel: 0.41)
+
+
+
+chord(root: C3, type: dom7, inv: 1, len: 1, vel: 0.43)
+
+chord(root: C3, type: dom7, inv: 1, len: 1, vel: 0.39)
+
+
+
+chord(root: C3, type: dom7, inv: 1, len: 1, vel: 0.49)
+
+chord(root: C3, type: dom7, inv: 1, len: 1, vel: 0.38)
+
+
+
+chord(root: C3, type: dom7, inv: 1, len: 1, vel: 0.5)
+
+chord(root: C3, type: dom7, inv: 1, len: 1, vel: 0.43)
+
+
+
+chord(root: F3, type: maj, inv: 2, len: 1, vel: 0.46)
+
+chord(root: F3, type: maj, inv: 2, len: 1, vel: 0.4)
+
+
+
+chord(root: F3, type: maj, inv: 2, len: 1, vel: 0.46)
+
+chord(root: F3, type: maj, inv: 2, len: 1, vel: 0.38)
+
+
+
+chord(root: F3, type: maj, inv: 2, len: 1, vel: 0.43)
+
+chord(root: F3, type: maj, inv: 2, len: 1, vel: 0.39)
+
+
+
+chord(root: F3, type: dom7, inv: 2, len: 1, vel: 0.5)
+
+chord(root: F3, type: dom7, inv: 2, len: 1, vel: 0.41)
+
+
+
+chord(root: Bb2, type: maj, inv: 1, len: 1, vel: 0.45)
+
+chord(root: Bb2, type: maj, inv: 1, len: 1, vel: 0.37)
+
+
+
+chord(root: Bb2, type: min, inv: 1, len: 1, vel: 0.48)
+
+chord(root: Bb2, type: min, inv: 1, len: 1, vel: 0.43)
+
+
+
+chord(root: F3, type: maj, inv: 2, len: 1, vel: 0.48)
+
+chord(root: F3, type: maj, inv: 2, len: 1, vel: 0.42)
+
+
+
+chord(root: C3, type: dom7, inv: 1, len: 1, vel: 0.47)
+
+chord(root: C3, type: dom7, inv: 1, len: 1, vel: 0.42)
+
+
+
+chord(root: F3, type: maj, inv: 2, len: 1, vel: 0.48)
+
+chord(root: F3, type: maj, inv: 2, len: 1, vel: 0.38)
+
+
+
+chord(root: F3, type: maj, inv: 2, len: 1, vel: 0.48)
+
+chord(root: F3, type: maj, inv: 2, len: 1, vel: 0.42)
+
+vol(v: 0.62); set(reverb: 0.25); pan(v: -0.25)
+
+chord(root: F3, type: maj, inv: 2, len: 1, vel: 0.5)
+
+chord(root: F3, type: maj, inv: 2, len: 1, vel: 0.41)
+
+
+
+chord(root: Bb2, type: maj, inv: 1, len: 1, vel: 0.42)
+
+chord(root: Bb2, type: maj, inv: 1, len: 1, vel: 0.4)
+
+
+
+chord(root: Bb2, type: min, inv: 1, len: 1, vel: 0.47)
+
+chord(root: Bb2, type: min, inv: 1, len: 1, vel: 0.4)
+
+
+
+chord(root: F3, type: maj, inv: 2, len: 1, vel: 0.47)
+
+chord(root: F3, type: maj, inv: 2, len: 1, vel: 0.42)
+
+
+
+chord(root: C3, type: dom7, inv: 1, len: 1, vel: 0.47)
+
+chord(root: C3, type: dom7, inv: 1, len: 1, vel: 0.42)
+
+chord(root: F3, type: maj, spread: 1, len: 6, vel: 0.5, strum: 90ms)
+=== channels/strings.ch
+inst(name: violins); vol(v: 0.42); set(reverb: 0.4)
+	lfo(param: detune, rate: 5.5Hz, depth: 0.1)
+	pan(v: 0.2)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+note(p: A4, len: 4, glide: 1/32)
+
+
+
+note(p: C5, len: 2, glide: 1/32)
+
+note(p: F5, len: 6, glide: 1/32)
+
+
+
+
+
+note(p: E5, len: 4, glide: 1/32)
+
+
+
+note(p: D5, len: 2, glide: 1/32)
+
+note(p: C5, len: 6, glide: 1/32)
+
+
+
+
+
+note(p: Bb4, len: 2, glide: 1/32)
+
+note(p: C5, len: 2, glide: 1/32)
+
+note(p: D5, len: 2, glide: 1/32)
+
+note(p: E5, len: 4, glide: 1/32)
+
+
+
+note(p: G5, len: 2, glide: 1/32)
+
+note(p: F5, len: 4, glide: 1/32)
+
+
+
+note(p: C5, len: 2, glide: 1/32)
+
+note(p: A4, len: 6, glide: 1/32)
+
+
+
+
+
+note(p: A4, len: 4, glide: 1/32)
+
+
+
+note(p: C5, len: 2, glide: 1/32)
+
+note(p: Eb5, len: 6, glide: 1/32)
+
+
+
+
+
+note(p: D5, len: 4, glide: 1/32)
+
+
+
+note(p: F5, len: 2, glide: 1/32)
+
+note(p: Db5, len: 4, glide: 1/32)
+
+
+
+note(p: F5, len: 2, glide: 1/32)
+
+note(p: C5, len: 4, glide: 1/32)
+
+
+
+note(p: A4, len: 2, glide: 1/32)
+
+note(p: G4, len: 2, glide: 1/32)
+
+note(p: Bb4, len: 2, glide: 1/32)
+
+note(p: E5, len: 2, glide: 1/32)
+
+note(p: F5, len: 6, glide: 1/32)
+
+
+
+
+
+
+
+
+
+
+
+ramp(vol: 0.55, over: 8bar)
+	note(p: D5, len: 4)
+
+
+
+note(p: E5, len: 2)
+
+note(p: F5, len: 4)
+
+
+
+note(p: A5, len: 2)
+
+note(p: G5, len: 4)
+
+
+
+note(p: F5, len: 2)
+
+note(p: E5, len: 6)
+
+
+
+
+
+note(p: C#5, len: 2)
+
+note(p: E5, len: 2)
+
+note(p: G5, len: 2)
+
+note(p: A5, len: 4)
+
+
+
+note(p: G5, len: 2)
+
+note(p: F5, len: 4)
+
+
+
+note(p: E5, len: 2)
+
+note(p: D5, len: 6)
+
+
+
+
+
+note(p: Bb4, len: 2)
+
+note(p: D5, len: 2)
+
+note(p: G5, len: 2)
+
+note(p: Bb5, len: 4)
+
+
+
+note(p: A5, len: 2)
+
+note(p: A5, len: 4)
+
+
+
+note(p: F5, len: 2)
+
+note(p: D5, len: 6)
+
+
+
+
+
+note(p: D5, len: 2)
+
+note(p: F5, len: 2)
+
+note(p: Bb5, len: 2)
+
+note(p: A5, len: 4)
+
+
+
+note(p: G5, len: 2)
+
+note(p: F5, len: 4)
+
+
+
+note(p: E5, len: 2)
+
+note(p: C5, len: 2)
+
+note(p: E5, len: 2)
+
+note(p: G5, len: 2)
+
+transpose(v: 12st); vol(v: 0.4)
+	note(p: A4, len: 4)
+
+
+
+note(p: C5, len: 2)
+
+note(p: F5, len: 6)
+
+
+
+
+
+note(p: E5, len: 4)
+
+
+
+note(p: D5, len: 2)
+
+note(p: C5, len: 6)
+
+
+
+
+
+note(p: Bb4, len: 2)
+
+note(p: C5, len: 2)
+
+note(p: D5, len: 2)
+
+note(p: E5, len: 4)
+
+
+
+note(p: G5, len: 2)
+
+note(p: F5, len: 4)
+
+
+
+note(p: C5, len: 2)
+
+note(p: A4, len: 6)
+
+
+
+
+
+note(p: A4, len: 4)
+
+
+
+note(p: C5, len: 2)
+
+note(p: Eb5, len: 6)
+
+
+
+
+
+note(p: D5, len: 4)
+
+
+
+note(p: F5, len: 2)
+
+note(p: Db5, len: 4)
+
+
+
+note(p: F5, len: 2)
+
+note(p: C5, len: 4)
+
+
+
+note(p: A4, len: 2)
+
+note(p: G4, len: 2)
+
+note(p: Bb4, len: 2)
+
+note(p: E5, len: 2)
+
+note(p: F5, len: 6)
+
+
+
+
+
+
+
+
+
+
+
+transpose(v: 0st)
+	note(p: F5, len: 6)
+	ramp(vol: 0.25, over: 6bar)
+
+
+
+
+
+note(p: D5, len: 6)
+
+
+
+
+
+note(p: Db5, len: 6)
+
+
+
+
+
+note(p: C5, len: 6)
+
+
+
+
+
+note(p: Bb4, len: 4)
+
+
+
+note(p: G4, len: 2)
+
+note(p: F4, len: 6)
+=== channels/bells.ch
+inst(name: musicbox); vol(v: 0.3); set(reverb: 0.45, delay: 0.1, sparkle: 0.6)
+	pan(v: 0.35)
+	transpose(v: 0st); pattern(name: arp_maj)
+
+
+
+
+
+transpose(v: 5st); pattern(name: arp_maj)
+
+
+
+
+
+transpose(v: 0st); pattern(name: arp_maj)
+
+
+
+
+
+transpose(v: -5st); pattern(name: arp_maj)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+transpose(v: 0st); pattern(name: arp_min)
+
+
+
+
+
+
+
+
+
+
+
+transpose(v: 4st); pattern(name: arp_maj)
+
+
+
+
+
+
+
+
+
+
+
+transpose(v: 4st); pattern(name: arp_maj)
+
+
+
+
+
+
+
+
+
+
+
+transpose(v: 0st); pattern(name: arp_min)
+
+
+
+
+
+
+
+
+
+
+
+transpose(v: 5st); pattern(name: arp_min)
+
+
+
+
+
+
+
+
+
+
+
+transpose(v: 0st); pattern(name: arp_min)
+
+
+
+
+
+
+
+
+
+
+
+transpose(v: 5st); pattern(name: arp_maj)
+
+
+
+
+
+
+
+
+
+
+
+transpose(v: 0st); pattern(name: arp_min)
+
+
+
+
+
+
+
+
+
+
+
+transpose(v: 0st); pattern(name: arp_maj)
+
+
+
+
+
+transpose(v: 0st); pattern(name: arp_maj)
+
+
+
+
+
+transpose(v: -5st); pattern(name: arp_maj)
+
+
+
+
+
+transpose(v: -5st); pattern(name: arp_maj)
+
+
+
+
+
+transpose(v: -5st); pattern(name: arp_maj)
+
+
+
+
+
+transpose(v: -5st); pattern(name: arp_maj)
+
+
+
+
+
+transpose(v: 0st); pattern(name: arp_maj)
+
+
+
+
+
+transpose(v: 0st); pattern(name: arp_maj)
+
+
+
+
+
+transpose(v: 0st); pattern(name: arp_maj)
+
+
+
+
+
+transpose(v: 0st); pattern(name: arp_maj)
+
+
+
+
+
+transpose(v: 5st); pattern(name: arp_maj)
+
+
+
+
+
+transpose(v: 8st); pattern(name: arp_min)
+
+
+
+
+
+transpose(v: 0st); pattern(name: arp_maj)
+
+
+
+
+
+transpose(v: -5st); pattern(name: arp_maj)
+
+
+
+
+
+transpose(v: 0st); pattern(name: arp_maj)
+
+
+
+
+
+transpose(v: 0st); pattern(name: arp_maj)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+transpose(v: 0st); note(p: [F6, A6, C7], len: 2bar, vel: 0.5)

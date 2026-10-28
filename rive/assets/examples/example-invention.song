@@ -1,0 +1,1311 @@
+%partition-bundle 1
+=== song.yaml
+title: Two-Part Invention
+author: Partition examples
+bpm: 84
+signature: 4/4
+rows_per_beat: 4
+master_volume: -1dB
+channels:
+  - name: right
+    file: channels/right.ch
+  - name: left
+    file: channels/left.ch
+=== conductor.ch
+mark(name: a)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+jump(to: a, times: 1)
+mark(name: b)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+jump(to: b, times: 1)
+mark(name: coda)
+	ramp(bpm: 60, over: 3bar, curve: smooth)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+end()
+=== instruments/harpsichord.inst
+base(preset: pluck)
+osc(wave: saw, level: 0.4)
+osc(wave: square, oct: 1, level: 0.1)
+osc(wave: saw, oct: -1, level: 0.12, detune: 3c)
+filter(type: lowpass, cutoff: 3.5k, res: 0.15, env: 0.3, keytrack: 0.5)
+filter_env(a: 1ms, d: 300ms, s: 0.2, r: 200ms)
+env(a: 1ms, d: 1.6s, s: 0, r: 250ms)
+param(name: brightness, target: cutoff, min: 1.5k, max: 6k)
+voice(poly: 6)
+=== patterns/subject.pat
+
+note(p: C5, len: 1)
+note(p: D5, len: 1)
+note(p: Eb5, len: 1)
+note(p: F5, len: 1)
+note(p: D5, len: 1)
+note(p: Eb5, len: 1)
+note(p: C5, len: 1)
+note(p: G5, len: 2)
+
+note(p: C6, len: 2)
+
+note(p: B5, len: 2)
+
+note(p: C6, len: 2)
+
+=== patterns/counter.pat
+note(p: C4, len: 2)
+
+note(p: Bb3, len: 2)
+
+note(p: Ab3, len: 2)
+
+note(p: G3, len: 2)
+
+note(p: Eb3, len: 2)
+
+note(p: C3, len: 2)
+
+note(p: G3, len: 2)
+
+note(p: C3, len: 2)
+
+=== patterns/subject_major.pat
+
+note(p: Eb5, len: 1)
+note(p: F5, len: 1)
+note(p: G5, len: 1)
+note(p: Ab5, len: 1)
+note(p: F5, len: 1)
+note(p: G5, len: 1)
+note(p: Eb5, len: 1)
+note(p: Bb5, len: 2)
+
+note(p: Eb6, len: 2)
+
+note(p: D6, len: 2)
+
+note(p: Eb6, len: 2)
+
+=== patterns/counter_major.pat
+note(p: Eb4, len: 2)
+
+note(p: D4, len: 2)
+
+note(p: C4, len: 2)
+
+note(p: Bb3, len: 2)
+
+note(p: G3, len: 2)
+
+note(p: Eb3, len: 2)
+
+note(p: Bb3, len: 2)
+
+note(p: Eb3, len: 2)
+
+=== patterns/subject_inv.pat
+
+note(p: G5, len: 1)
+note(p: F5, len: 1)
+note(p: Eb5, len: 1)
+note(p: D5, len: 1)
+note(p: F5, len: 1)
+note(p: Eb5, len: 1)
+note(p: G5, len: 1)
+note(p: C5, len: 2)
+
+note(p: G4, len: 2)
+
+note(p: Ab4, len: 2)
+
+note(p: G4, len: 2)
+
+=== patterns/motif.pat
+
+note(p: C5, len: 1)
+note(p: D5, len: 1)
+note(p: Eb5, len: 1)
+note(p: F5, len: 1)
+note(p: D5, len: 1)
+note(p: Eb5, len: 1)
+note(p: C5, len: 1)
+=== patterns/motif_low.pat
+
+note(p: Bb4, len: 1)
+note(p: C5, len: 1)
+note(p: Db5, len: 1)
+note(p: Eb5, len: 1)
+note(p: C5, len: 1)
+note(p: Db5, len: 1)
+note(p: Bb4, len: 1)
+=== patterns/episode.pat
+pattern(name: motif)
+
+
+
+
+
+
+
+pattern(name: motif_low)
+
+
+
+
+
+
+
+=== patterns/walk.pat
+note(p: C3, len: 4)
+
+
+
+note(p: G2, len: 4)
+
+
+
+note(p: Bb2, len: 4)
+
+
+
+note(p: F2, len: 4)
+
+
+
+=== patterns/pedal.pat
+note(p: G2, len: 4)
+
+
+
+note(p: G2, len: 4)
+
+
+
+note(p: G2, len: 4)
+
+
+
+note(p: G2, len: 4)
+
+
+
+=== channels/right.ch
+inst(name: harpsichord); vol(v: 0.62); set(brightness: 0.55, reverb: 0.22)
+	pan(v: 0.3)
+	transpose(v: 0st)
+	pattern(name: subject)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+transpose(v: 12st)
+	pattern(name: counter)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+transpose(v: 7st)
+	pattern(name: subject)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+transpose(v: 19st)
+	pattern(name: counter)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+vol(v: 0.5)
+	transpose(v: 5st)
+	pattern(name: episode)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+vol(v: 0.52)
+	transpose(v: -2st)
+	pattern(name: episode)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+vol(v: 0.54)
+	transpose(v: 3st)
+	pattern(name: episode)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+vol(v: 0.56)
+	transpose(v: -4st)
+	pattern(name: episode)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+vol(v: 0.58)
+	transpose(v: 0st)
+	pattern(name: subject_major)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+transpose(v: 12st)
+	pattern(name: counter_major)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+transpose(v: 0st)
+	pattern(name: episode)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+transpose(v: 0st)
+	note(p: Ab5, len: 2)
+
+note(p: G5, len: 2)
+
+note(p: F5, len: 2)
+
+note(p: Eb5, len: 2)
+
+note(p: D5, len: 4, vel: 0.8)
+
+
+
+note(p: B4, len: 2)
+
+note(p: C5, len: 2)
+
+vol(v: 0.52)
+	transpose(v: 0st)
+	pattern(name: subject_inv)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+transpose(v: 19st)
+	pattern(name: counter)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+vol(v: 0.5)
+	transpose(v: 0st)
+	pattern(name: episode)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+vol(v: 0.53)
+	transpose(v: 2st)
+	pattern(name: episode)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+vol(v: 0.56)
+	transpose(v: 3st)
+	pattern(name: episode)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+vol(v: 0.59)
+	transpose(v: 5st)
+	pattern(name: episode)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+vol(v: 0.6)
+	transpose(v: 12st)
+	pattern(name: counter)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+transpose(v: 0st)
+	pattern(name: subject)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+transpose(v: 0st)
+	note(p: Ab5, len: 2)
+
+note(p: G5, len: 2)
+
+note(p: F5, len: 2)
+
+note(p: Eb5, len: 2)
+
+note(p: D5, len: 2)
+
+note(p: C5, len: 2)
+
+note(p: B4, len: 2)
+
+note(p: C5, len: 2)
+
+note(p: D5, len: 2)
+
+note(p: F5, len: 2)
+
+note(p: Ab5, len: 2)
+
+note(p: G5, len: 2)
+
+note(p: F5, len: 2)
+
+note(p: Eb5, len: 2)
+
+note(p: D5, len: 4)
+
+
+
+chord(root: C4, type: maj, spread: 1, len: 1bar, vel: 0.75, strum: 140ms)
+	note(p: G5, len: 1bar, vel: 0.6, at: 1/16)
+	ramp(brightness: 0.3, over: 1bar)
+=== channels/left.ch
+inst(name: harpsichord); vol(v: 0.62); set(brightness: 0.4, reverb: 0.22)
+	pan(v: -0.3)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+transpose(v: -12st)
+	pattern(name: subject)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+transpose(v: -5st)
+	pattern(name: counter)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+transpose(v: -5st)
+	pattern(name: subject)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+transpose(v: 5st)
+	pattern(name: walk)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+transpose(v: -2st)
+	pattern(name: walk)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+transpose(v: 3st)
+	pattern(name: walk)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+transpose(v: -4st)
+	pattern(name: walk)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+transpose(v: -12st)
+	pattern(name: subject_major)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+transpose(v: 0st)
+	pattern(name: walk)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+transpose(v: 0st)
+	note(p: F3, len: 4)
+
+
+
+note(p: G3, len: 4)
+
+
+
+note(p: G2, len: 4)
+
+
+
+note(p: C3, len: 4)
+
+
+
+transpose(v: 0st)
+	pattern(name: pedal)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+transpose(v: -12st)
+	pattern(name: subject_inv)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+transpose(v: 0st)
+	pattern(name: walk)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+transpose(v: 2st)
+	pattern(name: walk)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+transpose(v: 3st)
+	pattern(name: walk)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+transpose(v: 5st)
+	pattern(name: walk)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+transpose(v: -12st)
+	pattern(name: subject)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+transpose(v: -12st)
+	pattern(name: counter)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+transpose(v: 0st)
+	note(p: F3, len: 4)
+
+
+
+note(p: Ab3, len: 4)
+
+
+
+note(p: G3, len: 4)
+
+
+
+note(p: G2, len: 4)
+
+
+
+note(p: G2, len: 8)
+
+
+
+
+
+
+
+note(p: G3, len: 4)
+
+
+
+note(p: F3, len: 4)
+
+
+
+note(p: [C2, C3], len: 1bar, vel: 0.8)

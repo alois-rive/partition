@@ -1,0 +1,9 @@
+name: partition
+main: Partition
+scripting: wasm
+logs:
+  file: build/rive.log
+  problems: build/problems.log
+pages:
+  teamId: 40887
+  name: "partition"

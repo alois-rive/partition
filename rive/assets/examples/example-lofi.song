@@ -1,0 +1,788 @@
+%partition-bundle 1
+=== song.yaml
+title: Rainy Lo-Fi
+author: Partition examples
+bpm: 84
+signature: 4/4
+rows_per_beat: 4
+swing: 0.35
+channels:
+  - name: drums
+    file: channels/drums.ch
+  - name: keys
+    file: channels/keys.ch
+  - name: bass
+    file: channels/bass.ch
+  - name: vinyl
+    file: channels/vinyl.ch
+=== conductor.ch
+mark(name: intro)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+mark(name: main)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+jump(to: main, times: 1)
+mark(name: outro)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+end()
+=== instruments/vinyl.inst
+osc(wave: noise, level: 0.5)
+filter(type: bandpass, cutoff: 3k, res: 0.1)
+env(a: 300ms, d: 100ms, s: 1, r: 1s)
+=== instruments/crackle.inst
+osc(wave: noise)
+filter(type: highpass, cutoff: 5k)
+env(a: 1ms, d: 6ms, s: 0, r: 5ms)
+voice(fixed: C4)
+=== patterns/beat.pat
+note(p: C1, inst: kick, vel: 0.9)
+	note(p: C4, inst: hat_closed, vel: 0.35)
+
+note(p: C4, inst: hat_closed, vel: 0.22)
+
+note(p: C4, inst: snare, vel: 0.65)
+	note(p: C4, inst: hat_closed, vel: 0.35)
+
+note(p: C4, inst: hat_closed, vel: 0.22)
+note(p: C1, inst: kick, vel: 0.6)
+note(p: C4, inst: hat_closed, vel: 0.35)
+
+note(p: C1, inst: kick, vel: 0.8)
+	note(p: C4, inst: hat_closed, vel: 0.22)
+
+note(p: C4, inst: snare, vel: 0.65)
+	note(p: C4, inst: hat_closed, vel: 0.35)
+
+note(p: C4, inst: hat_closed, vel: 0.22)
+
+=== patterns/keys.pat
+chord(root: F3, type: maj7, len: 1bar, strum: 25ms, vel: 0.6)
+
+
+
+
+
+
+
+
+
+
+chord(root: F3, type: maj7, len: 2b, strum: 15ms, vel: 0.35)
+
+
+
+
+chord(root: E3, type: min7, len: 1bar, strum: 25ms, vel: 0.6)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+chord(root: D3, type: min9, len: 1bar, strum: 25ms, vel: 0.6)
+
+
+
+
+
+
+
+
+
+
+chord(root: D3, type: min9, len: 2b, strum: 15ms, vel: 0.35)
+
+
+
+
+chord(root: C3, type: maj7, len: 1bar, strum: 30ms, vel: 0.55)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+=== patterns/bassline.pat
+note(p: F2, len: 6)
+
+
+
+
+
+
+
+
+
+note(p: F2, len: 4)
+
+
+
+
+
+note(p: E2, len: 6)
+
+
+
+
+
+
+
+
+
+note(p: E2, len: 4)
+
+
+
+
+
+note(p: D2, len: 6)
+
+
+
+
+
+
+
+
+
+note(p: D2, len: 4)
+
+
+
+
+
+note(p: C2, len: 6)
+
+
+
+
+
+
+
+
+
+note(p: G2, len: 4)
+
+
+
+
+
+=== patterns/crackle.pat
+vol(v: 0.5); note(p: C4, inst: crackle, vel: 0.5)
+
+
+
+
+note(p: C4, inst: crackle, vel: 0.3)
+
+
+
+
+
+
+
+note(p: C4, inst: crackle, vel: 0.7)
+
+
+
+note(p: C4, inst: crackle, vel: 0.25)
+
+
+
+
+
+=== channels/drums.ch
+inst(name: kick); vol(v: 1.0)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pattern(name: beat, times: 8)
+=== channels/keys.ch
+inst(name: epiano); vol(v: 0.38); set(reverb: 0.25)
+	pattern(name: keys)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pattern(name: keys, times: 2)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ramp(vol: 0.2, over: 4bar); pattern(name: keys)
+=== channels/bass.ch
+inst(name: sub_bass); vol(v: 0.42)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pattern(name: bassline, times: 2)
+=== channels/vinyl.ch
+inst(name: vinyl); vol(v: 0.08); note(p: C4, len: 24bar)
+	pattern(name: crackle, times: 16)

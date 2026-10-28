@@ -1,0 +1,1213 @@
+%partition-bundle 1
+=== song.yaml
+title: Pixel Quest
+author: Partition examples
+bpm: 150
+signature: 4/4
+rows_per_beat: 4
+master_volume: -1.5dB
+channels:
+  - name: arp
+    file: channels/arp.ch
+  - name: bass
+    file: channels/bass.ch
+  - name: lead
+    file: channels/lead.ch
+  - name: drums
+    file: channels/drums.ch
+=== conductor.ch
+mark(name: intro)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+mark(name: a)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+jump(to: a, times: 1)
+mark(name: outro)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+end()
+=== patterns/arp_maj.pat
+note(p: C4)
+note(p: E4)
+note(p: G4)
+note(p: C5)
+note(p: C4)
+note(p: E4)
+note(p: G4)
+note(p: C5)
+note(p: C4)
+note(p: E4)
+note(p: G4)
+note(p: C5)
+note(p: C4)
+note(p: E4)
+note(p: G4)
+note(p: C5)
+=== patterns/arp_min.pat
+note(p: C4)
+note(p: Eb4)
+note(p: G4)
+note(p: C5)
+note(p: C4)
+note(p: Eb4)
+note(p: G4)
+note(p: C5)
+note(p: C4)
+note(p: Eb4)
+note(p: G4)
+note(p: C5)
+note(p: C4)
+note(p: Eb4)
+note(p: G4)
+note(p: C5)
+=== patterns/bass8.pat
+note(p: C2, len: 2)
+
+note(p: C3, len: 2)
+
+note(p: C2, len: 2)
+
+note(p: C3, len: 2)
+
+note(p: C2, len: 2)
+
+note(p: C3, len: 2)
+
+note(p: C2, len: 2)
+
+note(p: C3, len: 2)
+
+=== patterns/drums.pat
+note(p: C1, inst: kick, vel: 0.85)
+	note(p: C4, inst: hat_closed, vel: 0.4)
+
+note(p: C4, inst: hat_closed, vel: 0.4)
+
+note(p: C4, inst: snare, vel: 0.6)
+	note(p: C4, inst: hat_closed, vel: 0.4)
+
+note(p: C4, inst: hat_closed, vel: 0.4)
+
+note(p: C1, inst: kick, vel: 0.85)
+	note(p: C4, inst: hat_closed, vel: 0.4)
+
+note(p: C1, inst: kick, vel: 0.85)
+	note(p: C4, inst: hat_closed, vel: 0.4)
+
+note(p: C4, inst: snare, vel: 0.6)
+	note(p: C4, inst: hat_closed, vel: 0.4)
+
+note(p: C4, inst: hat_closed, vel: 0.4)
+
+=== channels/arp.ch
+inst(name: square); vol(v: 0.22); set(delay: 0.15)
+	transpose(v: 0st); pattern(name: arp_maj)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+transpose(v: -3st); pattern(name: arp_min)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+transpose(v: 5st); pattern(name: arp_maj)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+transpose(v: 7st); pattern(name: arp_maj)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+transpose(v: 0st); pattern(name: arp_maj)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+transpose(v: -3st); pattern(name: arp_min)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+transpose(v: 5st); pattern(name: arp_maj)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+transpose(v: 7st); pattern(name: arp_maj)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+transpose(v: 0st); pattern(name: arp_maj)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+transpose(v: -3st); pattern(name: arp_min)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+transpose(v: 5st); pattern(name: arp_maj)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+transpose(v: 7st); pattern(name: arp_maj)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+transpose(v: 0st); pattern(name: arp_maj)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+transpose(v: -3st); pattern(name: arp_min)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+transpose(v: 5st); pattern(name: arp_maj)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+transpose(v: 7st); pattern(name: arp_maj)
+=== channels/bass.ch
+inst(name: tri); vol(v: 0.35)
+	transpose(v: 0st); pattern(name: bass8)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+transpose(v: -3st); pattern(name: bass8)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+transpose(v: 5st); pattern(name: bass8)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+transpose(v: 7st); pattern(name: bass8)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+transpose(v: 0st); pattern(name: bass8)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+transpose(v: -3st); pattern(name: bass8)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+transpose(v: 5st); pattern(name: bass8)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+transpose(v: 7st); pattern(name: bass8)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+transpose(v: 0st); pattern(name: bass8)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+transpose(v: -3st); pattern(name: bass8)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+transpose(v: 5st); pattern(name: bass8)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+transpose(v: 7st); pattern(name: bass8)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+transpose(v: 0st); pattern(name: bass8)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+transpose(v: -3st); pattern(name: bass8)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+transpose(v: 5st); pattern(name: bass8)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+transpose(v: 7st); pattern(name: bass8)
+=== channels/lead.ch
+inst(name: pulse); vol(v: 0.5); lfo(param: pw, rate: 2bar, depth: 0.15)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+note(p: E5, len: 2)
+
+note(p: G5, len: 2)
+
+note(p: C6, len: 4)
+
+
+
+note(p: B5, len: 2)
+
+note(p: G5, len: 2)
+
+note(p: E5, len: 4)
+
+
+
+note(p: A5, len: 4)
+
+
+
+note(p: C6, len: 2)
+
+note(p: B5, len: 2)
+
+note(p: A5, len: 4)
+
+
+
+note(p: E5, len: 4)
+
+
+
+note(p: F5, len: 2)
+
+note(p: A5, len: 2)
+
+note(p: C6, len: 4)
+
+
+
+note(p: A5, len: 2)
+
+note(p: F5, len: 2)
+
+note(p: G5, len: 4)
+
+
+
+note(p: B5, len: 4)
+
+
+
+note(p: D6, len: 2)
+
+note(p: B5, len: 2)
+
+note(p: G5, len: 8)
+
+
+
+
+
+
+
+note(p: E5, len: 2)
+
+note(p: G5, len: 2)
+
+note(p: C6, len: 4)
+
+
+
+note(p: B5, len: 2)
+
+note(p: G5, len: 2)
+
+note(p: E5, len: 4)
+
+
+
+note(p: A5, len: 4)
+
+
+
+note(p: C6, len: 2)
+
+note(p: B5, len: 2)
+
+note(p: A5, len: 4)
+
+
+
+note(p: E5, len: 4)
+
+
+
+note(p: C6, len: 4)
+
+
+
+note(p: A5, len: 2)
+
+note(p: F5, len: 2)
+
+note(p: A5, len: 4)
+
+
+
+note(p: C6, len: 4)
+
+
+
+note(p: B5, len: 2)
+
+note(p: D6, len: 2)
+
+note(p: B5, len: 4)
+
+
+
+note(p: C6, len: 8)
+=== channels/drums.ch
+inst(name: kick); vol(v: 0.75)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pattern(name: drums, times: 8)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pattern(name: drums, times: 4)

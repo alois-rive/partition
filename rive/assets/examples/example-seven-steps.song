@@ -1,0 +1,2631 @@
+%partition-bundle 1
+=== song.yaml
+title: Seven Steps
+author: Partition examples
+bpm: 132
+signature: 4/4
+rows_per_beat: 4
+master_volume: -2dB
+channels:
+  - name: drums
+    file: channels/drums.ch
+  - name: bass
+    file: channels/bass.ch
+  - name: organ
+    file: channels/organ.ch
+  - name: lead
+    file: channels/lead.ch
+=== conductor.ch
+mark(name: intro)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+mark(name: riff)
+	sig(v: 7/8)
+	rpb(v: 2)
+	bpm(v: 264)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+jump(to: riff, times: 1)
+mark(name: melody)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+jump(to: melody, times: 1)
+mark(name: solo)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+jump(to: solo, times: 1)
+mark(name: bridge)
+	sig(v: 5/4)
+	rpb(v: 4)
+	bpm(v: 132)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+jump(to: bridge, times: 1)
+mark(name: back)
+	sig(v: 7/8)
+	rpb(v: 2)
+	bpm(v: 264)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+jump(to: back, times: 1)
+mark(name: outro)
+
+
+
+
+
+
+
+
+
+
+
+
+end()
+
+
+=== instruments/prog_organ.inst
+base(preset: organ)
+filter(type: lowpass, cutoff: 2.5k, res: 0.15)
+drive(v: 0.25)
+param(name: bright, target: cutoff, min: 700, max: 7k)
+=== instruments/prog_lead.inst
+base(preset: lead)
+voice(mono: true, glide: 35ms)
+env(a: 6ms, d: 250ms, s: 0.75, r: 180ms)
+=== patterns/riff_bar.pat
+note(p: D2, len: 2, vel: 0.95)
+
+note(p: D2, len: 1, vel: 0.6)
+
+note(p: A2, len: 2, vel: 0.85)
+
+note(p: D3, len: 1, vel: 0.7)
+note(p: D2, len: 1, vel: 0.55)
+note(p: A2, len: 2, vel: 0.9)
+
+note(p: D3, len: 1, vel: 0.7)
+note(p: A2, len: 1, vel: 0.55)
+note(p: E2, len: 1, vel: 0.7)
+note(p: A2, len: 1, vel: 0.5)
+=== patterns/bass4.pat
+pattern(name: riff_bar)
+
+
+
+
+
+
+
+
+
+
+
+
+
+pattern(name: riff_bar)
+
+
+
+
+
+
+
+
+
+
+
+
+
+transpose(v: -4st)
+	pattern(name: riff_bar)
+
+
+
+
+
+
+
+
+
+
+
+
+
+transpose(v: -2st)
+	pattern(name: riff_bar)
+
+
+
+
+
+
+
+
+
+
+
+
+
+=== patterns/bass4_solo.pat
+transpose(v: 5st)
+	pattern(name: riff_bar)
+
+
+
+
+
+
+
+
+
+
+
+
+
+transpose(v: -4st)
+	pattern(name: riff_bar)
+
+
+
+
+
+
+
+
+
+
+
+
+
+transpose(v: -2st)
+	pattern(name: riff_bar)
+
+
+
+
+
+
+
+
+
+
+
+
+
+transpose(v: -5st)
+	pattern(name: riff_bar)
+
+
+
+
+
+
+
+
+
+
+
+
+
+=== patterns/organ_dm.pat
+chord(root: D3, type: min7, inv: 1, len: 3, vel: 0.85)
+
+
+
+chord(root: D3, type: min7, inv: 1, len: 3, vel: 0.7)
+
+
+
+chord(root: D3, type: min7, inv: 1, len: 5, vel: 0.8)
+
+
+
+chord(root: D3, type: min7, inv: 1, len: 1, vel: 0.45)
+
+=== patterns/organ_bb.pat
+chord(root: A#2, type: maj7, inv: 2, len: 3, vel: 0.85)
+
+
+
+chord(root: A#2, type: maj7, inv: 2, len: 3, vel: 0.7)
+
+
+
+chord(root: A#2, type: maj7, inv: 2, len: 5, vel: 0.8)
+
+
+
+chord(root: A#2, type: maj7, inv: 2, len: 1, vel: 0.45)
+
+=== patterns/organ_c.pat
+chord(root: C3, type: add9, inv: 1, len: 3, vel: 0.85)
+
+
+
+chord(root: C3, type: add9, inv: 1, len: 3, vel: 0.7)
+
+
+
+chord(root: C3, type: add9, inv: 1, len: 5, vel: 0.8)
+
+
+
+chord(root: C3, type: add9, inv: 1, len: 1, vel: 0.45)
+
+=== patterns/organ_gm.pat
+chord(root: G2, type: min7, inv: 2, len: 3, vel: 0.85)
+
+
+
+chord(root: G2, type: min7, inv: 2, len: 3, vel: 0.7)
+
+
+
+chord(root: G2, type: min7, inv: 2, len: 5, vel: 0.8)
+
+
+
+chord(root: G2, type: min7, inv: 2, len: 1, vel: 0.45)
+
+=== patterns/organ_a7.pat
+chord(root: A2, type: dom7, inv: 1, len: 3, vel: 0.85)
+
+
+
+chord(root: A2, type: dom7, inv: 1, len: 3, vel: 0.7)
+
+
+
+chord(root: A2, type: dom7, inv: 1, len: 5, vel: 0.8)
+
+
+
+chord(root: A2, type: dom7, inv: 1, len: 1, vel: 0.45)
+
+=== patterns/organ4.pat
+pattern(name: organ_dm, times: 2)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pattern(name: organ_bb)
+
+
+
+
+
+
+
+
+
+
+
+
+
+pattern(name: organ_c)
+
+
+
+
+
+
+
+
+
+
+
+
+
+=== patterns/organ4_solo.pat
+pattern(name: organ_gm)
+
+
+
+
+
+
+
+
+
+
+
+
+
+pattern(name: organ_bb)
+
+
+
+
+
+
+
+
+
+
+
+
+
+pattern(name: organ_c)
+
+
+
+
+
+
+
+
+
+
+
+
+
+pattern(name: organ_a7)
+
+
+
+
+
+
+
+
+
+
+
+
+
+=== patterns/drums_a.pat
+note(p: C4, inst: hat_closed, vel: 0.5)
+	note(p: C1, vel: .95)
+
+note(p: C4, inst: hat_closed, vel: 0.28)
+
+note(p: C4, inst: hat_closed, vel: 0.5)
+	note(p: C4, inst: snare, vel: .85)
+
+note(p: C4, inst: hat_closed, vel: 0.28)
+
+note(p: C4, inst: hat_closed, vel: 0.5)
+	note(p: C1, vel: .9)
+
+note(p: C4, inst: hat_closed, vel: 0.28)
+
+note(p: C4, inst: hat_closed, vel: 0.28)
+	note(p: C4, inst: snare, vel: .8)
+note(p: C4, inst: hat_closed, vel: .2)
+=== patterns/drums_b.pat
+note(p: C4, inst: hat_closed, vel: 0.5)
+	note(p: C1, vel: .95)
+
+note(p: C4, inst: hat_closed, vel: 0.28)
+note(p: C4, inst: snare, vel: .25)
+note(p: C4, inst: hat_closed, vel: 0.5)
+	note(p: C4, inst: snare, vel: .85)
+
+note(p: C4, inst: hat_closed, vel: 0.28)
+	note(p: C1, vel: .6)
+
+note(p: C4, inst: hat_closed, vel: 0.5)
+	note(p: C1, vel: .9)
+
+note(p: C4, inst: hat_closed, vel: 0.28)
+note(p: C1, vel: .5)
+note(p: C4, inst: hat_closed, vel: 0.28)
+	note(p: C4, inst: snare, vel: .8)
+note(p: C4, inst: hat_closed, vel: .2)
+=== patterns/fill78.pat
+note(p: C4, inst: snare, vel: 0.3)
+	note(p: C1, vel: .9)
+note(p: C4, inst: snare, vel: 0.35)
+note(p: C4, inst: snare, vel: 0.39)
+note(p: C4, inst: snare, vel: 0.44)
+note(p: C4, inst: snare, vel: 0.48)
+note(p: C4, inst: snare, vel: 0.53)
+note(p: C4, inst: snare, vel: 0.58)
+note(p: C4, inst: snare, vel: 0.62)
+note(p: C4, inst: snare, vel: 0.67)
+note(p: C4, inst: snare, vel: 0.72)
+note(p: C4, inst: snare, vel: 0.76)
+note(p: C4, inst: snare, vel: 0.81)
+note(p: C4, inst: snare, vel: 0.85)
+note(p: C4, inst: snare, vel: 0.9)
+=== patterns/drums4.pat
+pattern(name: drums_a)
+
+
+
+
+
+
+
+
+
+
+
+
+
+pattern(name: drums_b)
+
+
+
+
+
+
+
+
+
+
+
+
+
+pattern(name: drums_a)
+
+
+
+
+
+
+
+
+
+
+
+
+
+pattern(name: drums_b)
+
+
+
+
+
+
+
+
+
+
+
+
+
+=== patterns/drums4_fill.pat
+pattern(name: drums_a)
+
+
+
+
+
+
+
+
+
+
+
+
+
+pattern(name: drums_b)
+
+
+
+
+
+
+
+
+
+
+
+
+
+pattern(name: drums_a)
+
+
+
+
+
+
+
+
+
+
+
+
+
+pattern(name: fill78)
+
+
+
+
+
+
+
+
+
+
+
+
+
+=== patterns/drums_54.pat
+note(p: C4, inst: hat_open, vel: 0.28, len: 1)
+	note(p: C1, vel: .95)
+
+note(p: C4, inst: hat_open, vel: 0.16, len: 1)
+
+note(p: C4, inst: hat_open, vel: 0.28, len: 1)
+
+note(p: C4, inst: hat_open, vel: 0.16, len: 1)
+	note(p: C1, vel: .55)
+
+note(p: C4, inst: hat_open, vel: 0.28, len: 1)
+	note(p: C4, inst: snare, vel: .8)
+
+note(p: C4, inst: hat_open, vel: 0.16, len: 1)
+
+note(p: C4, inst: hat_open, vel: 0.28, len: 1)
+	note(p: C1, vel: .85)
+
+note(p: C4, inst: hat_open, vel: 0.16, len: 1)
+
+note(p: C4, inst: hat_open, vel: 0.28, len: 1)
+	note(p: C4, inst: snare, vel: .75)
+
+note(p: C4, inst: hat_open, vel: 0.16, len: 1)
+note(p: C4, inst: snare, vel: .3)
+=== patterns/melody.pat
+note(p: A4, len: 4, vel: 0.8)
+
+
+
+note(p: D5, len: 4, vel: 0.85)
+
+
+
+note(p: F5, len: 6, vel: 0.9)
+
+
+
+
+
+note(p: E5, len: 4, vel: 0.8)
+
+
+
+note(p: D5, len: 2, vel: 0.7)
+
+note(p: C5, len: 2, vel: 0.7)
+
+note(p: A4, len: 6, vel: 0.8)
+
+
+
+
+
+note(p: D5, len: 4, vel: 0.85)
+
+
+
+note(p: F5, len: 4, vel: 0.85)
+
+
+
+note(p: A5, len: 6, vel: 0.95, glide: 1)
+
+
+
+
+
+note(p: G5, len: 4, vel: 0.85)
+
+
+
+note(p: E5, len: 4, vel: 0.8)
+
+
+
+note(p: D5, len: 3, vel: 0.75)
+
+
+note(p: E5, len: 3, vel: 0.65)
+
+
+=== patterns/solo.pat
+note(p: G4, len: 1, vel: 0.6)
+note(p: A#4, len: 1, vel: 0.65)
+note(p: D5, len: 1, vel: 0.7)
+note(p: F5, len: 1, vel: 0.75)
+note(p: G5, len: 1, vel: 0.6)
+note(p: F5, len: 1, vel: 0.65)
+note(p: D5, len: 1, vel: 0.7)
+note(p: A#4, len: 1, vel: 0.75)
+note(p: A4, len: 2, vel: 0.75)
+
+note(p: D5, len: 4, vel: 0.85)
+
+
+
+note(p: F5, len: 2, vel: 0.85)
+
+note(p: D5, len: 1, vel: 0.65)
+note(p: A#4, len: 1, vel: 0.6)
+note(p: A4, len: 2, vel: 0.7)
+
+note(p: C5, len: 2, vel: 0.75)
+
+note(p: D5, len: 6, vel: 0.9, glide: 1)
+
+
+
+
+
+note(p: E5, len: 1, vel: 0.65)
+note(p: G5, len: 1, vel: 0.69)
+note(p: C6, len: 1, vel: 0.73)
+note(p: G5, len: 1, vel: 0.65)
+note(p: E5, len: 1, vel: 0.69)
+note(p: D5, len: 1, vel: 0.73)
+note(p: C5, len: 1, vel: 0.65)
+note(p: D5, len: 1, vel: 0.69)
+note(p: E5, len: 6, vel: 0.85, at: 0.5)
+
+
+
+
+
+note(p: C#5, len: 2, vel: 0.8)
+
+note(p: E5, len: 2, vel: 0.8)
+
+note(p: G5, len: 2, vel: 0.85)
+
+note(p: A5, len: 4, vel: 0.95, glide: 1)
+
+
+
+note(p: G5, len: 1, vel: 0.7)
+note(p: F5, len: 1, vel: 0.65)
+note(p: E5, len: 1, vel: 0.65)
+note(p: C#5, len: 1, vel: 0.7)
+=== patterns/bridge_lead.pat
+note(p: D5, len: 8, vel: 0.7)
+
+
+
+
+
+
+
+note(p: C5, len: 4, vel: 0.65)
+
+
+
+note(p: A#4, len: 4, vel: 0.6)
+
+
+
+note(p: A4, len: 4, vel: 0.6)
+
+
+
+note(p: G4, len: 8, vel: 0.65)
+
+
+
+
+
+
+
+note(p: A#4, len: 4, vel: 0.65)
+
+
+
+note(p: D5, len: 8, vel: 0.75, glide: 2)
+
+
+
+
+
+
+
+note(p: F5, len: 12, vel: 0.85, glide: 2)
+
+
+
+
+
+
+
+
+
+
+
+note(p: D5, len: 4, vel: 0.7)
+
+
+
+note(p: C5, len: 4, vel: 0.65)
+
+
+
+note(p: D5, len: 8, vel: 0.75)
+
+
+
+
+
+
+
+note(p: C#5, len: 12, vel: 0.8)
+
+
+
+
+
+
+
+
+
+
+
+=== patterns/bridge_organ.pat
+chord(root: G2, type: min9, len: 20, vel: 0.7)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+chord(root: D#3, type: maj7, len: 20, vel: 0.7)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+chord(root: A#2, type: maj7, inv: 1, len: 20, vel: 0.7)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+chord(root: A2, type: sus4, len: 10, vel: 0.7)
+
+
+
+
+
+
+
+
+
+chord(root: A2, type: dom7, inv: 1, len: 10, vel: 0.75)
+
+
+
+
+
+
+
+
+
+=== patterns/bridge_bass.pat
+note(p: G2, len: 12, vel: 0.85)
+
+
+
+
+
+
+
+
+
+
+
+note(p: D2, len: 8, vel: 0.7)
+
+
+
+
+
+
+
+note(p: D#2, len: 12, vel: 0.85)
+
+
+
+
+
+
+
+
+
+
+
+note(p: A#1, len: 8, vel: 0.7)
+
+
+
+
+
+
+
+note(p: A#1, len: 12, vel: 0.85)
+
+
+
+
+
+
+
+
+
+
+
+note(p: F2, len: 8, vel: 0.7)
+
+
+
+
+
+
+
+note(p: A1, len: 10, vel: 0.85)
+
+
+
+
+
+
+
+
+
+note(p: E2, len: 4, vel: 0.7)
+
+
+
+note(p: A2, len: 6, vel: 0.75)
+
+
+
+
+
+=== channels/drums.ch
+inst(name: kick); vol(v: 0.58)
+	note(p: C4, inst: hat_open, vel: 0.5, len: 8)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+note(p: G3, inst: tom, vel: 0.6)
+
+note(p: E3, inst: tom, vel: 0.7)
+
+note(p: C3, inst: tom, vel: 0.8)
+
+note(p: A2, inst: tom, vel: 0.9)
+
+pattern(name: drums4)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pattern(name: drums4_fill)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pattern(name: drums4)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pattern(name: drums_54, times: 4)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pattern(name: drums4_fill)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+note(p: C1, vel: 1)
+	note(p: C4, inst: hat_open, vel: 0.6, len: 8)
+=== channels/bass.ch
+inst(name: deep_bass); vol(v: 0.45)
+	note(p: D2, len: 2bar, vel: 0.7)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pattern(name: bass4)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pattern(name: bass4)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pattern(name: bass4_solo)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pattern(name: bridge_bass)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pattern(name: bass4)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+note(p: D2, len: 28, vel: 0.9)
+=== channels/organ.ch
+inst(name: prog_organ); vol(v: 0.04); set(bright: 0.2, reverb: 0.15)
+	ramp(vol: 0.2, over: 2bar)
+	chord(root: D3, type: min9, len: 2bar, vel: 0.8)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+set(bright: 0.45)
+	pattern(name: organ4)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pattern(name: organ4)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ramp(bright: 0.8, over: 4bar)
+	pattern(name: organ4_solo)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+set(bright: 0.35)
+	pattern(name: bridge_organ)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+set(bright: 0.5); ramp(bright: 1, over: 8bar)
+	pattern(name: organ4)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ramp(vol: 0, over: 28)
+	chord(root: D3, type: min9, len: 28, vel: 0.85)
+=== channels/lead.ch
+inst(name: prog_lead); vol(v: 0.25); set(reverb: 0.22, delay: 0.12)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pattern(name: melody)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+vel(v: 0.9)
+	pattern(name: solo)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+vol(v: 0.22)
+	pattern(name: bridge_lead)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+vol(v: 0.28)
+	pattern(name: melody)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+note(p: A4, len: 2, vel: 0.7)
+
+note(p: D5, len: 26, vel: 0.9, glide: 2)
